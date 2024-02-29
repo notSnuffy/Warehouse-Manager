@@ -1,0 +1,39 @@
+
+{
+  "name": "Ubuntu with Node, Docker and PHP with Composer",
+  "build": {
+    "dockerfile": "./Dockerfile",
+    "context": "."
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {
+      "version": "latest",
+      "dockerDashComposeVersion": "v2"
+    },
+    "ghcr.io/devcontainers/features/git:1": {
+      "version": "latest",
+      "ppa": false
+    },
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "lts"
+    }
+  },
+  "remoteUser": "vscode",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "PKief.material-icon-theme",
+        "mgmcdermott.vscode-language-babel",
+        "ms-azuretools.vscode-docker",
+        "dbaeumer.vscode-eslint",
+        "eamodio.gitlens",
+        "ecmel.vscode-html-css",
+        "esbenp.prettier-vscode",
+        "Gruntfuggly.todo-tree",
+        "mongodb.mongodb-vscode",
+        "xdebug.php-debug",
+        "bmewburn.vscode-intelephense-client"
+      ]
+    }
+  }
+}
