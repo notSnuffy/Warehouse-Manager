@@ -1,0 +1,4 @@
+cd gui
+npx lint-staged
+
+exit 1
