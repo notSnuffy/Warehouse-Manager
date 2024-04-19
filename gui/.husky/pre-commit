@@ -1,4 +1,2 @@
 cd gui
-npx lint-staged
-
-exit 1
+npx lint-staged --concurrent false

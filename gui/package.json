@@ -25,11 +25,5 @@
     "postcss": "^8",
     "prettier": "3.2.5",
     "tailwindcss": "^3.3.0"
-  },
-  "lint-staged": {
-    "**/*": [
-      "next lint",
-      "prettier --write --ignore-unknown"
-    ]
   }
 }
