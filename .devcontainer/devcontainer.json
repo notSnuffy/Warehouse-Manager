@@ -18,6 +18,10 @@
       "version": "lts"
     }
   },
+
+  // 3000: Next, 8080: PHP
+  "forwardPorts": [3000, 8080],
+
   "remoteUser": "vscode",
   "customizations": {
     "vscode": {
