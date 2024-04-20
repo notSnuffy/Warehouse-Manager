@@ -2,10 +2,16 @@ FROM "mcr.microsoft.com/devcontainers/base:jammy"
 
 ENV DEBIAN_FRONTEND=noninteractive
 
+RUN apt update && apt install -y software-properties-common
+
 # Installations
-RUN apt update && apt install -y \
-    php && \
-    rm -rf /var/lib/apt/lists/*
+RUN add-apt-repository ppa:ondrej/php && \ 
+    apt update && apt install -y \
+    php php-pear php-dev && \
+    rm -rf /var/lib/apt/lists/* && \
+    pecl install mongodb && \
+    PHP_INI=$(php --ini | grep 'Loaded Configuration File' | awk -F ': +' '{print $2}') && \
+    echo "extension=mongodb.so" >> $PHP_INI
 
 # Install Composer
 RUN php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');" && \

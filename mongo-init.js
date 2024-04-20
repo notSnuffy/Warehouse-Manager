@@ -5,3 +5,4 @@ db.createUser({
   pwd: "password",
   roles: [{ role: "readWrite", db: "WarehouseManager" }],
 });
+db.createCollection("test");
