@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { Button } from "primereact/button";
 import { InputText } from "primereact/inputtext";
+import useSWR from "swr";
 
 /**
  * @module Test
@@ -17,7 +18,16 @@ import { InputText } from "primereact/inputtext";
  * @returns {JSX.Element} The rendered Home component.
  */
 function Home() {
-  const [count, setCount] = useState(0);
+  const [shouldFetch, setShouldFetch] = useState(false);
+  const fetcher = (url) => fetch(url).then((res) => res.json());
+  const { data } = useSWR(
+    shouldFetch ? "http://localhost:8080" : null,
+    fetcher,
+  );
+
+  const handleClick = () => {
+    setShouldFetch(true);
+  };
 
   return (
     <main>
@@ -26,10 +36,11 @@ function Home() {
         <Button
           icon="pi pi-plus"
           className="mr-2"
-          label="Increment"
-          onClick={() => setCount((count) => count + 1)}
+          label="Fetch Data"
+          disabled={shouldFetch}
+          onClick={handleClick}
         ></Button>
-        <InputText value={count.toString()} />
+        <InputText value={data ? data.message : ""} />
       </div>
     </main>
   );
