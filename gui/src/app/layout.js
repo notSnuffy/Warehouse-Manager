@@ -1,4 +1,3 @@
-import { JetBrains_Mono } from "next/font/google";
 import PrimeProvider from "./PrimeProvider";
 
 export const metadata = {
