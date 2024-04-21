@@ -1,6 +1,19 @@
 import Image from "next/image";
 
-export default function Home() {
+/**
+ * @module Test
+ */
+
+/**
+ * Renders the Home component.
+ * @memberof module:Test
+ * @example
+ * // Renders the Home component!.
+ * <Home />
+ *
+ * @returns {JSX.Element} The rendered Home component.
+ */
+function Home() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-between p-24">
       <p> Hello World! </p>
@@ -112,3 +125,5 @@ export default function Home() {
     </main>
   );
 }
+
+export default Home;

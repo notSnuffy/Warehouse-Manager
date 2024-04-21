@@ -1,0 +1,26 @@
+{
+  "opts": {
+    "template": "node_modules/docdash",
+    "destination": "docs/",
+    "recurse": true
+  },
+  "plugins": ["plugins/markdown"],
+  "source": {
+    "include": ["src"]
+  },
+  "docdash": {
+    "static": true,
+    "sort": true,
+    "search": true,
+    "collapse": true,
+    "wrap": true,
+    "typedefs": true,
+    "removeQuotes": "none",
+    "scripts": []
+  },
+  "templates": {
+    "default": {
+      "useLongnameInNav": true
+    }
+  }
+}

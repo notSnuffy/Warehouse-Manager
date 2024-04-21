@@ -1,0 +1,21 @@
+FROM node:20 as build
+
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+
+RUN npm install
+
+COPY jsdoc.json ./
+
+COPY src ./src
+
+RUN npm run docs
+
+FROM nginx:1.25.5-alpine
+
+COPY --from=build /app/docs /usr/share/nginx/html
+
+EXPOSE 80
+
+

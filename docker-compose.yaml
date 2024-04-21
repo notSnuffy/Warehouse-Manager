@@ -38,6 +38,14 @@ services:
     restart: always
     depends_on:
       - mongodb
+  docs:
+    build:
+      context: ./gui
+      dockerfile: Dockerfile-docs
+    ports:
+      - 8008:80
+    volumes:
+      - /usr/share/nginx/html
 volumes:
   mongo-data:
     driver: local

@@ -19,8 +19,8 @@
     }
   },
 
-  // 3000: Next, 8080: PHP, 8081: MongoExpress, 27017: MongoDB
-  "forwardPorts": [3000, 8080, 8081, 27017],
+  // 80: Documentation, 3000: Next, 8080: PHP, 8081: MongoExpress, 27017: MongoDB
+  "forwardPorts": [8008, 3000, 8080, 8081, 27017],
 
   "remoteUser": "vscode",
   "customizations": {
