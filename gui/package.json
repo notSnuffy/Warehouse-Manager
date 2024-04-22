@@ -12,8 +12,10 @@
     "docs": "jsdoc -c jsdoc.json"
   },
   "dependencies": {
+    "@pixi/react": "^7.1.2",
     "@reduxjs/toolkit": "^2.2.3",
     "next": "14.1.0",
+    "pixi.js": "^7.4.2",
     "primereact": "^10.6.3",
     "react": "^18",
     "react-dom": "^18",
