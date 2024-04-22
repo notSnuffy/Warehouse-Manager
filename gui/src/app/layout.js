@@ -1,4 +1,5 @@
 import PrimeProvider from "./PrimeProvider";
+import StoreProvider from "./StoreProvider";
 
 export const metadata = {
   title: "Create Next App",
@@ -9,7 +10,9 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body>
-        <PrimeProvider>{children}</PrimeProvider>
+        <PrimeProvider>
+          <StoreProvider>{children}</StoreProvider>
+        </PrimeProvider>
       </body>
     </html>
   );
