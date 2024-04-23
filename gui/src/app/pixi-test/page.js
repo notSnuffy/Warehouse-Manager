@@ -1,8 +1,20 @@
 "use client";
-import React from "react";
 import "@pixi/events";
 import { Container, Stage, Graphics, useApp } from "@pixi/react";
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
+import { Button } from "primereact/button";
+import { addRectangle } from "@/lib/features/shapes/shapesSlice";
+import { useDispatch, useSelector, ReactReduxContext } from "react-redux";
+
+const ContextBridge = ({ children, Context, render }) => {
+  return (
+    <Context.Consumer>
+      {(value) =>
+        render(<Context.Provider value={value}>{children}</Context.Provider>)
+      }
+    </Context.Consumer>
+  );
+};
 
 function Rectangle({ x, y, width, height, onDragStart }) {
   const draw = useCallback((g) => {
@@ -20,8 +32,10 @@ function Rectangle({ x, y, width, height, onDragStart }) {
   return <Graphics draw={draw} />;
 }
 
-function ShapeContainer({ x, y, children }) {
+function ShapeContainer({ x, y }) {
   const app = useApp();
+  const shapes = useSelector((state) => state.rootReducer.shapes.shapes);
+
   let dragTarget = null;
   const onDragMove = (event) => {
     if (dragTarget) {
@@ -44,35 +58,65 @@ function ShapeContainer({ x, y, children }) {
     }
   };
 
+  // useEffect(() => {
+  //   if (app.stage) {
+  //     app.stage.on("pointerup", onDragEnd);
+  //     app.stage.on("pointerupoutside", onDragEnd);
+
+  //     return () => {
+  //       if (app.stage) {
+  //         app.stage.off("pointerupoutside", onDragEnd);
+  //         app.stage.off("pointerup", onDragEnd);
+  //       }
+  //     };
+  //   }
+  // }, [app, onDragEnd]);
+
   app.stage.on("pointerup", onDragEnd);
   app.stage.on("pointerupoutside", onDragEnd);
 
-  console.log(children);
-
-  const childrenWithOnDragStart = React.Children.map(children, (child) => {
-    return React.cloneElement(child, { onDragStart });
-  });
-
   return (
     <Container x={x} y={y} eventMode={"static"}>
-      {childrenWithOnDragStart}
+      {shapes.map((shape, index) => (
+        <Rectangle
+          key={index}
+          x={shape.x}
+          y={shape.y}
+          width={shape.width}
+          height={shape.height}
+          onDragStart={onDragStart}
+        />
+      ))}
     </Container>
   );
 }
 
+function EditorStage({ children, ...props }) {
+  return (
+    <ContextBridge
+      Context={ReactReduxContext}
+      render={(children) => <Stage {...props}>{children}</Stage>}
+    >
+      {children}
+    </ContextBridge>
+  );
+}
+
 function PixiComponent() {
+  const dispatch = useDispatch();
+
   const onMount = (app) => {
     app.stage.eventMode = "static";
     app.stage.hitArea = app.screen;
   };
 
   return (
-    <Stage x={800} y={600} onMount={onMount}>
-      <ShapeContainer x={100} y={100}>
-        <Rectangle x={0} y={0} width={100} height={100} />
-        <Rectangle x={200} y={200} width={100} height={100} />
-      </ShapeContainer>
-    </Stage>
+    <>
+      <Button label="Add rectangle" onClick={() => dispatch(addRectangle())} />
+      <EditorStage x={800} y={600} onMount={onMount}>
+        <ShapeContainer x={100} y={100} />
+      </EditorStage>
+    </>
   );
 }
 

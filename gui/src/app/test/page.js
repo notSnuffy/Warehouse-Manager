@@ -11,7 +11,7 @@ import { useDispatch, useSelector } from "react-redux";
  */
 function Test() {
   let name = "World";
-  const test = useSelector((state) => state.test.value);
+  const test = useSelector((state) => state.rootReducer.test.value);
   const dispatch = useDispatch();
   return (
     <>
