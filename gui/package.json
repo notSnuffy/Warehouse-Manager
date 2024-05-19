@@ -12,7 +12,6 @@
     "docs": "jsdoc -c jsdoc.json"
   },
   "dependencies": {
-    "@pixi/react": "^7.1.2",
     "pixi.js": "^7.4.2"
   },
   "devDependencies": {
