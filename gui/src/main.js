@@ -1,7 +1,7 @@
 import { Boot } from "./scenes/Boot";
 import { Preloader } from "./scenes/Preloader";
 import { MainMenu } from "./scenes/MainMenu";
-import { Game } from "./scenes/Editor";
+import { Editor } from "./scenes/Editor";
 import Phaser from "phaser";
 
 const window_size = {
@@ -19,7 +19,7 @@ const config = {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
   },
-  scene: [Boot, Preloader, MainMenu, Game],
+  scene: [Boot, Preloader, MainMenu, Editor],
 };
 
 export default new Phaser.Game(config);
