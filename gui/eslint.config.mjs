@@ -5,5 +5,17 @@ export default [
   {
     languageOptions: { globals: globals.browser },
   },
-  pluginJs.configs.recommended,
+  {
+    ...pluginJs.configs.recommended,
+    rules: {
+      ...pluginJs.configs.recommended.rules,
+      "no-unused-vars": [
+        "error",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+        },
+      ],
+    },
+  },
 ];
