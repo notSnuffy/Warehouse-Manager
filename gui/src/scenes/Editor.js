@@ -1,8 +1,9 @@
-import { Scene } from "phaser";
+import Phaser from "phaser";
 
 const UISeperator = 50;
+const ROTATION_KNOB_RADIUS = 10;
 
-export class Editor extends Scene {
+export class Editor extends Phaser.Scene {
   shapes = [];
   currentTool = "move";
   lastSelected = null;
@@ -23,18 +24,15 @@ export class Editor extends Scene {
   create() {
     this.cameras.main.setBackgroundColor(0x000000);
 
-    let moveButton = this.add
-      .text(20, 20, "Move", { color: "#ffffff" })
-      .setInteractive();
-    let selectButton = this.add
-      .text(80, 20, "Select", { color: "#ffffff" })
-      .setInteractive();
-
-    moveButton.on("pointerdown", () => {
+    let moveButton = document.getElementById("move-button");
+    moveButton.hidden = false;
+    moveButton.addEventListener("click", () => {
       this.currentTool = "move";
     });
 
-    selectButton.on("pointerdown", () => {
+    let selectButton = document.getElementById("select-button");
+    selectButton.hidden = false;
+    selectButton.addEventListener("click", () => {
       this.currentTool = "select";
     });
 
@@ -72,6 +70,8 @@ export class Editor extends Scene {
               this.rotationKnob.destroy();
               this.rotationKnob = null;
             }
+
+            this.hideResizeHandles();
           }
           console.log(shape.rotation);
           shape.setFillStyle(0xffffff);
@@ -80,13 +80,12 @@ export class Editor extends Scene {
           this.createResizeHandles(shape);
 
           console.log(shape.x, shape.y);
-          const radius = 10;
-          const knobOffset = shape.height / 2 + radius;
+          const knobOffset = shape.height / 2 + ROTATION_KNOB_RADIUS;
           this.rotationKnob = this.add
             .circle(
               shape.x + Math.cos(shape.rotation - Math.PI / 2) * knobOffset,
               shape.y + Math.sin(shape.rotation - Math.PI / 2) * knobOffset,
-              radius,
+              ROTATION_KNOB_RADIUS,
               0x888888,
             )
             .setInteractive({ draggable: true });
@@ -107,6 +106,31 @@ export class Editor extends Scene {
       });
     }
     this.input.on("pointerdown", this.handleUnselect, this);
+
+    this.space = this.input.keyboard.addKey(
+      Phaser.Input.Keyboard.KeyCodes.SPACE,
+    );
+  }
+
+  update() {
+    if (Phaser.Input.Keyboard.JustDown(this.space)) {
+      console.log("Shapes:");
+      for (let i = 0; i < this.shapes.length; i++) {
+        let shape = this.shapes[i];
+        console.log(
+          "x: ",
+          shape.x,
+          "y: ",
+          shape.y,
+          "rotation: ",
+          shape.rotation,
+          "width: ",
+          shape.width,
+          "height: ",
+          shape.height,
+        );
+      }
+    }
   }
 
   handleUnselect() {
@@ -129,11 +153,16 @@ export class Editor extends Scene {
   handleRotationDrag(shape, rotationKnob, knobOffset) {
     return (_, dragX, dragY) => {
       shape.rotation = Math.atan2(dragY - shape.y, dragX - shape.x);
-      rotationKnob.setPosition(
-        shape.x + Math.cos(shape.rotation) * knobOffset,
-        shape.y + Math.sin(shape.rotation) * knobOffset,
-      );
+      this.updateRotationKnob(shape, rotationKnob, knobOffset);
+      this.updateResizeHandles(shape);
     };
+  }
+
+  updateRotationKnob(shape, rotationKnob, knobOffset) {
+    rotationKnob.setPosition(
+      shape.x + Math.cos(shape.rotation) * knobOffset,
+      shape.y + Math.sin(shape.rotation) * knobOffset,
+    );
   }
 
   createResizeHandles(shape) {
@@ -268,8 +297,12 @@ export class Editor extends Scene {
           }
           shape.setSize(width, height);
           shape.setPosition(newX, newY);
-          console.log(shape.width, shape.height);
-          console.log(shape.x, shape.y);
+          this.updateResizeHandles(shape);
+          const knobOffset = shape.height / 2 + ROTATION_KNOB_RADIUS;
+          this.rotationKnob.setPosition(
+            shape.x + Math.cos(shape.rotation - Math.PI / 2) * knobOffset,
+            shape.y + Math.sin(shape.rotation - Math.PI / 2) * knobOffset,
+          );
         }
       });
 
@@ -288,5 +321,64 @@ export class Editor extends Scene {
       handle.destroy();
     }
     this.resizeHandles = [];
+  }
+
+  updateResizeHandles(shape) {
+    const handles = [
+      {
+        x: shape.x - shape.width / 2,
+        y: shape.y - shape.height / 2,
+        width: 10,
+        height: 10,
+      }, // Top-left
+      {
+        x: shape.x + shape.width / 2,
+        y: shape.y - shape.height / 2,
+        width: 10,
+        height: 10,
+      }, // Top-right
+      {
+        x: shape.x + shape.width / 2,
+        y: shape.y + shape.height / 2,
+        width: 10,
+        height: 10,
+      }, // Bottom-right
+      {
+        x: shape.x - shape.width / 2,
+        y: shape.y + shape.height / 2,
+        width: 10,
+        height: 10,
+      }, // Bottom-left
+      {
+        x: shape.x,
+        y: shape.y - shape.height / 2,
+        width: shape.width - 10,
+        height: 2,
+      }, // Top
+      {
+        x: shape.x + shape.width / 2,
+        y: shape.y,
+        width: 2,
+        height: shape.height - 10,
+      }, // Right
+      {
+        x: shape.x,
+        y: shape.y + shape.height / 2,
+        width: shape.width - 10,
+        height: 2,
+      }, // Bottom
+      {
+        x: shape.x - shape.width / 2,
+        y: shape.y,
+        width: 2,
+        height: shape.height - 10,
+      }, // Left
+    ];
+
+    for (let i = 0; i < this.resizeHandles.length; i++) {
+      const handle = this.resizeHandles[i];
+      handle.setPosition(handles[i].x, handles[i].y);
+      handle.setSize(handles[i].width, handles[i].height);
+    }
   }
 }
