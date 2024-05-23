@@ -1,4 +1,10 @@
 import Phaser from "phaser";
+import {
+  getResizedPoints,
+  Corner,
+  Edge,
+  constructHandles,
+} from "../Math/Resize";
 
 /**
  * Radius of the rotation knob
@@ -175,9 +181,9 @@ class Editor extends Phaser.Scene {
     this.rotationKnob = this.add
       .circle(
         shape.getTopCenter().x +
-          ROTATION_KNOB_RADIUS * Math.cos(shape.rotation - Math.PI / 2),
+          ROTATION_KNOB_RADIUS * 2 * Math.cos(shape.rotation - Math.PI / 2),
         shape.getTopCenter().y +
-          ROTATION_KNOB_RADIUS * Math.sin(shape.rotation - Math.PI / 2),
+          ROTATION_KNOB_RADIUS * 2 * Math.sin(shape.rotation - Math.PI / 2),
         ROTATION_KNOB_RADIUS,
         0x888888,
       )
@@ -303,9 +309,9 @@ class Editor extends Phaser.Scene {
   updateRotationKnob(shape, rotationKnob) {
     rotationKnob.setPosition(
       shape.getTopCenter().x +
-        ROTATION_KNOB_RADIUS * Math.cos(shape.rotation - Math.PI / 2),
+        ROTATION_KNOB_RADIUS * 2 * Math.cos(shape.rotation - Math.PI / 2),
       shape.getTopCenter().y +
-        ROTATION_KNOB_RADIUS * Math.sin(shape.rotation - Math.PI / 2),
+        ROTATION_KNOB_RADIUS * 2 * Math.sin(shape.rotation - Math.PI / 2),
     );
   }
 
@@ -316,64 +322,7 @@ class Editor extends Phaser.Scene {
    * @returns {void}
    */
   createResizeHandles(shape) {
-    const bottomLeft = shape.getBottomLeft();
-    const bottomRight = shape.getBottomRight();
-    const topLeft = shape.getTopLeft();
-    const topRight = shape.getTopRight();
-    const topCenter = shape.getTopCenter();
-    const bottomCenter = shape.getBottomCenter();
-    const leftCenter = shape.getLeftCenter();
-    const rightCenter = shape.getRightCenter();
-    const handles = [
-      {
-        x: topLeft.x,
-        y: topLeft.y,
-        width: 10,
-        height: 10,
-      }, // Top-left
-      {
-        x: topRight.x,
-        y: topRight.y,
-        width: 10,
-        height: 10,
-      }, // Top-right
-      {
-        x: bottomRight.x,
-        y: bottomRight.y,
-        width: 10,
-        height: 10,
-      }, // Bottom-right
-      {
-        x: bottomLeft.x,
-        y: bottomLeft.y,
-        width: 10,
-        height: 10,
-      }, // Bottom-left
-      {
-        x: topCenter.x,
-        y: topCenter.y,
-        width: shape.width - 10,
-        height: 2,
-      }, // Top
-      {
-        x: rightCenter.x,
-        y: rightCenter.y,
-        width: 2,
-        height: shape.height - 10,
-      }, // Right
-      {
-        x: bottomCenter.x,
-        y: bottomCenter.y,
-        width: shape.width - 10,
-        height: 2,
-      }, // Bottom
-      {
-        x: leftCenter.x,
-        y: leftCenter.y,
-        width: 2,
-        height: shape.height - 10,
-      }, // Left
-    ];
+    const handles = constructHandles(shape);
 
     const cursorStyles = [
       "nwse-resize",
@@ -395,96 +344,138 @@ class Editor extends Phaser.Scene {
 
       resizeHandle.on("dragstart", () => {
         this.resizing = true;
-        this.resizeEdge = i;
+        this.resizeEdge = handle.position;
       });
 
       resizeHandle.on("drag", (_, dragX, dragY) => {
         if (this.currentTool === "select") {
-          let width, height, newX, newY;
-          const old_width = shape.width;
-          const old_height = shape.height;
+          const expectedCornerPointAfterResize = {
+            x: dragX,
+            y: dragY,
+          };
 
-          const topNewHeight = shape.y - dragY + shape.height / 2;
-          const rightNewWidth = dragX - shape.x + shape.width / 2;
-          const bottomNewHeight = dragY - shape.y + shape.height / 2;
-          const leftNewWidth = shape.x - dragX + shape.width / 2;
+          const topLeft = shape.getTopLeft();
+          const topRight = shape.getTopRight();
+          const bottomLeft = shape.getBottomLeft();
+          const bottomRight = shape.getBottomRight();
+          const leftCenter = shape.getLeftCenter();
+          const rightCenter = shape.getRightCenter();
+          const topCenter = shape.getTopCenter();
+          const bottomCenter = shape.getBottomCenter();
+
+          let newDimensions, line, adjustedCornerPoint;
+
           switch (this.resizeEdge) {
-            case 0: // Top-left
-              width = leftNewWidth >= 1 ? leftNewWidth : shape.width;
-              height = topNewHeight >= 1 ? topNewHeight : shape.height;
-              newX = leftNewWidth >= 1 ? dragX + width / 2 : shape.x;
-              newY = topNewHeight >= 1 ? dragY + height / 2 : shape.y;
+            case Corner.TOP_LEFT:
+              newDimensions = getResizedPoints(
+                bottomRight,
+                expectedCornerPointAfterResize,
+                shape.rotation,
+              );
               break;
-            case 1: // Top-right
-              width = rightNewWidth >= 1 ? rightNewWidth : shape.width;
-              height = topNewHeight >= 1 ? topNewHeight : shape.height;
-              newX =
-                rightNewWidth >= 1
-                  ? shape.x + (width - old_width) / 2
-                  : shape.x;
-              newY = topNewHeight >= 1 ? dragY + height / 2 : shape.y;
+            case Corner.TOP_RIGHT:
+              newDimensions = getResizedPoints(
+                bottomLeft,
+                expectedCornerPointAfterResize,
+                shape.rotation,
+              );
               break;
-            case 2: // Bottom-right
-              width = rightNewWidth >= 1 ? rightNewWidth : shape.width;
-              height = bottomNewHeight >= 1 ? bottomNewHeight : shape.height;
-              newX =
-                rightNewWidth >= 1
-                  ? shape.x + (width - old_width) / 2
-                  : shape.x;
-              newY =
-                bottomNewHeight >= 1
-                  ? shape.y + (height - old_height) / 2
-                  : shape.y;
+            case Corner.BOTTOM_RIGHT:
+              newDimensions = getResizedPoints(
+                topLeft,
+                expectedCornerPointAfterResize,
+                shape.rotation,
+              );
               break;
-            case 3: // Bottom-left
-              width = leftNewWidth >= 1 ? leftNewWidth : shape.width;
-              height = bottomNewHeight >= 1 ? bottomNewHeight : shape.height;
-              newX = leftNewWidth >= 1 ? dragX + width / 2 : shape.x;
-              newY =
-                bottomNewHeight >= 1
-                  ? shape.y + (height - old_height) / 2
-                  : shape.y;
+            case Corner.BOTTOM_LEFT:
+              newDimensions = getResizedPoints(
+                topRight,
+                expectedCornerPointAfterResize,
+                shape.rotation,
+              );
               break;
-            case 4: // Top
-              width = shape.width;
-              height = topNewHeight >= 1 ? topNewHeight : shape.height;
-              newX = shape.x;
-              newY = topNewHeight >= 1 ? dragY + height / 2 : shape.y;
+            case Edge.TOP:
+              line = new Phaser.Geom.Line(
+                bottomCenter.x,
+                bottomCenter.y,
+                topCenter.x,
+                topCenter.y,
+              );
+              adjustedCornerPoint = Phaser.Geom.Line.GetNearestPoint(
+                line,
+                expectedCornerPointAfterResize,
+              );
+              newDimensions = getResizedPoints(
+                bottomCenter,
+                adjustedCornerPoint,
+                shape.rotation,
+                { width: shape.width },
+              );
               break;
-            case 5: // Right
-              width = rightNewWidth >= 1 ? rightNewWidth : shape.width;
-              height = shape.height;
-              newX =
-                rightNewWidth >= 1
-                  ? shape.x + (width - old_width) / 2
-                  : shape.x;
-              newY = shape.y;
+            case Edge.RIGHT:
+              line = new Phaser.Geom.Line(
+                leftCenter.x,
+                leftCenter.y,
+                rightCenter.x,
+                rightCenter.y,
+              );
+              adjustedCornerPoint = Phaser.Geom.Line.GetNearestPoint(
+                line,
+                expectedCornerPointAfterResize,
+              );
+              newDimensions = getResizedPoints(
+                leftCenter,
+                adjustedCornerPoint,
+                shape.rotation,
+                { height: shape.height },
+              );
               break;
-            case 6: // Bottom
-              width = shape.width;
-              height = bottomNewHeight >= 1 ? bottomNewHeight : shape.height;
-              newX = shape.x;
-              newY =
-                bottomNewHeight >= 1
-                  ? shape.y + (height - old_height) / 2
-                  : shape.y;
+            case Edge.BOTTOM:
+              line = new Phaser.Geom.Line(
+                topCenter.x,
+                topCenter.y,
+                bottomCenter.x,
+                bottomCenter.y,
+              );
+              adjustedCornerPoint = Phaser.Geom.Line.GetNearestPoint(
+                line,
+                expectedCornerPointAfterResize,
+              );
+              newDimensions = getResizedPoints(
+                topCenter,
+                adjustedCornerPoint,
+                shape.rotation,
+                { width: shape.width },
+              );
               break;
-            case 7: // Left
-              width = leftNewWidth >= 1 ? leftNewWidth : shape.width;
-              height = shape.height;
-              newX = leftNewWidth >= 1 ? dragX + width / 2 : shape.x;
-              newY = shape.y;
+            case Edge.LEFT:
+              line = new Phaser.Geom.Line(
+                rightCenter.x,
+                rightCenter.y,
+                leftCenter.x,
+                leftCenter.y,
+              );
+              adjustedCornerPoint = Phaser.Geom.Line.GetNearestPoint(
+                line,
+                expectedCornerPointAfterResize,
+              );
+              newDimensions = getResizedPoints(
+                rightCenter,
+                adjustedCornerPoint,
+                shape.rotation,
+                { height: shape.height },
+              );
               break;
           }
 
-          shape.setSize(width, height);
-          shape.setPosition(newX, newY);
+          shape.setSize(newDimensions.width, newDimensions.height);
+          shape.setPosition(newDimensions.x, newDimensions.y);
           this.updateResizeHandles(shape);
           this.rotationKnob.setPosition(
             shape.getTopCenter().x +
-              ROTATION_KNOB_RADIUS * Math.cos(shape.rotation - Math.PI / 2),
+              ROTATION_KNOB_RADIUS * 2 * Math.cos(shape.rotation - Math.PI / 2),
             shape.getTopCenter().y +
-              ROTATION_KNOB_RADIUS * Math.sin(shape.rotation - Math.PI / 2),
+              ROTATION_KNOB_RADIUS * 2 * Math.sin(shape.rotation - Math.PI / 2),
           );
         }
       });
@@ -518,64 +509,7 @@ class Editor extends Phaser.Scene {
    * @returns {void}
    */
   updateResizeHandles(shape) {
-    const bottomLeft = shape.getBottomLeft();
-    const bottomRight = shape.getBottomRight();
-    const topLeft = shape.getTopLeft();
-    const topRight = shape.getTopRight();
-    const topCenter = shape.getTopCenter();
-    const bottomCenter = shape.getBottomCenter();
-    const leftCenter = shape.getLeftCenter();
-    const rightCenter = shape.getRightCenter();
-    const handles = [
-      {
-        x: topLeft.x,
-        y: topLeft.y,
-        width: 10,
-        height: 10,
-      }, // Top-left
-      {
-        x: topRight.x,
-        y: topRight.y,
-        width: 10,
-        height: 10,
-      }, // Top-right
-      {
-        x: bottomRight.x,
-        y: bottomRight.y,
-        width: 10,
-        height: 10,
-      }, // Bottom-right
-      {
-        x: bottomLeft.x,
-        y: bottomLeft.y,
-        width: 10,
-        height: 10,
-      }, // Bottom-left
-      {
-        x: topCenter.x,
-        y: topCenter.y,
-        width: shape.width - 10,
-        height: 2,
-      }, // Top
-      {
-        x: rightCenter.x,
-        y: rightCenter.y,
-        width: 2,
-        height: shape.height - 10,
-      }, // Right
-      {
-        x: bottomCenter.x,
-        y: bottomCenter.y,
-        width: shape.width - 10,
-        height: 2,
-      }, // Bottom
-      {
-        x: leftCenter.x,
-        y: leftCenter.y,
-        width: 2,
-        height: shape.height - 10,
-      }, // Left
-    ];
+    const handles = constructHandles(shape);
 
     for (let i = 0; i < this.resizeHandles.length; i++) {
       const handle = this.resizeHandles[i];
