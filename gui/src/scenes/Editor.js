@@ -166,6 +166,38 @@ class Editor extends Phaser.Scene {
   }
 
   /**
+   * Creates the rotation knob
+   * @param {Phaser.GameObjects.Shape} shape - Shape to create the rotation knob for
+   * @public
+   * @returns {void}
+   */
+  createRotationKnob(shape) {
+    this.rotationKnob = this.add
+      .circle(
+        shape.getTopCenter().x +
+          ROTATION_KNOB_RADIUS * Math.cos(shape.rotation - Math.PI / 2),
+        shape.getTopCenter().y +
+          ROTATION_KNOB_RADIUS * Math.sin(shape.rotation - Math.PI / 2),
+        ROTATION_KNOB_RADIUS,
+        0x888888,
+      )
+      .setInteractive({ draggable: true });
+
+    this.rotationKnob.on("dragstart", () => {
+      this.knobDragging = true;
+    });
+
+    this.rotationKnob.on(
+      "drag",
+      this.handleRotationDrag(shape, this.rotationKnob),
+    );
+
+    this.rotationKnob.on("dragend", () => {
+      this.knobDragging = false;
+    });
+  }
+
+  /**
    * Adds shape select event
    * @param {Phaser.GameObjects.Shape} shape - Shape to add select event to
    * @public
@@ -180,31 +212,7 @@ class Editor extends Phaser.Scene {
         this.lastSelected = shape;
 
         this.createResizeHandles(shape);
-
-        const knobOffset = shape.height / 2 + ROTATION_KNOB_RADIUS;
-        this.rotationKnob = this.add
-          .circle(
-            shape.getTopCenter().x +
-              ROTATION_KNOB_RADIUS * Math.cos(shape.rotation - Math.PI / 2),
-            shape.getTopCenter().y +
-              ROTATION_KNOB_RADIUS * Math.sin(shape.rotation - Math.PI / 2),
-            ROTATION_KNOB_RADIUS,
-            0x888888,
-          )
-          .setInteractive({ draggable: true });
-
-        this.rotationKnob.on("dragstart", () => {
-          this.knobDragging = true;
-        });
-
-        this.rotationKnob.on(
-          "drag",
-          this.handleRotationDrag(shape, this.rotationKnob, knobOffset),
-        );
-
-        this.rotationKnob.on("dragend", () => {
-          this.knobDragging = false;
-        });
+        this.createRotationKnob(shape);
       }
     });
   }
@@ -223,16 +231,20 @@ class Editor extends Phaser.Scene {
       this.handleSelectButtonClick,
     );
 
-    this.shapes.push(this.add.rectangle(100, 100, 100, 100, 0xff0000));
+    this.shapes.push(this.add.rectangle(100, 300, 100, 100, 0xff0000));
     this.shapes.push(this.add.rectangle(300, 300, 100, 100, 0xff0000));
     this.shapes.push(this.add.ellipse(500, 500, 50, 100, 0xff0000));
+
+    console.log(this.shapes[2]);
+
+    this.shapes[1].setRotation(Math.PI / 4);
 
     for (let i = 0; i < this.shapes.length; i++) {
       let shape = this.shapes[i];
       shape.setInteractive({ draggable: true });
 
       this.addShapeDrag(shape);
-      this.addShapeSelect(shape);
+      this.addShapeSelect(shape, i);
     }
     this.input.on("pointerdown", this.handleUnselect, this);
 
@@ -464,6 +476,7 @@ class Editor extends Phaser.Scene {
               newY = shape.y;
               break;
           }
+
           shape.setSize(width, height);
           shape.setPosition(newX, newY);
           this.updateResizeHandles(shape);
