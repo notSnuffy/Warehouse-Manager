@@ -2,7 +2,7 @@ import Phaser from "phaser";
 import HANDLE_POSITION from "./HandlePosition";
 import { getResizedPoints } from "./math";
 import { getShapePoints } from "../functions/shapes";
-import { updateRotationKnob } from "../rotation/rotationKnob";
+import Manager from "../Manager";
 
 /**
  * Size of the handles
@@ -38,36 +38,68 @@ const HANDLE_SIZE = 10;
  * Manage resizing of shapes
  * @memberof module:resize
  * @class ResizeManager
+ * @extends Manager
  */
-class ResizeManager {
+class ResizeManager extends Manager {
   /**
    * The resize handles
    * @type {Object}
    * @private
    * @default {}
    */
-  resizeHandles = {};
+  #resizeHandles = {};
 
   /**
    * Flag to indicate if the shape is being resized
    * @type {boolean}
+   * @private
    * @default false
    */
-  resizing = false;
+  #resizing = false;
 
   /**
    * Edge being resized
    * @type {number}
    * @default null
    */
-  resizeEdge = null;
+  #resizeEdge = null;
+
+  /**
+   * Array of managers that need to be updated when resizing
+   * @type {Manager[]}
+   * @private
+   * @default []
+   */
+  #managersToUpdate = [];
 
   /**
    * Constructor for ResizeManager
    * @param {Phaser.Scene} scene - The scene
    */
   constructor(scene) {
-    this.scene = scene;
+    super(scene);
+  }
+
+  /**
+   * Add a manager to the list of managers to update
+   * @param {Manager} manager - The manager to add
+   * @returns {void}
+   * @public
+   */
+  addManagerToUpdate(manager) {
+    this.#managersToUpdate.push(manager);
+  }
+
+  /**
+   * Flag to indicate if an action is active
+   * @type {boolean}
+   * @readonly
+   * @public
+   * @returns {boolean} The action active flag
+   * @override
+   */
+  get actionActive() {
+    return this.#resizing;
   }
 
   /**
@@ -75,7 +107,7 @@ class ResizeManager {
    * @param {Phaser.GameObjects.Shape} shape - The shape to construct the handles for
    * @returns {HandlePositions} The handles
    */
-  constructHandles(shape) {
+  #constructHandles(shape) {
     const positions = {
       TOP_LEFT: {
         position: HANDLE_POSITION.TOP_LEFT,
@@ -128,14 +160,9 @@ class ResizeManager {
    * @param {number} dragX - The x coordinate of the drag
    * @param {number} dragY - The y coordinate of the drag
    * @param {Phaser.GameObjects.Shape} shape - The shape to resize
-   * @param {Phaser.GameObjects.Shape} rotationKnob - The rotation knob
    * @returns {void}
    */
-  handleResizeDrag(dragX, dragY, shape, rotationKnob = null) {
-    if (this.scene.currentTool !== "select") {
-      return;
-    }
-
+  #handleResizeDrag(dragX, dragY, shape) {
     const expectedCornerPointAfterResize = {
       x: dragX,
       y: dragY,
@@ -144,7 +171,7 @@ class ResizeManager {
 
     let newDimensions, line, adjustedCornerPoint;
 
-    switch (this.resizeEdge) {
+    switch (this.#resizeEdge) {
       case HANDLE_POSITION.TOP_LEFT:
         newDimensions = getResizedPoints(
           points.bottomRight,
@@ -249,12 +276,10 @@ class ResizeManager {
 
     shape.setSize(newDimensions.width, newDimensions.height);
     shape.setPosition(newDimensions.x, newDimensions.y);
-    this.updateResizeHandles(shape, this.resizeHandles);
-    if (!rotationKnob) {
-      return;
-    }
-
-    updateRotationKnob(shape, rotationKnob);
+    this.update(shape);
+    this.#managersToUpdate.forEach((manager) => {
+      manager.update(shape);
+    });
   }
 
   /**
@@ -272,17 +297,17 @@ class ResizeManager {
     resizeHandle.setRotation(shape.rotation);
 
     resizeHandle.on("dragstart", () => {
-      this.resizing = true;
-      this.resizeEdge = handle.position;
+      this.#resizing = true;
+      this.#resizeEdge = handle.position;
     });
 
     resizeHandle.on("drag", (_, dragX, dragY) => {
-      this.handleResizeDrag(dragX, dragY, shape, this.scene.rotationKnob);
+      this.#handleResizeDrag(dragX, dragY, shape, this.scene.rotationKnob);
     });
 
     resizeHandle.on("dragend", () => {
-      this.resizing = false;
-      this.resizeEdge = null;
+      this.#resizing = false;
+      this.#resizeEdge = null;
     });
 
     return resizeHandle;
@@ -291,14 +316,13 @@ class ResizeManager {
   /**
    * Updates the resize handles
    * @param {Phaser.GameObjects.Shape} shape - Shape to update resize handles for
-   * @param {Object} resizeHandles - Resize handles to update
    * @returns {void}
    */
-  updateResizeHandles(shape) {
-    const handles = this.constructHandles(shape);
+  update(shape) {
+    const handles = this.#constructHandles(shape);
 
-    Object.keys(this.resizeHandles).forEach((key) => {
-      const handle = this.resizeHandles[key];
+    Object.keys(this.#resizeHandles).forEach((key) => {
+      const handle = this.#resizeHandles[key];
       const new_handle = handles[key];
       handle.setPosition(new_handle.x, new_handle.y);
       handle.setSize(new_handle.width, new_handle.height);
@@ -310,9 +334,10 @@ class ResizeManager {
    * Creates resize handles for a shape
    * @param {Phaser.GameObjects.Shape} shape - Shape to create resize handles for
    * @returns {void}
+   * @override
    */
-  createResizeHandles(shape) {
-    const handles = this.constructHandles(shape);
+  create(shape) {
+    const handles = this.#constructHandles(shape);
 
     const cursorStyles = {
       TOP_LEFT: "nwse-resize",
@@ -329,7 +354,7 @@ class ResizeManager {
       const handle = handles[key];
       const cursor = cursorStyles[key];
       const resizeHandle = this.#createResizeHandle(handle, cursor, shape);
-      this.resizeHandles[key] = resizeHandle;
+      this.#resizeHandles[key] = resizeHandle;
     });
   }
 
@@ -337,14 +362,15 @@ class ResizeManager {
    * Hides the resize handles
    * @public
    * @returns {void}
+   * @override
    */
-  hideResizeHandles() {
-    Object.keys(this.resizeHandles).forEach((key) => {
-      const handle = this.resizeHandles[key];
+  hide() {
+    Object.keys(this.#resizeHandles).forEach((key) => {
+      const handle = this.#resizeHandles[key];
       handle.destroy();
     });
-    this.resizeHandles = {};
+    this.#resizeHandles = {};
   }
 }
 
-export { ResizeManager };
+export default ResizeManager;

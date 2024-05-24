@@ -1,6 +1,6 @@
 import Phaser from "phaser";
-import { ResizeManager } from "../lib/resize/handles";
-import { createRotationKnob } from "../lib/rotation/rotationKnob";
+import MoveManager from "../lib/move/MoveManager";
+import SelectShapeManager from "../lib/select/SelectShapeManager";
 
 /**
  * Represents the editor scene
@@ -11,8 +11,9 @@ class Editor extends Phaser.Scene {
   /**
    * Array of shapes in the scene
    * @type {Phaser.GameObjects.Shape[]}
+   * @private
    */
-  shapes = [];
+  #shapes = [];
 
   /**
    * Current tool selected
@@ -20,39 +21,31 @@ class Editor extends Phaser.Scene {
    * @default "move"
    * @private
    */
-  currentTool = "move";
+  #currentTool = "move";
 
   /**
-   * Last selected shape
-   * @type {Phaser.GameObjects.Shape}
-   * @private
+   * Getter for the currently active tool
+   */
+  get activeTool() {
+    return this.#currentTool;
+  }
+
+  /**
+   * Move manager
+   * @type {MoveManager}
    * @default null
+   * @private
    */
-  lastSelected = null;
+  #moveManager = null;
 
   /**
-   * Rotation knob
-   * @type {Phaser.GameObjects.Shape}
-   * @private
+   * Select manager
+   * Also handles rotation and resizing from resize:ResizeManager and rotation:RotationManager
+   * @type {SelectShapeManager}
    * @default null
-   */
-  rotationKnob = null;
-
-  /**
-   * Resize manager
-   * @type {ResizeManager}
    * @private
-   * @default null
    */
-  resizeManager = null;
-
-  /**
-   * Flag to indicate if the knob is being dragged
-   * @type {boolean}
-   * @private
-   * @default false
-   */
-  knobDragging = false;
+  #selectManager = null;
 
   /**
    * Constructor for the Editor scene
@@ -86,36 +79,12 @@ class Editor extends Phaser.Scene {
   }
 
   /**
-   * Handles the unselect event
-   * @public
-   */
-  handleUnselect() {
-    if (
-      this.knobDragging ||
-      (this.resizeManager && this.resizeManager.resizing)
-    ) {
-      return;
-    }
-    console.log("unselect");
-    if (this.lastSelected) {
-      this.lastSelected.setFillStyle(0xff0000);
-      this.lastSelected = null;
-    }
-    if (this.rotationKnob) {
-      this.rotationKnob.destroy();
-      this.rotationKnob = null;
-    }
-
-    this.resizeManager.hideResizeHandles();
-  }
-
-  /**
    * Handles the move button click event
    * @public
    */
   handleMoveButtonClick() {
-    this.currentTool = "move";
-    this.handleUnselect();
+    this.#currentTool = "move";
+    this.#selectManager.hide();
   }
 
   /**
@@ -123,49 +92,7 @@ class Editor extends Phaser.Scene {
    * @public
    */
   handleSelectButtonClick() {
-    this.currentTool = "select";
-  }
-
-  /**
-   * Adds shape drag event
-   * @param {Phaser.GameObjects.Shape} shape - Shape to add drag event to
-   * @public
-   */
-  addShapeDrag(shape) {
-    shape.on("drag", (_, dragX, dragY) => {
-      if (this.currentTool === "move") {
-        let height = shape.height;
-        let width = shape.width;
-        if (
-          dragY >= height / 2 &&
-          dragY + height / 2 < this.cameras.main.height &&
-          dragX + width / 2 < this.cameras.main.width &&
-          dragX >= width / 2
-        ) {
-          shape.setPosition(dragX, dragY);
-        }
-      }
-    });
-  }
-
-  /**
-   * Adds shape select event
-   * @param {Phaser.GameObjects.Shape} shape - Shape to add select event to
-   * @public
-   */
-  addShapeSelect(shape) {
-    shape.on("pointerdown", (pointer, x, y, event) => {
-      event.stopPropagation();
-      if (this.currentTool === "select") {
-        this.handleUnselect();
-
-        shape.setFillStyle(0xffffff);
-        this.lastSelected = shape;
-
-        this.resizeManager.createResizeHandles(shape);
-        createRotationKnob(shape, this);
-      }
-    });
+    this.#currentTool = "select";
   }
 
   /**
@@ -173,7 +100,8 @@ class Editor extends Phaser.Scene {
    * @public
    */
   create() {
-    this.resizeManager = new ResizeManager(this);
+    this.#selectManager = new SelectShapeManager(this);
+    this.#moveManager = new MoveManager(this);
 
     this.cameras.main.setBackgroundColor(0x000000);
 
@@ -184,20 +112,20 @@ class Editor extends Phaser.Scene {
       this.handleSelectButtonClick,
     );
 
-    this.shapes.push(this.add.rectangle(100, 300, 100, 100, 0xff0000));
-    this.shapes.push(this.add.rectangle(300, 300, 100, 100, 0xff0000));
-    this.shapes.push(this.add.ellipse(500, 500, 50, 100, 0xff0000));
+    this.#shapes.push(this.add.rectangle(100, 300, 100, 100, 0xff0000));
+    this.#shapes.push(this.add.rectangle(300, 300, 100, 100, 0xff0000));
+    this.#shapes.push(this.add.ellipse(500, 500, 50, 100, 0xff0000));
 
-    this.shapes[1].setRotation(Math.PI / 4);
+    this.#shapes[1].setRotation(Math.PI / 4);
 
-    for (let i = 0; i < this.shapes.length; i++) {
-      let shape = this.shapes[i];
+    for (let i = 0; i < this.#shapes.length; i++) {
+      let shape = this.#shapes[i];
       shape.setInteractive({ draggable: true });
 
-      this.addShapeDrag(shape);
-      this.addShapeSelect(shape, i);
+      this.#moveManager.create(shape);
+      this.#selectManager.create(shape);
     }
-    this.input.on("pointerdown", this.handleUnselect, this);
+    this.input.on("pointerdown", this.#selectManager.hide, this.#selectManager);
 
     this.space = this.input.keyboard.addKey(
       Phaser.Input.Keyboard.KeyCodes.SPACE,

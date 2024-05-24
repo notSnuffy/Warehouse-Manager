@@ -32,6 +32,18 @@ import Phaser from "phaser";
  * @description This module provides functions for shapes
  */
 
+/**
+ * @module move
+ * @requires Phaser
+ * @description This module provides functions for moving shapes
+ */
+
+/**
+ * @module select
+ * @reguires Phaser
+ * @description This module provides functions for selecting shapes
+ */
+
 const window_size = {
   width: 1024,
   height: 768,
