@@ -1,4 +1,5 @@
 import Manager from "../Manager";
+import { getShapePoints } from "../functions/shapes";
 
 /**
  * Manage the movement of shapes
@@ -39,14 +40,44 @@ class MoveManager extends Manager {
   create(shape) {
     shape.on("drag", (_, dragX, dragY) => {
       if (this.scene.activeTool === "move") {
-        let height = shape.height;
-        let width = shape.width;
-        if (
-          dragY >= height / 2 &&
-          dragY + height / 2 < this.scene.cameras.main.height &&
-          dragX + width / 2 < this.scene.cameras.main.width &&
-          dragX >= width / 2
-        ) {
+        const points = Object.values(getShapePoints(shape));
+
+        const minX = points.reduce(
+          (acc, point) => Math.min(acc, point.x),
+          points[0].x,
+        );
+        const maxX = points.reduce(
+          (acc, point) => Math.max(acc, point.x),
+          points[0].x,
+        );
+        const minY = points.reduce(
+          (acc, point) => Math.min(acc, point.y),
+          points[0].y,
+        );
+        const maxY = points.reduce(
+          (acc, point) => Math.max(acc, point.y),
+          points[0].y,
+        );
+
+        const topHeightFromCenter = shape.y - minY;
+        const bottomHeightFromCenter = maxY - shape.y;
+        const leftWidthFromCenter = shape.x - minX;
+        const rightWidthFromCenter = maxX - shape.x;
+
+        const leftSideWithinBounds = dragX >= leftWidthFromCenter;
+        const rightSideWithinBounds =
+          dragX + rightWidthFromCenter <= this.scene.cameras.main.width;
+        const topSideWithinBounds = dragY >= topHeightFromCenter;
+        const bottomSideWithinBounds =
+          dragY + bottomHeightFromCenter <= this.scene.cameras.main.height;
+
+        const withinBounds =
+          leftSideWithinBounds &&
+          rightSideWithinBounds &&
+          topSideWithinBounds &&
+          bottomSideWithinBounds;
+
+        if (withinBounds) {
           shape.setPosition(dragX, dragY);
         }
       }
