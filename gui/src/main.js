@@ -4,6 +4,34 @@ import { MainMenu } from "./scenes/MainMenu";
 import { Editor } from "./scenes/Editor";
 import Phaser from "phaser";
 
+/**
+ * @module resize
+ * @requires Phaser
+ * @description This module provides functions for resizing shapes
+ */
+
+/**
+ * @module types
+ * @description This module provides types for the editor
+ */
+
+/**
+ * @module points
+ * @description This module provides functions for points
+ */
+
+/**
+ * @module rotation
+ * @requires Phaser
+ * @description This module provides functions for rotating shapes
+ */
+
+/**
+ * @module shapes
+ * @requires Phaser
+ * @description This module provides functions for shapes
+ */
+
 const window_size = {
   width: 1024,
   height: 768,
