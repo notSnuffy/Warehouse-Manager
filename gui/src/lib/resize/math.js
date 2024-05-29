@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import { calculateCenterPoint } from "../functions/points";
+import MoveDimensionVisitor from "./MoveDimensionVisitor";
 
 /**
  * @memberof module:types
@@ -30,6 +31,7 @@ function adjustPoints(points, center, rotation) {
 /**
  * Adjust the dimension of a shape
  * @memberof module:resize
+ * @param {Handle} handle - The handle
  * @param {Object} point1 - The first point
  * @param {Object} point2 - The second point
  * @param {Object} fixedDimension - The fixed dimension
@@ -40,20 +42,39 @@ function adjustPoints(points, center, rotation) {
  * const fixedDimension = { width: 2 };
  * const adjustedDimension = adjustDimension(point1, point2, fixedDimension);
  */
-function adjustDimension(point1, point2, fixedDimension = {}) {
-  let newWidth = Math.abs(point2.x - point1.x);
+function adjustDimension(handle, point1, point2, fixedDimension = {}) {
+  const moveDimensionVisitor = new MoveDimensionVisitor(
+    point1,
+    point2,
+    fixedDimension,
+  );
 
-  let newHeight = Math.abs(point2.y - point1.y);
+  console.log(handle);
+  handle.accept(moveDimensionVisitor);
+  console.log(moveDimensionVisitor);
 
-  if (fixedDimension.width) {
-    newWidth = fixedDimension.width;
-  }
+  const newSize = moveDimensionVisitor.result;
 
-  if (fixedDimension.height) {
-    newHeight = fixedDimension.height;
-  }
+  // if (type === 0) {
+  //   newWidth = point2.x - point1.x;
+  //   newHeight = point1.y - point2.y;
+  // } else if (type === 1) {
+  //   newWidth = point1.x - point2.x;
+  //   newHeight = point2.y - point1.y;
+  // } else {
+  //   newWidth = point2.x - point1.x;
+  //   newHeight = point2.y - point1.y;
+  // }
 
-  return [newWidth, newHeight];
+  // if (fixedDimension.width) {
+  //   newWidth = fixedDimension.width;
+  // }
+
+  // if (fixedDimension.height) {
+  //   newHeight = fixedDimension.height;
+  // }
+
+  return [newSize.newWidth, newSize.newHeight];
 }
 
 /**
@@ -68,26 +89,22 @@ function adjustDimension(point1, point2, fixedDimension = {}) {
 /**
  * Calculate the resized points + dimensions
  * @memberof module:resize
+ * @param {Handle} handle - The handle
  * @param {Point} staticPoint - The static point
  * @param {Point} expectedPoint - The expected point
  * @param {number} rotation - The rotation in radians
  * @param {Object} fixedDimension - The fixed dimension
  * @returns {Shape} The resized points + dimensions
- *
- * @example
- * const staticPoint = { x: 0, y: 0 };
- * const expectedPoint = { x: 2, y: 2 };
- * const rotation = Math.PI / 2;
- * const fixedDimension = { width: 2 };
- * const resizedPoints = getResizedPoints(staticPoint, expectedPoint, rotation, fixedDimension);
  */
 function getResizedPoints(
+  handle,
   staticPoint,
   expectedPoint,
   rotation,
   fixedDimension = {},
 ) {
   const newCenter = calculateCenterPoint(staticPoint, expectedPoint);
+  console.log(staticPoint, expectedPoint, newCenter);
 
   const [adjustedStaticPoint, adjustedExpectedPoint] = adjustPoints(
     [staticPoint, expectedPoint],
@@ -96,6 +113,7 @@ function getResizedPoints(
   );
 
   const [newWidth, newHeight] = adjustDimension(
+    handle,
     adjustedStaticPoint,
     adjustedExpectedPoint,
     fixedDimension,

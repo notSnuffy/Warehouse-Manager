@@ -113,10 +113,133 @@ class Editor extends Phaser.Scene {
     );
 
     this.#shapes.push(this.add.rectangle(100, 300, 100, 100, 0xff0000));
-    this.#shapes.push(this.add.rectangle(300, 300, 100, 100, 0xff0000));
+    this.#shapes.push(this.add.rectangle(300, 300, 100, 300, 0xff0000));
     this.#shapes.push(this.add.ellipse(500, 500, 50, 100, 0xff0000));
 
-    this.#shapes[1].setRotation(Math.PI / 4);
+    this.#shapes[1].setRotation(0);
+    let test_shape = this.#shapes[1];
+    const bottomRight = test_shape.getBottomRight();
+    const topRight = test_shape.getTopRight();
+    const bottomLeft = test_shape.getBottomLeft();
+    const topLeft = test_shape.getTopLeft();
+
+    console.log("Bottom Right: ", bottomRight);
+    console.log("Top Right: ", topRight);
+    console.log("Bottom Left: ", bottomLeft);
+    console.log("Top Left: ", topLeft);
+
+    let dirA = new Phaser.Math.Vector2(
+      topRight.x - topLeft.x,
+      topRight.y - topLeft.y,
+    );
+
+    let x_delta = 30 / dirA.length();
+    x_delta = x_delta * (topLeft.y - topRight.y);
+    let y_delta = 30 / dirA.length();
+    y_delta = y_delta * (topRight.x - topLeft.x);
+
+    let newTopLeft = new Phaser.Math.Vector2(
+      topLeft.x + x_delta,
+      topLeft.y + y_delta,
+    );
+
+    let newTopRight = new Phaser.Math.Vector2(
+      topRight.x + x_delta,
+      topRight.y + y_delta,
+    );
+
+    this.add
+      .line(
+        0,
+        0,
+        newTopLeft.x,
+        newTopLeft.y,
+        newTopRight.x,
+        newTopRight.y,
+        0x00ff00,
+      )
+      .setOrigin(0, 0);
+
+    let dirB = new Phaser.Math.Vector2(
+      bottomLeft.x - topLeft.x,
+      bottomLeft.y - topLeft.y,
+    );
+
+    x_delta = -30 / dirB.length();
+    x_delta = x_delta * (topLeft.y - bottomLeft.y);
+    y_delta = -30 / dirB.length();
+    y_delta = y_delta * (bottomLeft.x - topLeft.x);
+
+    let newBottomLeft = new Phaser.Math.Vector2(
+      bottomLeft.x + x_delta,
+      bottomLeft.y + y_delta,
+    );
+
+    let newTopLeftB = new Phaser.Math.Vector2(
+      topLeft.x + x_delta,
+      topLeft.y + y_delta,
+    );
+
+    this.add
+      .line(
+        0,
+        0,
+        newTopLeftB.x,
+        newTopLeftB.y,
+        newBottomLeft.x,
+        newBottomLeft.y,
+        0x00ff00,
+      )
+      .setOrigin(0, 0);
+
+    let mousePos = this.input.activePointer.position;
+    let mouseFollower = this.add.circle(mousePos.x, mousePos.y, 5, 0x00ff00);
+
+    // Function to get the line equation value at a point (x, y)
+    function lineValue(A, B, C, x, y) {
+      return A * x + B * y + C;
+    }
+
+    // Get line equation coefficients for lineA (through topLeft and extendedTopRight)
+    let A1 = newTopRight.y - newTopLeft.y;
+    let B1 = newTopLeft.x - newTopRight.x;
+    let C1 = newTopRight.x * newTopLeft.y - newTopLeft.x * newTopRight.y;
+
+    // Get line equation coefficients for lineB (through topLeft and extendedBottomLeft)
+    let A2 = newBottomLeft.y - newTopLeft.y;
+    let B2 = newTopLeft.x - newBottomLeft.x;
+    let C2 = newBottomLeft.x * newTopLeft.y - newTopLeft.x * newBottomLeft.y;
+
+    this.input.on("pointermove", (pointer) => {
+      let currentMousePos = new Phaser.Math.Vector2(pointer.x, pointer.y);
+      mouseFollower.setPosition(pointer.x, pointer.y);
+
+      // Calculate line equation values at current mouse position
+      let currValueA = lineValue(
+        A1,
+        B1,
+        C1,
+        currentMousePos.x,
+        currentMousePos.y,
+      );
+      let currValueB = lineValue(
+        A2,
+        B2,
+        C2,
+        currentMousePos.x,
+        currentMousePos.y,
+      );
+
+      // Check if the mouse is outside lineA (above)
+      if (currValueA >= 0) {
+        console.log("Mouse is outside lineA");
+      }
+
+      // Check if the mouse is outside lineB (left)
+      if (currValueB <= 0) {
+        console.log("Mouse is outside lineB");
+      }
+    });
 
     for (let i = 0; i < this.#shapes.length; i++) {
       let shape = this.#shapes[i];

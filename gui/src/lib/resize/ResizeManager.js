@@ -1,8 +1,8 @@
 import Phaser from "phaser";
-import HANDLE_POSITION from "./HandlePosition";
-import { getResizedPoints } from "./math";
 import { getShapePoints } from "../functions/shapes";
 import Manager from "../Manager";
+import * as Handles from "./handles";
+import MoveHandlerVisitor from "./MoveHandlerVisitor";
 
 /**
  * Size of the handles
@@ -72,6 +72,8 @@ class ResizeManager extends Manager {
    */
   #managersToUpdate = [];
 
+  previousMousePos = new Phaser.Math.Vector2(0, 0);
+
   /**
    * Constructor for ResizeManager
    * @param {Phaser.Scene} scene - The scene
@@ -108,51 +110,84 @@ class ResizeManager extends Manager {
    * @returns {HandlePositions} The handles
    */
   #constructHandles(shape) {
-    const positions = {
+    const points = getShapePoints(shape);
+
+    const handles = {
       TOP_LEFT: {
-        position: HANDLE_POSITION.TOP_LEFT,
-        point: shape.getTopLeft(),
+        handle: new Handles.TopLeftHandle(
+          points.topLeft.x,
+          points.topLeft.y,
+          HANDLE_SIZE,
+          HANDLE_SIZE,
+        ),
       },
       TOP_RIGHT: {
-        position: HANDLE_POSITION.TOP_RIGHT,
-        point: shape.getTopRight(),
+        handle: new Handles.TopRightHandle(
+          points.topRight.x,
+          points.topRight.y,
+          HANDLE_SIZE,
+          HANDLE_SIZE,
+        ),
       },
       BOTTOM_RIGHT: {
-        position: HANDLE_POSITION.BOTTOM_RIGHT,
-        point: shape.getBottomRight(),
+        handle: new Handles.BottomRightHandle(
+          points.bottomRight.x,
+          points.bottomRight.y,
+          HANDLE_SIZE,
+          HANDLE_SIZE,
+        ),
       },
       BOTTOM_LEFT: {
-        position: HANDLE_POSITION.BOTTOM_LEFT,
-        point: shape.getBottomLeft(),
+        handle: new Handles.BottomLeftHandle(
+          points.bottomLeft.x,
+          points.bottomLeft.y,
+          HANDLE_SIZE,
+          HANDLE_SIZE,
+        ),
       },
       TOP_CENTER: {
-        position: HANDLE_POSITION.TOP_CENTER,
-        point: shape.getTopCenter(),
+        handle: new Handles.TopCenterHandle(
+          points.topCenter.x,
+          points.topCenter.y,
+          HANDLE_SIZE,
+          HANDLE_SIZE,
+        ),
       },
       RIGHT_CENTER: {
-        position: HANDLE_POSITION.RIGHT_CENTER,
-        point: shape.getRightCenter(),
+        handle: new Handles.RightCenterHandle(
+          points.rightCenter.x,
+          points.rightCenter.y,
+          HANDLE_SIZE,
+          HANDLE_SIZE,
+        ),
       },
       BOTTOM_CENTER: {
-        position: HANDLE_POSITION.BOTTOM_CENTER,
-        point: shape.getBottomCenter(),
+        handle: new Handles.BottomCenterHandle(
+          points.bottomCenter.x,
+          points.bottomCenter.y,
+          HANDLE_SIZE,
+          HANDLE_SIZE,
+        ),
       },
       LEFT_CENTER: {
-        position: HANDLE_POSITION.LEFT_CENTER,
-        point: shape.getLeftCenter(),
+        handle: new Handles.LeftCenterHandle(
+          points.leftCenter.x,
+          points.leftCenter.y,
+          HANDLE_SIZE,
+          HANDLE_SIZE,
+        ),
       },
     };
 
-    Object.keys(positions).forEach((key) => {
-      const handle = positions[key];
-      handle.x = handle.point.x;
-      handle.y = handle.point.y;
-      handle.width = HANDLE_SIZE;
-      handle.height = HANDLE_SIZE;
-      delete handle.point;
+    Object.keys(handles).forEach((key) => {
+      const handle = handles[key];
+      handle.x = handle.handle.x;
+      handle.y = handle.handle.y;
+      handle.width = handle.handle.width;
+      handle.height = handle.handle.height;
     });
 
-    return positions;
+    return handles;
   }
 
   /**
@@ -169,111 +204,219 @@ class ResizeManager extends Manager {
     };
     const points = getShapePoints(shape);
 
-    let newDimensions, line, adjustedCornerPoint;
+    let moveHandlerVisitor = new MoveHandlerVisitor(
+      points,
+      expectedCornerPointAfterResize,
+      shape.rotation,
+    );
+    console.log(moveHandlerVisitor);
+    const handle = this.#resizeEdge;
+    console.log(handle);
+    handle.accept(moveHandlerVisitor);
+    console.log(moveHandlerVisitor);
+    let newDimensions = moveHandlerVisitor.result;
 
-    switch (this.#resizeEdge) {
-      case HANDLE_POSITION.TOP_LEFT:
-        newDimensions = getResizedPoints(
-          points.bottomRight,
-          expectedCornerPointAfterResize,
-          shape.rotation,
-        );
-        break;
-      case HANDLE_POSITION.TOP_RIGHT:
-        newDimensions = getResizedPoints(
-          points.bottomLeft,
-          expectedCornerPointAfterResize,
-          shape.rotation,
-        );
-        break;
-      case HANDLE_POSITION.BOTTOM_RIGHT:
-        newDimensions = getResizedPoints(
-          points.topLeft,
-          expectedCornerPointAfterResize,
-          shape.rotation,
-        );
-        break;
-      case HANDLE_POSITION.BOTTOM_LEFT:
-        newDimensions = getResizedPoints(
-          points.topRight,
-          expectedCornerPointAfterResize,
-          shape.rotation,
-        );
-        break;
-      case HANDLE_POSITION.TOP_CENTER:
-        line = new Phaser.Geom.Line(
-          points.bottomCenter.x,
-          points.bottomCenter.y,
-          points.topCenter.x,
-          points.topCenter.y,
-        );
-        adjustedCornerPoint = Phaser.Geom.Line.GetNearestPoint(
-          line,
-          expectedCornerPointAfterResize,
-        );
-        newDimensions = getResizedPoints(
-          points.bottomCenter,
-          adjustedCornerPoint,
-          shape.rotation,
-          { width: shape.width },
-        );
-        break;
-      case HANDLE_POSITION.RIGHT_CENTER:
-        line = new Phaser.Geom.Line(
-          points.leftCenter.x,
-          points.leftCenter.y,
-          points.rightCenter.x,
-          points.rightCenter.y,
-        );
-        adjustedCornerPoint = Phaser.Geom.Line.GetNearestPoint(
-          line,
-          expectedCornerPointAfterResize,
-        );
-        newDimensions = getResizedPoints(
-          points.leftCenter,
-          adjustedCornerPoint,
-          shape.rotation,
-          { height: shape.height },
-        );
-        break;
-      case HANDLE_POSITION.BOTTOM_CENTER:
-        line = new Phaser.Geom.Line(
-          points.topCenter.x,
-          points.topCenter.y,
-          points.bottomCenter.x,
-          points.bottomCenter.y,
-        );
-        adjustedCornerPoint = Phaser.Geom.Line.GetNearestPoint(
-          line,
-          expectedCornerPointAfterResize,
-        );
-        newDimensions = getResizedPoints(
-          points.topCenter,
-          adjustedCornerPoint,
-          shape.rotation,
-          { width: shape.width },
-        );
-        break;
-      case HANDLE_POSITION.LEFT_CENTER:
-        line = new Phaser.Geom.Line(
-          points.rightCenter.x,
-          points.rightCenter.y,
-          points.leftCenter.x,
-          points.leftCenter.y,
-        );
-        adjustedCornerPoint = Phaser.Geom.Line.GetNearestPoint(
-          line,
-          expectedCornerPointAfterResize,
-        );
-        newDimensions = getResizedPoints(
-          points.rightCenter,
-          adjustedCornerPoint,
-          shape.rotation,
-          { height: shape.height },
-        );
-        break;
+    // switch (this.#resizeEdge) {
+    //   case HANDLE_POSITION.TOP_LEFT:
+    //     newDimensions = getResizedPoints(
+    //       points.bottomRight,
+    //       expectedCornerPointAfterResize,
+    //       shape.rotation,
+    //     );
+    //     break;
+    //   case HANDLE_POSITION.TOP_RIGHT:
+    //     newDimensions = getResizedPoints(
+    //       points.bottomLeft,
+    //       expectedCornerPointAfterResize,
+    //       shape.rotation,
+    //     );
+    //     break;
+    //   case HANDLE_POSITION.BOTTOM_RIGHT:
+    //     newDimensions = getResizedPoints(
+    //       points.topLeft,
+    //       expectedCornerPointAfterResize,
+    //       shape.rotation,
+    //     );
+
+    //     // let topLeft = points.topLeft;
+    //     // let topRight = points.topRight;
+    //     // let bottomLeft = points.bottomLeft;
+    //     // let bottomRight = points.bottomRight;
+
+    //     // let dirA = new Phaser.Math.Vector2(
+    //     //   topRight.x - topLeft.x,
+    //     //   topRight.y - topLeft.y,
+    //     // );
+
+    //     // let x_delta = 30 / dirA.length();
+    //     // x_delta = x_delta * (topLeft.y - topRight.y);
+    //     // let y_delta = 30 / dirA.length();
+    //     // y_delta = y_delta * (topRight.x - topLeft.x);
+
+    //     // let newTopLeft = new Phaser.Math.Vector2(
+    //     //   topLeft.x + x_delta,
+    //     //   topLeft.y + y_delta,
+    //     // );
+
+    //     // let newTopRight = new Phaser.Math.Vector2(
+    //     //   topRight.x + x_delta,
+    //     //   topRight.y + y_delta,
+    //     // );
+
+    //     // let dirB = new Phaser.Math.Vector2(
+    //     //   bottomLeft.x - topLeft.x,
+    //     //   bottomLeft.y - topLeft.y,
+    //     // );
+
+    //     // x_delta = -30 / dirB.length();
+    //     // x_delta = x_delta * (topLeft.y - bottomLeft.y);
+    //     // y_delta = -30 / dirB.length();
+    //     // y_delta = y_delta * (bottomLeft.x - topLeft.x);
+
+    //     // let newBottomLeft = new Phaser.Math.Vector2(
+    //     //   bottomLeft.x + x_delta,
+    //     //   bottomLeft.y + y_delta,
+    //     // );
+
+    //     // let newTopLeftB = new Phaser.Math.Vector2(
+    //     //   topLeft.x + x_delta,
+    //     //   topLeft.y + y_delta,
+    //     // );
+
+    //     // // Function to get the line equation value at a point (x, y)
+    //     // function lineValue(A, B, C, x, y) {
+    //     //   return A * x + B * y + C;
+    //     // }
+
+    //     // // Get line equation coefficients for lineA (through topLeft and extendedTopRight)
+    //     // let A1 = newTopRight.y - newTopLeft.y;
+    //     // let B1 = newTopLeft.x - newTopRight.x;
+    //     // let C1 = newTopRight.x * newTopLeft.y - newTopLeft.x * newTopRight.y;
+
+    //     // // Get line equation coefficients for lineB (through topLeft and extendedBottomLeft)
+    //     // let A2 = newBottomLeft.y - newTopLeft.y;
+    //     // let B2 = newTopLeft.x - newBottomLeft.x;
+    //     // let C2 =
+    //     //   newBottomLeft.x * newTopLeft.y - newTopLeft.x * newBottomLeft.y;
+
+    //     // let currentMousePos = new Phaser.Math.Vector2(dragX, dragY);
+
+    //     // // Calculate line equation values at current mouse position
+    //     // let currValueA = lineValue(
+    //     //   A1,
+    //     //   B1,
+    //     //   C1,
+    //     //   currentMousePos.x,
+    //     //   currentMousePos.y,
+    //     // );
+    //     // let currValueB = lineValue(
+    //     //   A2,
+    //     //   B2,
+    //     //   C2,
+    //     //   currentMousePos.x,
+    //     //   currentMousePos.y,
+    //     // );
+
+    //     // if (currValueA >= 0 && currValueB < 0) {
+    //     //   console.log("Both");
+    //     //   return;
+    //     // }
+
+    //     // if (currValueA >= 0 || currValueB < 0) {
+    //     //   return;
+    //     // }
+
+    //     break;
+    //   case HANDLE_POSITION.BOTTOM_LEFT:
+    //     newDimensions = getResizedPoints(
+    //       1,
+    //       points.topRight,
+    //       expectedCornerPointAfterResize,
+    //       shape.rotation,
+    //     );
+    //     break;
+    //   case HANDLE_POSITION.TOP_CENTER:
+    //     line = new Phaser.Geom.Line(
+    //       points.bottomCenter.x,
+    //       points.bottomCenter.y,
+    //       points.topCenter.x,
+    //       points.topCenter.y,
+    //     );
+    //     adjustedCornerPoint = Phaser.Geom.Line.GetNearestPoint(
+    //       line,
+    //       expectedCornerPointAfterResize,
+    //     );
+
+    //     newDimensions = getResizedPoints(
+    //       0,
+    //       points.bottomCenter,
+    //       adjustedCornerPoint,
+    //       shape.rotation,
+    //       { width: shape.width },
+    //     );
+    //     break;
+    //   case HANDLE_POSITION.RIGHT_CENTER:
+    //     line = new Phaser.Geom.Line(
+    //       points.leftCenter.x,
+    //       points.leftCenter.y,
+    //       points.rightCenter.x,
+    //       points.rightCenter.y,
+    //     );
+    //     adjustedCornerPoint = Phaser.Geom.Line.GetNearestPoint(
+    //       line,
+    //       expectedCornerPointAfterResize,
+    //     );
+    //     newDimensions = getResizedPoints(
+    //       points.leftCenter,
+    //       adjustedCornerPoint,
+    //       shape.rotation,
+    //       { height: shape.height },
+    //     );
+    //     break;
+    //   case HANDLE_POSITION.BOTTOM_CENTER:
+    //     line = new Phaser.Geom.Line(
+    //       points.topCenter.x,
+    //       points.topCenter.y,
+    //       points.bottomCenter.x,
+    //       points.bottomCenter.y,
+    //     );
+    //     adjustedCornerPoint = Phaser.Geom.Line.GetNearestPoint(
+    //       line,
+    //       expectedCornerPointAfterResize,
+    //     );
+    //     newDimensions = getResizedPoints(
+    //       points.topCenter,
+    //       adjustedCornerPoint,
+    //       shape.rotation,
+    //       { width: shape.width },
+    //     );
+    //     break;
+    //   case HANDLE_POSITION.LEFT_CENTER:
+    //     line = new Phaser.Geom.Line(
+    //       points.rightCenter.x,
+    //       points.rightCenter.y,
+    //       points.leftCenter.x,
+    //       points.leftCenter.y,
+    //     );
+    //     adjustedCornerPoint = Phaser.Geom.Line.GetNearestPoint(
+    //       line,
+    //       expectedCornerPointAfterResize,
+    //     );
+    //     newDimensions = getResizedPoints(
+    //       points.rightCenter,
+    //       adjustedCornerPoint,
+    //       shape.rotation,
+    //       { height: shape.height },
+    //     );
+    //     break;
+    // }
+
+    console.log(newDimensions);
+
+    if (newDimensions.height < 10 || newDimensions.width < 10) {
+      return;
     }
-
+    console.log(newDimensions);
     shape.setSize(newDimensions.width, newDimensions.height);
     shape.setPosition(newDimensions.x, newDimensions.y);
     this.update(shape);
@@ -298,11 +441,11 @@ class ResizeManager extends Manager {
 
     resizeHandle.on("dragstart", () => {
       this.#resizing = true;
-      this.#resizeEdge = handle.position;
+      this.#resizeEdge = handle.handle;
     });
 
     resizeHandle.on("drag", (_, dragX, dragY) => {
-      this.#handleResizeDrag(dragX, dragY, shape, this.scene.rotationKnob);
+      this.#handleResizeDrag(dragX, dragY, shape);
     });
 
     resizeHandle.on("dragend", () => {

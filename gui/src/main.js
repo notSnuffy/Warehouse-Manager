@@ -44,6 +44,12 @@ import Phaser from "phaser";
  * @description This module provides functions for selecting shapes
  */
 
+/**
+ * @module line
+ * @requires Phaser
+ * @description This module provides functions for lines
+ */
+
 const window_size = {
   width: 1024,
   height: 768,
