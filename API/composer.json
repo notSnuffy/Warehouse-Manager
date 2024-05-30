@@ -3,5 +3,8 @@
         "mongodb/mongodb": "^1.18",
         "slim/slim": "4.*",
         "slim/psr7": "^1.6"
+    },
+    "require-dev": {
+        "captainhook/captainhook": "^5.23"
     }
 }
