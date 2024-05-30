@@ -12,6 +12,13 @@ import MoveHandlerVisitor from "./MoveHandlerVisitor";
 const HANDLE_SIZE = 10;
 
 /**
+ * Maximum size of a shape
+ * @memberof module:resize
+ * @type {number}
+ */
+const MAX_SHAPE_SIZE = 10;
+
+/**
  * @memberof module:resize
  * @typedef {Object} Handle
  * @property {number} x - The x coordinate
@@ -202,221 +209,40 @@ class ResizeManager extends Manager {
       x: dragX,
       y: dragY,
     };
+
+    function getFixedDimensions() {
+      return {
+        topLeft: {},
+        topRight: {},
+        bottomLeft: {},
+        bottomRight: {},
+        topCenter: { width: shape.width },
+        bottomCenter: { width: shape.width },
+        leftCenter: { height: shape.height },
+        rightCenter: { height: shape.height },
+      };
+    }
+
     const points = getShapePoints(shape);
+    const fixedDimensions = getFixedDimensions();
 
     let moveHandlerVisitor = new MoveHandlerVisitor(
       points,
       expectedCornerPointAfterResize,
       shape.rotation,
+      fixedDimensions,
     );
-    console.log(moveHandlerVisitor);
     const handle = this.#resizeEdge;
-    console.log(handle);
     handle.accept(moveHandlerVisitor);
-    console.log(moveHandlerVisitor);
     let newDimensions = moveHandlerVisitor.result;
 
-    // switch (this.#resizeEdge) {
-    //   case HANDLE_POSITION.TOP_LEFT:
-    //     newDimensions = getResizedPoints(
-    //       points.bottomRight,
-    //       expectedCornerPointAfterResize,
-    //       shape.rotation,
-    //     );
-    //     break;
-    //   case HANDLE_POSITION.TOP_RIGHT:
-    //     newDimensions = getResizedPoints(
-    //       points.bottomLeft,
-    //       expectedCornerPointAfterResize,
-    //       shape.rotation,
-    //     );
-    //     break;
-    //   case HANDLE_POSITION.BOTTOM_RIGHT:
-    //     newDimensions = getResizedPoints(
-    //       points.topLeft,
-    //       expectedCornerPointAfterResize,
-    //       shape.rotation,
-    //     );
-
-    //     // let topLeft = points.topLeft;
-    //     // let topRight = points.topRight;
-    //     // let bottomLeft = points.bottomLeft;
-    //     // let bottomRight = points.bottomRight;
-
-    //     // let dirA = new Phaser.Math.Vector2(
-    //     //   topRight.x - topLeft.x,
-    //     //   topRight.y - topLeft.y,
-    //     // );
-
-    //     // let x_delta = 30 / dirA.length();
-    //     // x_delta = x_delta * (topLeft.y - topRight.y);
-    //     // let y_delta = 30 / dirA.length();
-    //     // y_delta = y_delta * (topRight.x - topLeft.x);
-
-    //     // let newTopLeft = new Phaser.Math.Vector2(
-    //     //   topLeft.x + x_delta,
-    //     //   topLeft.y + y_delta,
-    //     // );
-
-    //     // let newTopRight = new Phaser.Math.Vector2(
-    //     //   topRight.x + x_delta,
-    //     //   topRight.y + y_delta,
-    //     // );
-
-    //     // let dirB = new Phaser.Math.Vector2(
-    //     //   bottomLeft.x - topLeft.x,
-    //     //   bottomLeft.y - topLeft.y,
-    //     // );
-
-    //     // x_delta = -30 / dirB.length();
-    //     // x_delta = x_delta * (topLeft.y - bottomLeft.y);
-    //     // y_delta = -30 / dirB.length();
-    //     // y_delta = y_delta * (bottomLeft.x - topLeft.x);
-
-    //     // let newBottomLeft = new Phaser.Math.Vector2(
-    //     //   bottomLeft.x + x_delta,
-    //     //   bottomLeft.y + y_delta,
-    //     // );
-
-    //     // let newTopLeftB = new Phaser.Math.Vector2(
-    //     //   topLeft.x + x_delta,
-    //     //   topLeft.y + y_delta,
-    //     // );
-
-    //     // // Function to get the line equation value at a point (x, y)
-    //     // function lineValue(A, B, C, x, y) {
-    //     //   return A * x + B * y + C;
-    //     // }
-
-    //     // // Get line equation coefficients for lineA (through topLeft and extendedTopRight)
-    //     // let A1 = newTopRight.y - newTopLeft.y;
-    //     // let B1 = newTopLeft.x - newTopRight.x;
-    //     // let C1 = newTopRight.x * newTopLeft.y - newTopLeft.x * newTopRight.y;
-
-    //     // // Get line equation coefficients for lineB (through topLeft and extendedBottomLeft)
-    //     // let A2 = newBottomLeft.y - newTopLeft.y;
-    //     // let B2 = newTopLeft.x - newBottomLeft.x;
-    //     // let C2 =
-    //     //   newBottomLeft.x * newTopLeft.y - newTopLeft.x * newBottomLeft.y;
-
-    //     // let currentMousePos = new Phaser.Math.Vector2(dragX, dragY);
-
-    //     // // Calculate line equation values at current mouse position
-    //     // let currValueA = lineValue(
-    //     //   A1,
-    //     //   B1,
-    //     //   C1,
-    //     //   currentMousePos.x,
-    //     //   currentMousePos.y,
-    //     // );
-    //     // let currValueB = lineValue(
-    //     //   A2,
-    //     //   B2,
-    //     //   C2,
-    //     //   currentMousePos.x,
-    //     //   currentMousePos.y,
-    //     // );
-
-    //     // if (currValueA >= 0 && currValueB < 0) {
-    //     //   console.log("Both");
-    //     //   return;
-    //     // }
-
-    //     // if (currValueA >= 0 || currValueB < 0) {
-    //     //   return;
-    //     // }
-
-    //     break;
-    //   case HANDLE_POSITION.BOTTOM_LEFT:
-    //     newDimensions = getResizedPoints(
-    //       1,
-    //       points.topRight,
-    //       expectedCornerPointAfterResize,
-    //       shape.rotation,
-    //     );
-    //     break;
-    //   case HANDLE_POSITION.TOP_CENTER:
-    //     line = new Phaser.Geom.Line(
-    //       points.bottomCenter.x,
-    //       points.bottomCenter.y,
-    //       points.topCenter.x,
-    //       points.topCenter.y,
-    //     );
-    //     adjustedCornerPoint = Phaser.Geom.Line.GetNearestPoint(
-    //       line,
-    //       expectedCornerPointAfterResize,
-    //     );
-
-    //     newDimensions = getResizedPoints(
-    //       0,
-    //       points.bottomCenter,
-    //       adjustedCornerPoint,
-    //       shape.rotation,
-    //       { width: shape.width },
-    //     );
-    //     break;
-    //   case HANDLE_POSITION.RIGHT_CENTER:
-    //     line = new Phaser.Geom.Line(
-    //       points.leftCenter.x,
-    //       points.leftCenter.y,
-    //       points.rightCenter.x,
-    //       points.rightCenter.y,
-    //     );
-    //     adjustedCornerPoint = Phaser.Geom.Line.GetNearestPoint(
-    //       line,
-    //       expectedCornerPointAfterResize,
-    //     );
-    //     newDimensions = getResizedPoints(
-    //       points.leftCenter,
-    //       adjustedCornerPoint,
-    //       shape.rotation,
-    //       { height: shape.height },
-    //     );
-    //     break;
-    //   case HANDLE_POSITION.BOTTOM_CENTER:
-    //     line = new Phaser.Geom.Line(
-    //       points.topCenter.x,
-    //       points.topCenter.y,
-    //       points.bottomCenter.x,
-    //       points.bottomCenter.y,
-    //     );
-    //     adjustedCornerPoint = Phaser.Geom.Line.GetNearestPoint(
-    //       line,
-    //       expectedCornerPointAfterResize,
-    //     );
-    //     newDimensions = getResizedPoints(
-    //       points.topCenter,
-    //       adjustedCornerPoint,
-    //       shape.rotation,
-    //       { width: shape.width },
-    //     );
-    //     break;
-    //   case HANDLE_POSITION.LEFT_CENTER:
-    //     line = new Phaser.Geom.Line(
-    //       points.rightCenter.x,
-    //       points.rightCenter.y,
-    //       points.leftCenter.x,
-    //       points.leftCenter.y,
-    //     );
-    //     adjustedCornerPoint = Phaser.Geom.Line.GetNearestPoint(
-    //       line,
-    //       expectedCornerPointAfterResize,
-    //     );
-    //     newDimensions = getResizedPoints(
-    //       points.rightCenter,
-    //       adjustedCornerPoint,
-    //       shape.rotation,
-    //       { height: shape.height },
-    //     );
-    //     break;
-    // }
-
-    console.log(newDimensions);
-
-    if (newDimensions.height < 10 || newDimensions.width < 10) {
+    if (
+      newDimensions.height < MAX_SHAPE_SIZE ||
+      newDimensions.width < MAX_SHAPE_SIZE
+    ) {
       return;
     }
-    console.log(newDimensions);
+
     shape.setSize(newDimensions.width, newDimensions.height);
     shape.setPosition(newDimensions.x, newDimensions.y);
     this.update(shape);

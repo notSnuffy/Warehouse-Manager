@@ -32,47 +32,21 @@ function adjustPoints(points, center, rotation) {
  * Adjust the dimension of a shape
  * @memberof module:resize
  * @param {Handle} handle - The handle
- * @param {Object} point1 - The first point
- * @param {Object} point2 - The second point
- * @param {Object} fixedDimension - The fixed dimension
+ * @param {Point} point1 - The first point
+ * @param {Point} point2 - The second point
+ * @param {Object} fixedDimensions - The fixed dimensions
  * @returns {Array} The adjusted dimension
- * @example
- * const point1 = { x: 0, y: 0 };
- * const point2 = { x: 2, y: 2 };
- * const fixedDimension = { width: 2 };
- * const adjustedDimension = adjustDimension(point1, point2, fixedDimension);
  */
-function adjustDimension(handle, point1, point2, fixedDimension = {}) {
+function adjustDimension(handle, point1, point2, fixedDimensions) {
   const moveDimensionVisitor = new MoveDimensionVisitor(
     point1,
     point2,
-    fixedDimension,
+    fixedDimensions,
   );
 
-  console.log(handle);
   handle.accept(moveDimensionVisitor);
-  console.log(moveDimensionVisitor);
 
   const newSize = moveDimensionVisitor.result;
-
-  // if (type === 0) {
-  //   newWidth = point2.x - point1.x;
-  //   newHeight = point1.y - point2.y;
-  // } else if (type === 1) {
-  //   newWidth = point1.x - point2.x;
-  //   newHeight = point2.y - point1.y;
-  // } else {
-  //   newWidth = point2.x - point1.x;
-  //   newHeight = point2.y - point1.y;
-  // }
-
-  // if (fixedDimension.width) {
-  //   newWidth = fixedDimension.width;
-  // }
-
-  // if (fixedDimension.height) {
-  //   newHeight = fixedDimension.height;
-  // }
 
   return [newSize.newWidth, newSize.newHeight];
 }
@@ -93,7 +67,7 @@ function adjustDimension(handle, point1, point2, fixedDimension = {}) {
  * @param {Point} staticPoint - The static point
  * @param {Point} expectedPoint - The expected point
  * @param {number} rotation - The rotation in radians
- * @param {Object} fixedDimension - The fixed dimension
+ * @param {Object} fixedDimensions - The fixed dimensions
  * @returns {Shape} The resized points + dimensions
  */
 function getResizedPoints(
@@ -101,10 +75,9 @@ function getResizedPoints(
   staticPoint,
   expectedPoint,
   rotation,
-  fixedDimension = {},
+  fixedDimensions,
 ) {
   const newCenter = calculateCenterPoint(staticPoint, expectedPoint);
-  console.log(staticPoint, expectedPoint, newCenter);
 
   const [adjustedStaticPoint, adjustedExpectedPoint] = adjustPoints(
     [staticPoint, expectedPoint],
@@ -116,7 +89,7 @@ function getResizedPoints(
     handle,
     adjustedStaticPoint,
     adjustedExpectedPoint,
-    fixedDimension,
+    fixedDimensions,
   );
 
   return {

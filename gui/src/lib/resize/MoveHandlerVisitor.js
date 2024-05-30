@@ -1,5 +1,6 @@
 import HandleVisitor from "./HandleVisitor";
 import { getResizedPoints } from "./math";
+import Phaser from "phaser";
 
 /**
  * @memberof module:types
@@ -43,16 +44,12 @@ class MoveHandlerVisitor extends HandleVisitor {
   #rotation;
 
   /**
-   * The fixed dimension
+   * The fixed dimensions
    * @type {Object}
    * @private
    * @default {}
-   * @example
-   * const fixedDimension = { width: 2 };
-   * const fixedDimension = { height: 2 };
-   * const fixedDimension = { width: 2, height: 2 };
    */
-  //#fixedDimension;
+  #fixedDimensions;
 
   /**
    * The result
@@ -76,52 +73,66 @@ class MoveHandlerVisitor extends HandleVisitor {
    * @param {StaticPoints} staticPoints - The static points
    * @param {Point} expectedPoint - The expected corner point after resize
    * @param {number} rotation - The rotation in radians
-   * @param {Object} fixedDimension - The fixed dimension
+   * @param {Object} fixedDimensions - The fixed dimensions
    * @public
    */
-  constructor(staticPoints, expectedPoint, rotation, _fixedDimension = {}) {
+  constructor(staticPoints, expectedPoint, rotation, fixedDimensions) {
     super();
     this.#staticPoints = staticPoints;
     this.#expectedPoint = expectedPoint;
     this.#rotation = rotation;
-    //this.#fixedDimension = fixedDimension;
+    this.#fixedDimensions = fixedDimensions;
   }
 
   /**
    * Visit the top left handle
    * @param {TopLeftHandler} handle
-   * @returns {}
    * @public
    * @override
    */
   visitTopLeft(handle) {
-    return handle;
+    const newDimensions = getResizedPoints(
+      handle,
+      this.#staticPoints.bottomRight,
+      this.#expectedPoint,
+      this.#rotation,
+    );
+    this.#result = newDimensions;
   }
 
   /**
    * Visit the top right handle
-   * @param {Handle} handle
-   * @returns {Handle}
+   * @param {TopRightHandle} handle
    * @public
    */
   visitTopRight(handle) {
-    return handle;
+    const newDimensions = getResizedPoints(
+      handle,
+      this.#staticPoints.bottomLeft,
+      this.#expectedPoint,
+      this.#rotation,
+    );
+    this.#result = newDimensions;
   }
 
   /**
    * Visit the bottom left handle
-   * @param {Handle} handle
-   * @returns {Handle}
+   * @param {BottomRightHandle} handle
    * @public
    */
   visitBottomLeft(handle) {
-    return handle;
+    const newDimensions = getResizedPoints(
+      handle,
+      this.#staticPoints.topRight,
+      this.#expectedPoint,
+      this.#rotation,
+    );
+    this.#result = newDimensions;
   }
 
   /**
    * Visit the bottom right handle
    * @param {BottomRightHandle} handle
-   * @returns {Shape} New dimension of the shape
    * @public
    * @override
    */
@@ -137,42 +148,113 @@ class MoveHandlerVisitor extends HandleVisitor {
 
   /**
    * Visit the top center handle
-   * @param {Handle} handle
-   * @returns {Handle}
+   * @param {TopCenterHandle} handle
    * @public
    */
   visitTopCenter(handle) {
-    return handle;
+    const line = new Phaser.Geom.Line(
+      this.#staticPoints.bottomCenter.x,
+      this.#staticPoints.bottomCenter.y,
+      this.#staticPoints.topCenter.x,
+      this.#staticPoints.topCenter.y,
+    );
+    const adjustedCornerPoint = Phaser.Geom.Line.GetNearestPoint(
+      line,
+      this.#expectedPoint,
+    );
+
+    const newDimensions = getResizedPoints(
+      handle,
+      this.#staticPoints.bottomCenter,
+      adjustedCornerPoint,
+      this.#rotation,
+      this.#fixedDimensions.topCenter,
+    );
+    this.#result = newDimensions;
   }
 
   /**
    * Visit the bottom center handle
-   * @param {Handle} handle
-   * @returns {Handle}
+   * @param {BottomCenterHandle} handle
+   * @override
    * @public
    */
   visitBottomCenter(handle) {
-    return handle;
+    const line = new Phaser.Geom.Line(
+      this.#staticPoints.topCenter.x,
+      this.#staticPoints.topCenter.y,
+      this.#staticPoints.bottomCenter.x,
+      this.#staticPoints.bottomCenter.y,
+    );
+    const adjustedCornerPoint = Phaser.Geom.Line.GetNearestPoint(
+      line,
+      this.#expectedPoint,
+    );
+
+    const newDimensions = getResizedPoints(
+      handle,
+      this.#staticPoints.topCenter,
+      adjustedCornerPoint,
+      this.#rotation,
+      this.#fixedDimensions.bottomCenter,
+    );
+    this.#result = newDimensions;
   }
 
   /**
    * Visit the left center handle
-   * @param {Handle} handle
-   * @returns {Handle}
+   * @param {LeftCenterHandle} handle
+   * @override
    * @public
    */
   visitLeftCenter(handle) {
-    return handle;
+    const line = new Phaser.Geom.Line(
+      this.#staticPoints.rightCenter.x,
+      this.#staticPoints.rightCenter.y,
+      this.#staticPoints.leftCenter.x,
+      this.#staticPoints.leftCenter.y,
+    );
+    const adjustedCornerPoint = Phaser.Geom.Line.GetNearestPoint(
+      line,
+      this.#expectedPoint,
+    );
+
+    const newDimensions = getResizedPoints(
+      handle,
+      this.#staticPoints.rightCenter,
+      adjustedCornerPoint,
+      this.#rotation,
+      this.#fixedDimensions.leftCenter,
+    );
+    this.#result = newDimensions;
   }
 
   /**
    * Visit the right center handle
-   * @param {Handle} handle
-   * @returns {Handle}
+   * @param {RightCenterHandle} handle
+   * @override
    * @public
    */
   visitRightCenter(handle) {
-    return handle;
+    const line = new Phaser.Geom.Line(
+      this.#staticPoints.leftCenter.x,
+      this.#staticPoints.leftCenter.y,
+      this.#staticPoints.rightCenter.x,
+      this.#staticPoints.rightCenter.y,
+    );
+    const adjustedCornerPoint = Phaser.Geom.Line.GetNearestPoint(
+      line,
+      this.#expectedPoint,
+    );
+
+    const newDimensions = getResizedPoints(
+      handle,
+      this.#staticPoints.leftCenter,
+      adjustedCornerPoint,
+      this.#rotation,
+      this.#fixedDimensions.rightCenter,
+    );
+    this.#result = newDimensions;
   }
 }
 
