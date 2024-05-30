@@ -50,9 +50,14 @@ $app->post('/test', function (Request $request, Response $response, $args) {
 });
 
 
-$app->options('/{routes:.+}', function (Request $request, Response $response, $args) {
-    return $response;
-});
+$app->options(
+    '/{routes:.+}',
+    function (Request $request, Response $response, $args) {
+        return $response;
+    }
+);
+
+
 
 $app->run();
 
