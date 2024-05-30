@@ -23,6 +23,9 @@
             },
             {
                 "action": "phpcs --standard=PSR12 src"
+            },
+            {
+                "action": "php-cs-fixer fix src"
             }
         ]
     },
