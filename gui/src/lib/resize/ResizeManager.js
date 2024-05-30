@@ -243,7 +243,7 @@ class ResizeManager extends Manager {
       return;
     }
 
-    shape.setSize(newDimensions.width, newDimensions.height);
+    shape.setDisplaySize(newDimensions.width, newDimensions.height);
     shape.setPosition(newDimensions.x, newDimensions.y);
     this.update(shape);
     this.#managersToUpdate.forEach((manager) => {
