@@ -42,6 +42,14 @@ $app->get('/', function (Request $request, Response $response, $args) {
     return $newResponse;
 });
 
+$app->post('/test', function (Request $request, Response $response, $args) {
+    $data = $request->getParsedBody();
+    $newResponse = $response->withHeader('Content-type', 'application/json');
+    $newResponse->getBody()->write(json_encode($data));
+    return $newResponse;
+});
+
+
 $app->options('/{routes:.+}', function (Request $request, Response $response, $args) {
     return $response;
 });

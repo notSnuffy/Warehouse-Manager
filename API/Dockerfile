@@ -15,6 +15,7 @@ RUN php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');" &&
 COPY server.conf /etc/apache2/sites-available/000-default.conf
 RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf && \
     echo "Listen 8080" >> /etc/apache2/ports.conf && \
+    a2enmod rewrite && \
     service apache2 restart
 
 COPY composer.json composer.lock /var/www/html/

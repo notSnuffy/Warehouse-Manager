@@ -99,7 +99,7 @@ class Editor extends Phaser.Scene {
    * Creates the scene
    * @public
    */
-  create() {
+  async create() {
     this.#selectManager = new SelectShapeManager(this);
     this.#moveManager = new MoveManager(this);
 
@@ -127,6 +127,24 @@ class Editor extends Phaser.Scene {
     }
 
     this.input.on("pointerdown", this.#selectManager.hide, this.#selectManager);
+
+    try {
+      const response = await fetch("http://localhost:8080/test", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ hello: "world" }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      console.log(data);
+    } catch (error) {
+      console.error(error);
+    }
   }
 
   /**
