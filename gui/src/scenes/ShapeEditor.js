@@ -137,13 +137,13 @@ class ShapeEditor extends Phaser.Scene {
 
     this.cameras.main.setBackgroundColor(0x000000);
 
-    let menuBar = document.getElementById("menu-bar");
+    let menuBar = document.getElementById("menuBar");
     menuBar.hidden = false;
-    let itemsMenu = document.getElementById("items-menu");
+    let itemsMenu = document.getElementById("itemsMenu");
     itemsMenu.hidden = false;
-    this.addButtonHandler("move-button", "click", this.handleMoveButtonClick);
+    this.addButtonHandler("moveButton", "click", this.handleMoveButtonClick);
     this.addButtonHandler(
-      "select-button",
+      "selectButton",
       "click",
       this.handleSelectButtonClick,
     );

@@ -8,14 +8,14 @@ html {
   overflow: hidden;
   font-family: Arial, sans-serif;
 }
-#menu-bar {
+#menuBar {
   background-color: #343a40;
 }
-#editor-container {
+#editorContainer {
   background-color: #222;
   height: calc(100vh - 56px); /* Adjust height to fit below navbar */
 }
-#items-menu {
+#itemsMenu {
   background-color: #444;
   padding: 10px;
   overflow-y: auto;

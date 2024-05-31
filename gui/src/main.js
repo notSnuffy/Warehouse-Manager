@@ -61,7 +61,7 @@ const config = {
   type: Phaser.AUTO,
   width: window_size.width,
   height: window_size.height,
-  parent: "editor-container",
+  parent: "editorContainer",
   backgroundColor: "#028af8",
   scale: {
     mode: Phaser.Scale.FIT,

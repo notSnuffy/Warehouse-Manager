@@ -11,9 +11,9 @@ export class Boot extends Scene {
   }
 
   create() {
-    let menuBar = document.getElementById("menu-bar");
+    let menuBar = document.getElementById("menuBar");
     menuBar.hidden = true;
-    let itemsMenu = document.getElementById("items-menu");
+    let itemsMenu = document.getElementById("itemsMenu");
     itemsMenu.hidden = true;
 
     this.scene.start("Preloader");
