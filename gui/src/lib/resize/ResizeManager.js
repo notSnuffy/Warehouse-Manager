@@ -210,21 +210,21 @@ class ResizeManager extends Manager {
       y: dragY,
     };
 
-    function getFixedDimensions() {
+    function getFixedDimensions(shape) {
       return {
         topLeft: {},
         topRight: {},
         bottomLeft: {},
         bottomRight: {},
-        topCenter: { width: shape.width },
-        bottomCenter: { width: shape.width },
-        leftCenter: { height: shape.height },
-        rightCenter: { height: shape.height },
+        topCenter: { width: shape.displayWidth },
+        bottomCenter: { width: shape.displayWidth },
+        leftCenter: { height: shape.displayHeight },
+        rightCenter: { height: shape.displayHeight },
       };
     }
 
     const points = getShapePoints(shape);
-    const fixedDimensions = getFixedDimensions();
+    const fixedDimensions = getFixedDimensions(shape);
 
     let moveHandlerVisitor = new MoveHandlerVisitor(
       points,
