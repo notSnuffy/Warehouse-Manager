@@ -11,11 +11,10 @@ export class Boot extends Scene {
   }
 
   create() {
-    let moveButton = document.getElementById("move-button");
-    moveButton.hidden = true;
-
-    let selectButton = document.getElementById("select-button");
-    selectButton.hidden = true;
+    let menuBar = document.getElementById("menu-bar");
+    menuBar.hidden = true;
+    let itemsMenu = document.getElementById("items-menu");
+    itemsMenu.hidden = true;
 
     this.scene.start("Preloader");
   }

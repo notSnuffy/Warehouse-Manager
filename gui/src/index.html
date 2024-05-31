@@ -7,10 +7,114 @@
     <title>Warehouse Manager</title>
   </head>
   <body>
-    <div id="app">
-      <button id="move-button" class="btn btn-primary">Move</button>
-      <button id="select-button" class="btn btn-primary">Select</button>
-      <div id="editor-container"></div>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark" id="menu-bar">
+      <div class="container-fluid">
+        <div class="navbar-nav">
+          <button id="move-button" class="btn btn-primary mr-2">Move</button>
+          <button id="select-button" class="btn btn-primary mr-2">
+            Select
+          </button>
+        </div>
+        <button id="save-button" class="btn btn-primary">Save</button>
+      </div>
+    </nav>
+    <div class="container-fluid">
+      <div class="row">
+        <div class="col-md-9" id="editor-container"></div>
+        <div class="col-md-3" id="items-menu">
+          <h3 class="text-white">Add Shape</h3>
+          <button
+            class="btn btn-secondary mb-2"
+            data-shape="rectangle"
+            onclick="showModal(this)"
+          >
+            Add Rectangle
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div
+      class="modal fade"
+      id="newShapeModal"
+      tabindex="-1"
+      aria-labelledby="newShapeModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="newShapeModalLabel">Add New Shape</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <form id="shapeForm">
+              <div class="form-group">
+                <label for="shapeType">Shape</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="shapeType"
+                  readonly
+                />
+              </div>
+              <div class="form-group">
+                <label for="shapeX">X Position</label>
+                <input
+                  type="number"
+                  class="form-control"
+                  id="shapeX"
+                  required
+                />
+              </div>
+              <div class="form-group">
+                <label for="shapeY">Y Position</label>
+                <input
+                  type="number"
+                  class="form-control"
+                  id="shapeY"
+                  required
+                />
+              </div>
+              <div class="form-group">
+                <label for="shapeWidth">Width</label>
+                <input
+                  type="number"
+                  class="form-control"
+                  id="shapeWidth"
+                  required
+                />
+              </div>
+              <div class="form-group">
+                <label for="shapeHeight">Height</label>
+                <input
+                  type="number"
+                  class="form-control"
+                  id="shapeHeight"
+                  required
+                />
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              Close
+            </button>
+            <button type="button" class="btn btn-primary" id="saveShapeButton">
+              Save changes
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
     <script type="module" src="/main.js"></script>
   </body>

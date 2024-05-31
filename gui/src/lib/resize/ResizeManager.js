@@ -1,4 +1,3 @@
-import Phaser from "phaser";
 import { getShapePoints } from "../functions/shapes";
 import Manager from "../Manager";
 import * as Handles from "./handles";
@@ -78,8 +77,6 @@ class ResizeManager extends Manager {
    * @default []
    */
   #managersToUpdate = [];
-
-  previousMousePos = new Phaser.Math.Vector2(0, 0);
 
   /**
    * Constructor for ResizeManager
@@ -243,7 +240,9 @@ class ResizeManager extends Manager {
       return;
     }
 
+    console.log(shape);
     shape.setDisplaySize(newDimensions.width, newDimensions.height);
+    console.log(shape);
     shape.setPosition(newDimensions.x, newDimensions.y);
     this.update(shape);
     this.#managersToUpdate.forEach((manager) => {

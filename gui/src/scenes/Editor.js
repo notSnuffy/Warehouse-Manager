@@ -74,7 +74,6 @@ class Editor extends Phaser.Scene {
    */
   addButtonHandler(id, eventType, eventHandler, context = this) {
     let button = document.getElementById(id);
-    button.hidden = false;
     button.addEventListener(eventType, eventHandler.bind(context));
   }
 
@@ -100,11 +99,31 @@ class Editor extends Phaser.Scene {
    * @public
    */
   async create() {
+    window.addShape = function (shapeType, dimensions) {
+      // Your code to add the shape to the Phaser scene
+      console.log(`Adding shape: ${shapeType}`, dimensions);
+      this.#shapes.push(
+        this.add.rectangle(
+          dimensions.x,
+          dimensions.y,
+          dimensions.width,
+          dimensions.height,
+          0xff0000,
+        ),
+      );
+      this.#shapes[this.#shapes.length - 1].setInteractive({ draggable: true });
+      this.#moveManager.create(this.#shapes[this.#shapes.length - 1]);
+      this.#selectManager.create(this.#shapes[this.#shapes.length - 1]);
+    }.bind(this);
     this.#selectManager = new SelectShapeManager(this);
     this.#moveManager = new MoveManager(this);
 
     this.cameras.main.setBackgroundColor(0x000000);
 
+    let menuBar = document.getElementById("menu-bar");
+    menuBar.hidden = false;
+    let itemsMenu = document.getElementById("items-menu");
+    itemsMenu.hidden = false;
     this.addButtonHandler("move-button", "click", this.handleMoveButtonClick);
     this.addButtonHandler(
       "select-button",

@@ -4,6 +4,7 @@ import { MainMenu } from "./scenes/MainMenu";
 import { Editor } from "./scenes/Editor";
 import Phaser from "phaser";
 import "./styles.scss";
+import * as bootstrap from "bootstrap";
 
 /**
  * @module resize
@@ -70,3 +71,40 @@ const config = {
 };
 
 export default new Phaser.Game(config);
+
+function showModal(button) {
+  const shape = button.getAttribute("data-shape");
+  const modalElement = document.getElementById("newShapeModal");
+  const shapeTypeInput = document.getElementById("shapeType");
+  const modalTitle = document.getElementById("newShapeModalLabel");
+
+  modalTitle.textContent =
+    "Add New " + shape.charAt(0).toUpperCase() + shape.slice(1);
+  shapeTypeInput.value = shape;
+
+  const modal = new bootstrap.Modal(modalElement);
+  modal.show();
+}
+
+document
+  .getElementById("saveShapeButton")
+  .addEventListener("click", function () {
+    const shapeType = document.getElementById("shapeType").value;
+    const x = document.getElementById("shapeX").value;
+    const y = document.getElementById("shapeY").value;
+    const width = document.getElementById("shapeWidth").value;
+    const height = document.getElementById("shapeHeight").value;
+
+    window.addShape(shapeType, {
+      x: parseInt(x),
+      y: parseInt(y),
+      width: parseInt(width),
+      height: parseInt(height),
+    });
+
+    const modalElement = document.getElementById("newShapeModal");
+    const modal = bootstrap.Modal.getInstance(modalElement);
+    modal.hide();
+  });
+
+window.showModal = showModal;
