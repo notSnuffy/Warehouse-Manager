@@ -38,6 +38,10 @@ class MoveManager extends Manager {
    * @override
    */
   create(shape) {
+    shape.on("dragstart", () => {
+      this.scene.children.bringToTop(shape);
+    });
+
     shape.on("drag", (_, dragX, dragY) => {
       if (this.scene.activeTool === "move") {
         const points = Object.values(getShapePoints(shape));

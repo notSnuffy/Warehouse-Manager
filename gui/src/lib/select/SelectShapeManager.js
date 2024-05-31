@@ -74,6 +74,7 @@ class SelectShapeManager extends Manager {
         shape.setFillStyle(0xffffff);
         this.#lastSelected = shape;
 
+        this.scene.children.bringToTop(shape);
         this.#resizeManager.create(shape);
         this.#rotationManager.create(shape);
       }
