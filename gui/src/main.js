@@ -3,6 +3,7 @@ import { Preloader } from "./scenes/Preloader";
 import { MainMenu } from "./scenes/MainMenu";
 import { Editor } from "./scenes/Editor";
 import Phaser from "phaser";
+import "./styles.scss";
 
 /**
  * @module resize
