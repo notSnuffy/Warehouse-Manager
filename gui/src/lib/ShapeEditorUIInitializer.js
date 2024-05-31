@@ -47,7 +47,7 @@ class ShapeEditorUIInitializer {
     }
 
     document
-      .getElementById("saveShapeButton")
+      .getElementById("addShapeConfirmButton")
       .addEventListener("click", function () {
         const shapeType = document.getElementById("shapeType").value;
         const width = document.getElementById("shapeWidth").value;
