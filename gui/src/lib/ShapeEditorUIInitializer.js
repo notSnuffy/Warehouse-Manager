@@ -1,4 +1,5 @@
 import { Modal } from "bootstrap";
+import { DEFAULT_SHAPES } from "../scenes/ShapeEditor";
 
 /**
  * @class ShapeEditorUIInitializer
@@ -20,6 +21,18 @@ class ShapeEditorUIInitializer {
   }
 
   /**
+   * Adds a button handler
+   * @param {string} id - Id of the button
+   * @param {string} eventType - Event type
+   * @param {Function} eventHandler - Event handler
+   * @private
+   */
+  static #addButtonHandler(id, eventType, eventHandler) {
+    let button = document.getElementById(id);
+    button.addEventListener(eventType, eventHandler);
+  }
+
+  /**
    * If the UI has been initialized
    * @type {boolean}
    * @private
@@ -29,16 +42,39 @@ class ShapeEditorUIInitializer {
   static #initialized = false;
   /**
    * Initializes the UI
+   * @param {Function} handleMoveButtonClick - Function to handle move button click
+   * @param {Function} handleSelectButtonClick - Function to handle select button click
    * @param {Function} addShape - Function to add a shape
    * @param {string[]} shapes - Array of shapes
+   * @param {Function} saveShape - Function to save a shape
+   * @param {Function} selectHide - Function to hide selection
    * @static
    */
-  static initialize(addShape, shapes) {
+  static initialize(
+    handleMoveButtonClick,
+    handleSelectButtonClick,
+    addShape,
+    shapes,
+    saveShape,
+    selectHide,
+  ) {
     if (ShapeEditorUIInitializer.#initialized) {
       return;
     }
 
     ShapeEditorUIInitializer.#initialized = true;
+
+    const menuBar = document.getElementById("menuBar");
+    menuBar.hidden = false;
+    const itemsMenu = document.getElementById("itemsMenu");
+    itemsMenu.hidden = false;
+
+    ShapeEditorUIInitializer.#addButtonHandler(
+      "moveButton",
+      "click",
+      handleMoveButtonClick,
+    );
+    this.#addButtonHandler("selectButton", "click", handleSelectButtonClick);
     for (const shape of shapes) {
       const button = document.getElementById("add-" + shape);
       button.addEventListener("click", function () {
@@ -68,6 +104,25 @@ class ShapeEditorUIInitializer {
         const modal = Modal.getInstance(modalElement);
         modal.hide();
       });
+
+    const saveButton = document.getElementById("saveButton");
+    saveButton.addEventListener("click", function () {
+      selectHide();
+
+      const shapeName = document.getElementById("shapeName").value;
+      console.log(shapeName);
+      if (shapeName === "") {
+        alert("Please enter a shape name");
+        return;
+      }
+
+      if (DEFAULT_SHAPES.includes(shapeName)) {
+        alert("Shape name already exists");
+        return;
+      }
+
+      saveShape();
+    });
   }
 }
 

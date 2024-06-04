@@ -18,6 +18,14 @@ class SelectShapeManager extends Manager {
   #lastSelected = null;
 
   /**
+   * Last selected shape color
+   * @type {number}
+   * @private
+   * @default null
+   */
+  #lastSelectedColor;
+
+  /**
    * Rotation manager
    * @type {RotationManager}
    * @private
@@ -71,6 +79,7 @@ class SelectShapeManager extends Manager {
       if (this.scene.activeTool === "select") {
         this.hide();
 
+        this.#lastSelectedColor = shape.fillColor;
         shape.setFillStyle(0xffffff);
         this.#lastSelected = shape;
 
@@ -106,8 +115,9 @@ class SelectShapeManager extends Manager {
     }
 
     if (this.#lastSelected) {
-      this.#lastSelected.setFillStyle(0xff0000);
+      this.#lastSelected.setFillStyle(this.#lastSelectedColor);
       this.#lastSelected = null;
+      this.#lastSelectedColor = null;
     }
 
     this.#rotationManager.hide();

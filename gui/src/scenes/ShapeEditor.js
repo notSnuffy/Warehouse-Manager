@@ -4,6 +4,13 @@ import SelectShapeManager from "../lib/select/SelectShapeManager";
 import ShapeEditorUIInitializer from "../lib/ShapeEditorUIInitializer";
 
 /**
+ * Default shapes
+ * @type {string[]}
+ * @constant
+ */
+const DEFAULT_SHAPES = ["rectangle", "ellipse"];
+
+/**
  * Represents the editor scene
  * @class
  * @extends Phaser.Scene
@@ -66,40 +73,25 @@ class ShapeEditor extends Phaser.Scene {
   }
 
   /**
-   * Adds a button handler
-   * @param {string} id - Id of the button
-   * @param {string} eventType - Event type
-   * @param {Function} eventHandler - Event handler
-   * @param {Object} context - Context of the event handler
-   * @public
-   */
-  addButtonHandler(id, eventType, eventHandler, context = this) {
-    let button = document.getElementById(id);
-    button.addEventListener(eventType, eventHandler.bind(context));
-  }
-
-  /**
-   * Handles the move button click event
-   * @public
-   */
-  handleMoveButtonClick() {
-    this.#currentTool = "move";
-    this.#selectManager.hide();
-  }
-
-  /**
-   * Handles the select button click event
-   * @public
-   */
-  handleSelectButtonClick() {
-    this.#currentTool = "select";
-  }
-
-  /**
    * Creates the scene
    * @public
    */
   async create() {
+    /**
+     * Handles the move button click event
+     */
+    const handleMoveButtonClick = function () {
+      this.#currentTool = "move";
+      this.#selectManager.hide();
+    }.bind(this);
+
+    /**
+     * Handles the select button click event
+     */
+    const handleSelectButtonClick = function () {
+      this.#currentTool = "select";
+    }.bind(this);
+
     const addShape = function (shapeType, parameters) {
       if (shapeType === "rectangle") {
         this.#shapes.push(
@@ -130,23 +122,32 @@ class ShapeEditor extends Phaser.Scene {
       this.#selectManager.create(shape);
     }.bind(this);
 
-    ShapeEditorUIInitializer.initialize(addShape, ["rectangle", "ellipse"]);
+    const saveShape = function () {
+      for (let i = 0; i < this.#shapes.length; i++) {
+        const shape = this.#shapes[i];
+        console.log(
+          shape.x,
+          shape.y,
+          shape.width,
+          shape.height,
+          shape.fillColor.toString(16),
+        );
+      }
+    }.bind(this);
 
     this.#selectManager = new SelectShapeManager(this);
     this.#moveManager = new MoveManager(this);
 
-    this.cameras.main.setBackgroundColor(0x000000);
-
-    let menuBar = document.getElementById("menuBar");
-    menuBar.hidden = false;
-    let itemsMenu = document.getElementById("itemsMenu");
-    itemsMenu.hidden = false;
-    this.addButtonHandler("moveButton", "click", this.handleMoveButtonClick);
-    this.addButtonHandler(
-      "selectButton",
-      "click",
-      this.handleSelectButtonClick,
+    ShapeEditorUIInitializer.initialize(
+      handleMoveButtonClick,
+      handleSelectButtonClick,
+      addShape,
+      DEFAULT_SHAPES,
+      saveShape,
+      this.#selectManager.hide.bind(this.#selectManager),
     );
+
+    this.cameras.main.setBackgroundColor(0x000000);
 
     this.#shapes.push(this.add.rectangle(100, 300, 100, 100, 0xff0000));
     this.#shapes.push(this.add.rectangle(300, 300, 100, 300, 0xff0000));
@@ -189,4 +190,4 @@ class ShapeEditor extends Phaser.Scene {
   update() {}
 }
 
-export { ShapeEditor as ShapeEditor };
+export { ShapeEditor as ShapeEditor, DEFAULT_SHAPES };
