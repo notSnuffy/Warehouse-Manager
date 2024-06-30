@@ -53,6 +53,13 @@
             >
               Ellipse
             </button>
+            <button
+              class="btn btn-secondary mb-2"
+              data-shape="arc"
+              id="add-arc"
+            >
+              Arc
+            </button>
           </div>
         </div>
       </div>
@@ -107,7 +114,7 @@
                   value="0"
                 />
               </div>
-              <div class="form-group">
+              <div class="form-group" id="widthGroup">
                 <label for="shapeWidth">Width</label>
                 <input
                   type="number"
@@ -115,9 +122,10 @@
                   id="shapeWidth"
                   required
                   value="100"
+                  min="1"
                 />
               </div>
-              <div class="form-group">
+              <div class="form-group" id="heightGroup">
                 <label for="shapeHeight">Height</label>
                 <input
                   type="number"
@@ -125,6 +133,30 @@
                   id="shapeHeight"
                   required
                   value="100"
+                  min="1"
+                />
+              </div>
+              <div class="form-group" id="radiusGroup">
+                <label for="shapeRadius">Radius</label>
+                <input
+                  type="number"
+                  class="form-control"
+                  id="shapeRadius"
+                  required
+                  value="50"
+                  min="1"
+                />
+              </div>
+              <div class="form-group" id="angleGroup">
+                <label for="shapeAngle">Angle</label>
+                <input
+                  type="number"
+                  class="form-control"
+                  id="shapeAngle"
+                  required
+                  value="180"
+                  min="0"
+                  max="360"
                 />
               </div>
               <div class="form-group">

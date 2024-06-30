@@ -16,6 +16,23 @@ class ShapeEditorUIInitializer {
       "Add New " + shape.charAt(0).toUpperCase() + shape.slice(1);
     shapeTypeInput.value = shape;
 
+    const radiusGroup = document.getElementById("radiusGroup");
+    const angleGroup = document.getElementById("angleGroup");
+    const widthGroup = document.getElementById("widthGroup");
+    const heightGroup = document.getElementById("heightGroup");
+
+    if (shape === "arc") {
+      radiusGroup.hidden = false;
+      angleGroup.hidden = false;
+      widthGroup.hidden = true;
+      heightGroup.hidden = true;
+    } else {
+      radiusGroup.hidden = true;
+      angleGroup.hidden = true;
+      widthGroup.hidden = false;
+      heightGroup.hidden = false;
+    }
+
     const modal = new Modal(modalElement);
     modal.show();
   }
@@ -69,6 +86,52 @@ class ShapeEditorUIInitializer {
     const itemsMenu = document.getElementById("itemsMenu");
     itemsMenu.hidden = false;
 
+    const validateShapeWidth = function () {
+      const shapeWidth = document.getElementById("shapeWidth");
+
+      if (shapeWidth.value < 1) {
+        shapeWidth.value = 1;
+      }
+    };
+    document
+      .getElementById("shapeWidth")
+      .addEventListener("input", validateShapeWidth);
+
+    const validateShapeHeight = function () {
+      const shapeHeight = document.getElementById("shapeHeight");
+
+      if (shapeHeight.value < 1) {
+        shapeHeight.value = 1;
+      }
+    };
+    document
+      .getElementById("shapeHeight")
+      .addEventListener("input", validateShapeHeight);
+
+    const validateShapeRadius = function () {
+      const shapeRadius = document.getElementById("shapeRadius");
+
+      if (shapeRadius.value < 1) {
+        shapeRadius.value = 1;
+      }
+    };
+    document
+      .getElementById("shapeRadius")
+      .addEventListener("input", validateShapeRadius);
+
+    const validateShapeAngle = function () {
+      const shapeAngle = document.getElementById("shapeAngle");
+
+      if (shapeAngle.value < 0) {
+        shapeAngle.value = 0;
+      } else if (shapeAngle.value > 360) {
+        shapeAngle.value = 360;
+      }
+    };
+    document
+      .getElementById("shapeAngle")
+      .addEventListener("input", validateShapeAngle);
+
     ShapeEditorUIInitializer.#addButtonHandler(
       "moveButton",
       "click",
@@ -86,19 +149,36 @@ class ShapeEditorUIInitializer {
       .getElementById("addShapeConfirmButton")
       .addEventListener("click", function () {
         const shapeType = document.getElementById("shapeType").value;
-        const width = document.getElementById("shapeWidth").value;
-        const height = document.getElementById("shapeHeight").value;
-        const x = document.getElementById("shapeX").value + width / 2;
-        const y = document.getElementById("shapeY").value + height / 2;
-        const color = document.getElementById("shapeColor").value;
 
-        addShape(shapeType, {
-          x: parseInt(x),
-          y: parseInt(y),
-          width: parseInt(width),
-          height: parseInt(height),
-          color: parseInt(color.slice(1), 16),
-        });
+        if (shapeType === "arc") {
+          const radius = document.getElementById("shapeRadius").value;
+          const angle = document.getElementById("shapeAngle").value;
+          const x = document.getElementById("shapeX").value + radius;
+          const y = document.getElementById("shapeY").value + radius;
+          const color = document.getElementById("shapeColor").value;
+
+          addShape(shapeType, {
+            x: parseInt(x),
+            y: parseInt(y),
+            radius: parseInt(radius),
+            angle: parseInt(angle),
+            color: parseInt(color.slice(1), 16),
+          });
+        } else {
+          const width = document.getElementById("shapeWidth").value;
+          const height = document.getElementById("shapeHeight").value;
+          const x = document.getElementById("shapeX").value + width / 2;
+          const y = document.getElementById("shapeY").value + height / 2;
+          const color = document.getElementById("shapeColor").value;
+
+          addShape(shapeType, {
+            x: parseInt(x),
+            y: parseInt(y),
+            width: parseInt(width),
+            height: parseInt(height),
+            color: parseInt(color.slice(1), 16),
+          });
+        }
 
         const modalElement = document.getElementById("newShapeModal");
         const modal = Modal.getInstance(modalElement);

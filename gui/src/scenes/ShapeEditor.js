@@ -8,7 +8,7 @@ import ShapeEditorUIInitializer from "../lib/ShapeEditorUIInitializer";
  * @type {string[]}
  * @constant
  */
-const DEFAULT_SHAPES = ["rectangle", "ellipse"];
+const DEFAULT_SHAPES = ["rectangle", "ellipse", "arc"];
 
 /**
  * Represents the editor scene
@@ -113,6 +113,18 @@ class ShapeEditor extends Phaser.Scene {
             parameters.color,
           ),
         );
+      } else if (shapeType === "arc") {
+        this.#shapes.push(
+          this.add.arc(
+            parameters.x,
+            parameters.y,
+            parameters.radius,
+            0,
+            parameters.angle,
+            false,
+            parameters.color,
+          ),
+        );
       }
 
       const shape = this.#shapes[this.#shapes.length - 1];
@@ -151,7 +163,8 @@ class ShapeEditor extends Phaser.Scene {
 
     this.#shapes.push(this.add.rectangle(100, 300, 100, 100, 0xff0000));
     this.#shapes.push(this.add.rectangle(300, 300, 100, 300, 0xff0000));
-    this.#shapes.push(this.add.ellipse(500, 500, 50, 100, 0xff0000));
+    this.#shapes.push(this.add.ellipse(600, 500, 50, 100, 0xff0000));
+    this.#shapes.push(this.add.arc(700, 700, 50, 0, 180, false, 0xff0000));
 
     this.#shapes[1].setRotation(0);
 
