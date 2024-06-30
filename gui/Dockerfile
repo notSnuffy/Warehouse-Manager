@@ -2,7 +2,7 @@ FROM node:20
 
 WORKDIR /app
 
-COPY vite.config.mjs postcss.config.js tailwind.config.js ./
+COPY vite.config.mjs ./
 COPY package.json package-lock.json ./
 RUN npm install
 
