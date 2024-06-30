@@ -20,17 +20,81 @@ class ShapeEditorUIInitializer {
     const angleGroup = document.getElementById("angleGroup");
     const widthGroup = document.getElementById("widthGroup");
     const heightGroup = document.getElementById("heightGroup");
+    const polygonGroup = document.getElementById("polygonGroup");
+
+    const polygonPoints = document.getElementById("polygonPoints");
+    polygonPoints.innerHTML = "";
+
+    // Having the 0, 0 point as read-only should prevent the hitbox being broken
+    const defaultPoints = [
+      { x: 0, y: 0, readOnly: true },
+      { x: 50, y: 0, readOnly: false },
+      { x: 50, y: 50, readOnly: false },
+    ];
+
+    for (let i = 0; i < 3; ++i) {
+      const point = document.createElement("div");
+      const pointX = defaultPoints[i].x;
+      const pointY = defaultPoints[i].y;
+      const readOnly = defaultPoints[i].readOnly;
+      point.className = "input-group";
+      point.innerHTML = `
+      <span class="input-group-text">Point${i} X</span>
+      <input
+        type="number"
+        class="form-control"
+        id="shapePoint${i}X"
+        required
+        value="${pointX}"
+        ${readOnly ? "readonly" : ""}
+      />
+      <span class="input-group-text">Point${i} Y</span>
+      <input
+        type="number"
+        class="form-control"
+        id="shapePoint${i}Y"
+        required
+        value="${pointY}"
+        ${readOnly ? "readonly" : ""}
+      />
+      `;
+      polygonPoints.appendChild(point);
+
+      document
+        .getElementById(`shapePoint${i}X`)
+        .addEventListener("input", () => {
+          if (document.getElementById(`shapePoint${i}X`).value < 0) {
+            document.getElementById(`shapePoint${i}X`).value = 0;
+          }
+        });
+
+      document
+        .getElementById(`shapePoint${i}Y`)
+        .addEventListener("input", () => {
+          if (document.getElementById(`shapePoint${i}Y`).value < 0) {
+            document.getElementById(`shapePoint${i}Y`).value = 0;
+          }
+        });
+    }
 
     if (shape === "arc") {
       radiusGroup.hidden = false;
       angleGroup.hidden = false;
       widthGroup.hidden = true;
       heightGroup.hidden = true;
+      polygonGroup.hidden = true;
+    } else if (shape === "polygon") {
+      radiusGroup.hidden = true;
+      angleGroup.hidden = true;
+      widthGroup.hidden = true;
+      heightGroup.hidden = true;
+      polygonGroup.hidden = false;
     } else {
       radiusGroup.hidden = true;
       angleGroup.hidden = true;
       widthGroup.hidden = false;
       heightGroup.hidden = false;
+      polygonGroup.hidden = true;
     }
 
     const modal = new Modal(modalElement);
@@ -150,30 +214,52 @@ class ShapeEditorUIInitializer {
       .addEventListener("click", function () {
         const shapeType = document.getElementById("shapeType").value;
 
+        let x = parseInt(document.getElementById("shapeX").value);
+        let y = parseInt(document.getElementById("shapeY").value);
+
         if (shapeType === "arc") {
-          const radius = document.getElementById("shapeRadius").value;
+          const radius = parseInt(document.getElementById("shapeRadius").value);
           const angle = document.getElementById("shapeAngle").value;
-          const x = document.getElementById("shapeX").value + radius;
-          const y = document.getElementById("shapeY").value + radius;
+          x += radius;
+          y += radius;
           const color = document.getElementById("shapeColor").value;
 
           addShape(shapeType, {
-            x: parseInt(x),
-            y: parseInt(y),
-            radius: parseInt(radius),
+            x: x,
+            y: y,
+            radius: radius,
             angle: parseInt(angle),
+            color: parseInt(color.slice(1), 16),
+          });
+        } else if (shapeType === "polygon") {
+          const points = [];
+          const polygonPoints = document.getElementById("polygonPoints");
+
+          for (let i = 0; i < polygonPoints.children.length; ++i) {
+            const pointX = document.getElementById(`shapePoint${i}X`).value;
+            const pointY = document.getElementById(`shapePoint${i}Y`).value;
+            points.push(parseInt(pointX));
+            points.push(parseInt(pointY));
+          }
+
+          const color = document.getElementById("shapeColor").value;
+
+          addShape(shapeType, {
+            x: x,
+            y: y,
+            points: points,
             color: parseInt(color.slice(1), 16),
           });
         } else {
           const width = document.getElementById("shapeWidth").value;
           const height = document.getElementById("shapeHeight").value;
-          const x = document.getElementById("shapeX").value + width / 2;
-          const y = document.getElementById("shapeY").value + height / 2;
+          x += width / 2;
+          y = height / 2;
           const color = document.getElementById("shapeColor").value;
 
           addShape(shapeType, {
-            x: parseInt(x),
-            y: parseInt(y),
+            x: x,
+            y: y,
             width: parseInt(width),
             height: parseInt(height),
             color: parseInt(color.slice(1), 16),
@@ -184,6 +270,65 @@ class ShapeEditorUIInitializer {
         const modal = Modal.getInstance(modalElement);
         modal.hide();
       });
+
+    const addPolygonPointButton = document.getElementById(
+      "addPolygonPointButton",
+    );
+    addPolygonPointButton.addEventListener("click", function () {
+      const polygonPoints = document.getElementById("polygonPoints");
+
+      const pointIndex = polygonPoints.children.length;
+
+      const point = document.createElement("div");
+      point.className = "input-group";
+      point.innerHTML = `
+      <span class="input-group-text">Point${pointIndex} X</span>
+      <input
+        type="number"
+        class="form-control"
+        id="shapePoint${pointIndex}X"
+        required
+        value="0"
+      />
+      <span class="input-group-text">Point${pointIndex} Y</span>
+      <input
+        type="number"
+        class="form-control"
+        id="shapePoint${pointIndex}Y"
+        required
+        value="0"
+      />
+      `;
+      polygonPoints.appendChild(point);
+
+      document
+        .getElementById(`shapePoint${pointIndex}X`)
+        .addEventListener("input", () => {
+          if (document.getElementById(`shapePoint${pointIndex}X`).value < 0) {
+            document.getElementById(`shapePoint${pointIndex}X`).value = 0;
+          }
+        });
+
+      document
+        .getElementById(`shapePoint${pointIndex}Y`)
+        .addEventListener("input", () => {
+          if (document.getElementById(`shapePoint${pointIndex}Y`).value < 0) {
+            document.getElementById(`shapePoint${pointIndex}Y`).value = 0;
+          }
+        });
+    });
+
+    const removePolygonPointButton = document.getElementById(
+      "removePolygonPointButton",
+    );
+    removePolygonPointButton.addEventListener("click", function () {
+      const polygonPoints = document.getElementById("polygonPoints");
+      const pointIndex = polygonPoints.children.length - 1;
+
+      if (pointIndex > 2) {
+        polygonPoints.removeChild(polygonPoints.children[pointIndex]);
+      }
+    });
 
     const saveButton = document.getElementById("saveButton");
     saveButton.addEventListener("click", function () {

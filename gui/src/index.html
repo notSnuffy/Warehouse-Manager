@@ -60,6 +60,13 @@
             >
               Arc
             </button>
+            <button
+              class="btn btn-secondary mb-2"
+              data-shape="polygon"
+              id="add-polygon"
+            >
+              Polygon
+            </button>
           </div>
         </div>
       </div>
@@ -158,6 +165,24 @@
                   min="0"
                   max="360"
                 />
+              </div>
+              <div class="form-group" id="polygonGroup">
+                <label for="shapePoints">Polygon Points</label>
+                <div id="polygonPoints"></div>
+                <button
+                  type="button"
+                  class="btn btn-primary"
+                  id="addPolygonPointButton"
+                >
+                  Add Point
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-danger"
+                  id="removePolygonPointButton"
+                >
+                  Remove Point
+                </button>
               </div>
               <div class="form-group">
                 <label for="shapeColor">Color</label>
