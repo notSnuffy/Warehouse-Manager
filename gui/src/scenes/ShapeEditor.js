@@ -2,6 +2,7 @@ import Phaser from "phaser";
 import MoveManager from "../lib/move/MoveManager";
 import SelectShapeManager from "../lib/select/SelectShapeManager";
 import ShapeEditorUIInitializer from "../lib/ShapeEditorUIInitializer";
+import { API_URL } from "../config";
 
 /**
  * Default shapes
@@ -197,13 +198,7 @@ class ShapeEditor extends Phaser.Scene {
     this.input.on("pointerdown", this.#selectManager.hide, this.#selectManager);
 
     try {
-      const response = await fetch("http://localhost:8080/test", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ hello: "world" }),
-      });
+      const response = await fetch(API_URL);
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
