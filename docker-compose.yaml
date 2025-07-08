@@ -2,7 +2,7 @@ services:
   api:
     build: ./API
     ports:
-      - 8080:8080
+      - 8082:8080
     volumes:
       - ./API/src:/var/www/html/src
       - /var/www/html/vendor
