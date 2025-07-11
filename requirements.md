@@ -4,7 +4,7 @@
 | ----------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Administrator     | Has full control over the system     | Can manage users, inventory, shapes, furniture, floors, and permissions. Can add/edit/remove any user and assign roles. Can modify inventory and perform all operations.                                           |
 | Warehouse Worker  | Handles inventory operations         | Update stock, view inventory, track locations. Cannot modify shapes, furniture and floors                                                                                                                          |
-| Guest             | Views inventory                      | Browses products. Cannot do any modifications                                                                                                                                                                      |
+| Observer          | Views inventory                      | Browses products. Cannot do any modifications                                                                                                                                                                      |
 | Warehouse Manager | Oversees warehouse operations        | Manages Warehouse Workers assigned to him, Can do inventory operations. Cannot modify users not assigned. Cannot modify shapes, furniture and floors.                                                              |
 | Furniture Editor  | Creates furniture and shapes         | Can add/edit/remove furniture and shapes. Cannot modify users, inventory, floors and cannot do inventory operations.                                                                                               |
 | Floor Editor      | Creates floors                       | Can add/edit/remove floors. Cannot modify users, inventory, shapes and furniture. Cannot do inventory operations.                                                                                                  |
@@ -25,10 +25,10 @@
 | FR-7  | Users can view list of users                                      | Administrator, Warehouse Manager, Editor Manager              |
 | FR-8  | Users can search for specific users and filter them               | Administrator, Warehouse Manager, Editor Manager              |
 | FR-9  | Users can add, edit, or remove products in inventory              | Administrator, Warehouse Worker, Warehouse Manager            |
-| FR-10 | Users can view inventory list                                     | Administrator, Warehouse Worker, Warehouse Manager, Guest     |
-| FR-11 | Users can filter and search inventory items                       | Administrator, Warehouse Worker, Warehouse Manager, Guest     |
-| FR-12 | Users can track location of specific items                        | Administrator, Warehouse Worker, Warehouse Manager, Guest     |
-| FR-13 | Users can view detailed information about items                   | Administrator, Warehouse Worker, Warehouse Manager, Guest     |
+| FR-10 | Users can view inventory list                                     | Administrator, Warehouse Worker, Warehouse Manager, Observer  |
+| FR-11 | Users can filter and search inventory items                       | Administrator, Warehouse Worker, Warehouse Manager, Observer  |
+| FR-12 | Users can track location of specific items                        | Administrator, Warehouse Worker, Warehouse Manager, Observer  |
+| FR-13 | Users can view detailed information about items                   | Administrator, Warehouse Worker, Warehouse Manager, Observer  |
 | FR-14 | Users can generate reports on inventory                           | Administrator, Warehouse Manager                              |
 | FR-15 | Users can look through logs of actions taken                      | Administrator, Warehouse Manager, Editor Manager              |
 | FR-16 | Users can add, edit, or remove shapes                             | Administrator, Furniture Editor, Editor Manager               |
@@ -42,7 +42,7 @@
 | FR-24 | Users can move items between different furniture                  | Administrator, Warehouse Worker, Warehouse Manager            |
 | FR-25 | It should be possible to create a first user with all permissions | None                                                          |
 
-FR-20: Maybe Guest, Warehouse Worker, Warehouse Manager should be included since they should be able to look through the floors to add the items to specific locations
+FR-20: Maybe Observer, Warehouse Worker, Warehouse Manager should be included since they should be able to look through the floors to add the items to specific locations
 
 ---
 
