@@ -53,3 +53,121 @@ FR-20: Maybe Observer, Warehouse Worker, Warehouse Manager should be included si
 | NFR-1 | Sensitive information should be encrypted in transit           |
 | NFR-2 | System should be responsive and fast                           |
 | NFR-3 | Multiple users should be able to use the system simultaneously |
+
+---
+
+# Use Cases
+
+## View the inventory list
+
+- **Starting situation (Initial assumption)**
+
+  - The user is logged into the system and has permission to view the inventory.
+
+- **Normal**
+
+  1. The user navigates to the inventory section by clicking the designated button, menu item, or entering the inventory url.
+  2. The system displays the entire list of inventory items in a default order (e.g., alphabetical or by category).
+
+- **What can go wrong**
+
+  - The system fails to load the inventory due to a server or network error. An error message is shown.
+
+- **System state on completion**
+  - The user sees the current inventory list, or an appropriate message if the list cannot be loaded.
+
+### Diagram
+
+![View inventory list diagram](diagrams/view-inventory-list.svg)
+
+## Track the location of a specific item
+
+- **Starting situation (Initial assumption)**
+
+  - The user is logged into the system and has permission to view the inventory.
+
+- **Preconditions**
+
+  - The item exists in the inventory.
+
+- **Normal**
+
+  1. The user navigates to the inventory section.
+  2. The user searches for a specific item using the search bar, using filters, or by scrolling through the list.
+  3. The user clicks the track location button
+  4. The system retrieves the item's location.
+  5. The system renders an interactable screen showing the item's location on a specific floor by highlighting the furniture where the item resides.
+
+- **What can go wrong**
+
+  - The system fails to retrieve the location. An error message is shown.
+
+- **System state on completion**
+  - The user sees the screen with the item's location, or an appropriate message if the item location cannot be retrieved.
+
+### Diagram
+
+![Track item location diagram](diagrams/track-item-location.svg)
+
+## Add, edit, or remove a shape
+
+- **Starting situation (Initial assumption)**
+
+  - The user is logged into the system and has permission to manage shapes.
+
+- **Preconditions**
+
+  - The user has navigated to the shapes management section.
+
+- **Add**
+
+  1. The user clicks the button to add a new shape.
+  2. The system shows an editor with a list of other shapes as a base to create a new shape.
+  3. The user uses the editor to create a new shape by selecting other shapes and modifying them.
+  4. The user clicks the save button.
+  5. The user inputs additional data for the new shape (e.g., name, description).
+  6. The user clicks the confirm button.
+  7. The system validates the input data.
+  8. The system saves the new shape.
+
+- **Edit**
+
+  1. The user finds the existing shape from the list he wants to edit.
+  2. The user clicks the edit button.
+  3. The system shows the editor with the selected shape.
+  4. The user modifies the shapes needed.
+  5. The user clicks the save button.
+  6. The user can edit additional data for the shape (e.g., name, description).
+  7. The user clicks the confirm button.
+  8. The system validates the input data.
+  9. The system saves the changes to the shape.
+
+- **Remove**
+
+  1. The user finds the existing shape from the list he wants to remove.
+  2. The user clicks the remove button.
+  3. The system prompts the user to confirm the removal.
+  4. The user confirms the removal.
+  5. The system removes the shape.
+
+- **What can go wrong**
+
+  - The user enters invalid data (e.g., missing required fields, incorrect format). An error message is shown.
+  - The system fails to save the shape due to a server or network error. An error message is shown.
+
+- **System state on completion**
+  - The new or edited shape is saved and displayed in the shapes list, deleted shape is removed from the list, or an appropriate error message is shown if the action fails.
+
+### Diagram
+
+#### Add a new shape
+
+![Add a shape diagram](diagrams/add-shape.svg)
+
+#### Edit an existing shape
+
+![Edit a shape diagram](diagrams/edit-shape.svg)
+
+#### Remove an existing shape
+
+![Remove a shape diagram](diagrams/remove-shape.svg)
