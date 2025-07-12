@@ -125,10 +125,11 @@ FR-20: Maybe Observer, Warehouse Worker, Warehouse Manager should be included si
   2. The system shows an editor with a list of other shapes as a base to create a new shape.
   3. The user uses the editor to create a new shape by selecting other shapes and modifying them.
   4. The user clicks the save button.
-  5. The user inputs additional data for the new shape (e.g., name, description).
-  6. The user clicks the confirm button.
-  7. The system validates the input data.
-  8. The system saves the new shape.
+  5. The system shows a form to input additional data for the new shape.
+  6. The user inputs additional data for the new shape (e.g., name, description).
+  7. The user clicks the confirm button.
+  8. The system validates the input data.
+  9. The system saves the new shape.
 
 - **Edit**
 
@@ -137,10 +138,11 @@ FR-20: Maybe Observer, Warehouse Worker, Warehouse Manager should be included si
   3. The system shows the editor with the selected shape.
   4. The user modifies the shapes needed.
   5. The user clicks the save button.
-  6. The user can edit additional data for the shape (e.g., name, description).
-  7. The user clicks the confirm button.
-  8. The system validates the input data.
-  9. The system saves the changes to the shape.
+  6. The system shows a form to input additional data for the shape.
+  7. The user can edit additional data for the shape (e.g., name, description).
+  8. The user clicks the confirm button.
+  9. The system validates the input data.
+  10. The system saves the changes to the shape.
 
 - **Remove**
 
@@ -171,3 +173,78 @@ FR-20: Maybe Observer, Warehouse Worker, Warehouse Manager should be included si
 #### Remove an existing shape
 
 ![Remove a shape diagram](diagrams/remove-shape.svg)
+
+## Add a furniture
+
+- **Starting situation (Initial assumption)**
+
+  - The user is logged into the system and has permission to manage furniture.
+
+- **Preconditions**
+
+  - The user has navigated to the furniture management section.
+
+- **Add**
+
+  1. The user clicks the button to add new furniture.
+  2. The system shows an editor with a list of shapes to use to create new furniture.
+  3. The user uses the editor to create the shape of the furniture using the shapes
+  4. The user uses the editor to create "placeable" areas for the furniture by using the shapes
+  5. The user clicks the save button.
+  6. The systems prompts the user to choose a top-down view of the furniture.
+  7. The user selects the top-down view of the furniture.
+  8. The system shows a form to input additional data for the furniture.
+  9. The user inputs additional data for the new furniture (e.g., name, description).
+  10. The user clicks the confirm button.
+  11. The system validates the input data.
+  12. The system saves the new furniture.
+
+  - **What can go wrong**
+
+    - The user enters invalid data (e.g., missing required fields, incorrect format). An error message is shown.
+    - The system fails to save the furniture due to a server or network error. An error message is shown.
+
+- **System state on completion**
+
+  - The new furniture is saved and displayed in the furniture list, or an appropriate error message is shown if the action fails.
+
+### Diagram
+
+![Add a furniture diagram](diagrams/add-furniture.svg)
+
+## Add a floor
+
+- **Starting situation (Initial assumption)**
+
+  - The user is logged into the system and has permission to manage floors.
+
+- **Preconditions**
+
+  - The user has navigated to the floors management section.
+
+- **Add**
+
+  1. The user clicks the button to add a new floor.
+  2. The system shows an editor with a list of furnitures to use to create the floor.
+  3. The user clicks in the editor to add a corners of the floor
+  4. The user clicks two corners to create a wall of the floor.
+  5. The user adds furniture to the floor using the editor.
+  6. The user clicks the save button.
+  7. The system shows a form to input additional data for the floor.
+  8. The user inputs additional data for the new floor (e.g., name, description).
+  9. The user clicks the confirm button.
+  10. The system validates the input data.
+  11. The system saves the new floor.
+
+- **What can go wrong**
+
+  - The user enters invalid data (e.g., missing required fields, incorrect format). An error message is shown.
+  - The system fails to save the floor due to a server or network error. An error message is shown.
+
+- **System state on completion**
+
+  - The new floor is saved and displayed in the floors list, or an appropriate error message is shown if the action fails.
+
+### Diagram
+
+![Add a floor diagram](diagrams/add-floor.svg)
