@@ -256,3 +256,7 @@ FR-20: Maybe Observer, Warehouse Worker, Warehouse Manager should be included si
 ![Item Location Mockup](diagrams/item-location-mockup.svg)
 
 It should also be possible to click further into the furniture to see a more precise location of the item, such as a specific shelf or drawer within the furniture.
+
+## Furniture Editor Mockup
+
+![Furniture Editor Mockup](diagrams/furniture-editor-mockup.svg)
