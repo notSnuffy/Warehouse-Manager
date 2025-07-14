@@ -260,3 +260,9 @@ It should also be possible to click further into the furniture to see a more pre
 ## Furniture Editor Mockup
 
 ![Furniture Editor Mockup](diagrams/furniture-editor-mockup.svg)
+
+## Item List Mockup
+
+![Item List Mockup](diagrams/item-list-mockup.svg)
+
+Note: Include the location column in the actions as "Track Location"?
