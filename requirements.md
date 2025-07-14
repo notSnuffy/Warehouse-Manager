@@ -248,3 +248,21 @@ FR-20: Maybe Observer, Warehouse Worker, Warehouse Manager should be included si
 ### Diagram
 
 ![Add a floor diagram](diagrams/add-floor.svg)
+
+# Mockups
+
+## Item Location Mockup
+
+![Item Location Mockup](diagrams/item-location-mockup.svg)
+
+It should also be possible to click further into the furniture to see a more precise location of the item, such as a specific shelf or drawer within the furniture.
+
+## Furniture Editor Mockup
+
+![Furniture Editor Mockup](diagrams/furniture-editor-mockup.svg)
+
+## Item List Mockup
+
+![Item List Mockup](diagrams/item-list-mockup.svg)
+
+Note: Include the location column in the actions as "Track Location"?
