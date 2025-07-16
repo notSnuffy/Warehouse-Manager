@@ -58,11 +58,18 @@ FR-20: Maybe Observer, Warehouse Worker, Warehouse Manager should be included si
 
 # Use Cases
 
-## View the inventory list
+## Fr-10: View the inventory list
+
+- **Relevant user roles**
+
+  - Administrator
+  - Warehouse Worker
+  - Warehouse Manager
+  - Observer
 
 - **Starting situation (Initial assumption)**
 
-  - The user is logged into the system and has permission to view the inventory.
+  - Logged in user is either an Administrator, Warehouse Worker, Warehouse Manager, or Observer.
 
 - **Normal**
 
@@ -80,11 +87,18 @@ FR-20: Maybe Observer, Warehouse Worker, Warehouse Manager should be included si
 
 ![View inventory list diagram](diagrams/view-inventory-list.svg)
 
-## Track the location of a specific item
+## FR-12: Track the location of a specific item
+
+- **Relevant user roles**
+
+  - Administrator
+  - Warehouse Worker
+  - Warehouse Manager
+  - Observer
 
 - **Starting situation (Initial assumption)**
 
-  - The user is logged into the system and has permission to view the inventory.
+  - Logged in user is either an Administrator, Warehouse Worker, Warehouse Manager, or Observer.
 
 - **Preconditions**
 
@@ -109,11 +123,17 @@ FR-20: Maybe Observer, Warehouse Worker, Warehouse Manager should be included si
 
 ![Track item location diagram](diagrams/track-item-location.svg)
 
-## Add, edit, or remove a shape
+## FR-16: Add, edit, or remove a shape
+
+- **Relevant user roles**
+
+  - Administrator
+  - Furniture Editor
+  - Editor Manager
 
 - **Starting situation (Initial assumption)**
 
-  - The user is logged into the system and has permission to manage shapes.
+  - Logged in user is either an Administrator, Furniture Editor, or Editor Manager.
 
 - **Preconditions**
 
@@ -174,17 +194,23 @@ FR-20: Maybe Observer, Warehouse Worker, Warehouse Manager should be included si
 
 ![Remove a shape diagram](diagrams/remove-shape.svg)
 
-## Add a furniture
+## FR-17: Add a furniture
+
+- **Relevant user roles**
+
+  - Administrator
+  - Furniture Editor
+  - Editor Manager
 
 - **Starting situation (Initial assumption)**
 
-  - The user is logged into the system and has permission to manage furniture.
+  - Logged in user is either an Administrator, Furniture Editor, or Editor Manager.
 
 - **Preconditions**
 
   - The user has navigated to the furniture management section.
 
-- **Add**
+- **Normal**
 
   1. The user clicks the button to add new furniture.
   2. The system shows an editor with a list of shapes to use to create new furniture.
@@ -199,10 +225,10 @@ FR-20: Maybe Observer, Warehouse Worker, Warehouse Manager should be included si
   11. The system validates the input data.
   12. The system saves the new furniture.
 
-  - **What can go wrong**
+- **What can go wrong**
 
-    - The user enters invalid data (e.g., missing required fields, incorrect format). An error message is shown.
-    - The system fails to save the furniture due to a server or network error. An error message is shown.
+  - The user enters invalid data (e.g., missing required fields, incorrect format). An error message is shown.
+  - The system fails to save the furniture due to a server or network error. An error message is shown.
 
 - **System state on completion**
 
@@ -212,17 +238,23 @@ FR-20: Maybe Observer, Warehouse Worker, Warehouse Manager should be included si
 
 ![Add a furniture diagram](diagrams/add-furniture.svg)
 
-## Add a floor
+## FR-18: Add a floor
+
+- **Relevant user roles**
+
+  - Administrator
+  - Floor Editor
+  - Editor Manager
 
 - **Starting situation (Initial assumption)**
 
-  - The user is logged into the system and has permission to manage floors.
+  - Logged in user is either an Administrator, Floor Editor, or Editor Manager.
 
 - **Preconditions**
 
   - The user has navigated to the floors management section.
 
-- **Add**
+- **Normal**
 
   1. The user clicks the button to add a new floor.
   2. The system shows an editor with a list of furnitures to use to create the floor.
