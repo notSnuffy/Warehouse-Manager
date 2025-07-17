@@ -85,6 +85,8 @@ FR-20: Maybe Observer, Warehouse Worker, Warehouse Manager should be included si
 
 ### Diagram
 
+Shown from the perspective of the Warehouse Worker, but it is the same for all other relevant user roles.
+
 ![View inventory list diagram](diagrams/view-inventory-list.svg)
 
 ## FR-12: Track the location of a specific item
@@ -120,6 +122,8 @@ FR-20: Maybe Observer, Warehouse Worker, Warehouse Manager should be included si
   - The user sees the screen with the item's location, or an appropriate message if the item location cannot be retrieved.
 
 ### Diagram
+
+Shown from the perspective of the Warehouse Worker, but it is the same for all other relevant user roles.
 
 ![Track item location diagram](diagrams/track-item-location.svg)
 
@@ -182,6 +186,8 @@ FR-20: Maybe Observer, Warehouse Worker, Warehouse Manager should be included si
 
 ### Diagram
 
+Shown from the perspective of the Furniture Editor, but it is the same for all other relevant user roles.
+
 #### Add a new shape
 
 ![Add a shape diagram](diagrams/add-shape.svg)
@@ -236,6 +242,8 @@ FR-20: Maybe Observer, Warehouse Worker, Warehouse Manager should be included si
 
 ### Diagram
 
+Shown from the perspective of the Furniture Editor, but it is the same for all other relevant user roles.
+
 ![Add a furniture diagram](diagrams/add-furniture.svg)
 
 ## FR-18: Add a floor
@@ -279,6 +287,8 @@ FR-20: Maybe Observer, Warehouse Worker, Warehouse Manager should be included si
 
 ### Diagram
 
+Shown from the perspective of the Floor Editor, but it is the same for all other relevant user roles.
+
 ![Add a floor diagram](diagrams/add-floor.svg)
 
 # Mockups
@@ -287,14 +297,67 @@ FR-20: Maybe Observer, Warehouse Worker, Warehouse Manager should be included si
 
 ![Item Location Mockup](diagrams/item-location-mockup.svg)
 
-It should also be possible to click further into the furniture to see a more precise location of the item, such as a specific shelf or drawer within the furniture.
+This mockup shows how the item location tracking screen might look.
+
+First, there is a header as is typical in most websites. In the top left corner of the header, there is a logo of the application
+that can be clicked to return to the main page. Next to the logo, there is a navigation bar. In the mockup, there is currently
+only one button "Items", which leads to the inventory list. Depending on the user role, there can be more buttons in the navigation bar.
+As an alternative to the navigation bar if there would be many buttons, there can be a dropdown menu with the buttons. In the top center,
+there is a title with the name of the item being tracked. It should prevent the user from being confused if he has multiple tabs
+open to track multiple items at once. Then, as is typical in most applications, we get a button in the top right corner, which
+opens a menu with the user profile settings and logout button.
+
+Below the header, there is a section with the item location. It shows the floor where the item is located and highlights in color the specific
+furniture where the item the user is tracking resides. The floor is shown as was designed in the floor editor, with walls and furniture placed on it.
+The highlighted furniture should be clickable, so the user can see even more precise location of the item, such as a specific drawer or shelf.
 
 ## Furniture Editor Mockup
 
 ![Furniture Editor Mockup](diagrams/furniture-editor-mockup.svg)
 
+This mockup shows how the furniture editor might look.
+
+As usual in most web applications, there is a header. The header contains a logo in the top left corner, which can be clicked to return to the main page.
+Beside the logo, there is a navigation bar with buttons to navigate to the shapes and furniture lists. The navigation bar can contain more buttons depending on the user role.
+The navigation bar can also be replaced with a dropdown menu if there are too many buttons. Some editors have an input field where the user can easily change the name
+of the edited item. Usually, the input field is somewhere in the top left corner of the editor but because we do not want to have the left side of the screen too cluttered,
+the input field is placed in the top center of the header. In the top right corner, we have a button that opens a menu with the user profile settings and logout button as
+is typical in most applications.
+
+Below the header, there is a section for the editor tools. This location is a wide-spread convention in most editors, so users are used to it. Currently, the tools are
+buttons but they could also become a dropdown menu to gather more tools of the same type together. Instead of text, the buttons can also have icons to make the editor look more modern.
+The "Placeable zone" is shown as a checkbox, so the user can easily toggle it on and off. As an alternative, it can be changed to a toggle switch, which is more modern and intuitive.
+
+Under the tools section, in the left side of the editor, there is a list of shapes that can be used to create the furniture. The reason is that some editors put the shapes in the tools
+section directly, but that makes the tools section very cluttered and even if it is put into its own section in the toolbox, the user has to click through the toolbox to look for what
+he is looking for. The shapes list is made to be scrollable, so the user can easily find the shape he is looking for but search box can be added to the top of the list to make it even easier
+to find the shape. The list is seperated into 3 sections: "Default", "Custom", and "Public". The "Default" shapes are the shapes that are provided directly by the system.The "Custom" shapes
+are the shapes created by the user or by other users of our organization. The "Public" shapes are the shapes that are shared by other organizations and can be used by the user to create furniture.
+These sections can be opened and closed by clicking on the section title, so the user can easily hide the sections he does not need at the moment. For simplicity, the shapes list is shown as a list
+of buttons with the shape name, but it might be better to use a grid layout with icons representing the shapes, so the user can easily recognize the shape he is looking for.
+
+The rest of the editor is the main area where the user can create the furniture. In the mockup, there is a simple shelf shown. We can see that the construction of the furniture is shown with
+white lines, so the user can easily see how the furniture is constructed. In orange lines, the placeable zones are shown, so the user can easily see where the items can be placed on the furniture.
+The placeable zones are later used to place the items in the furniture.
+
 ## Item List Mockup
 
 ![Item List Mockup](diagrams/item-list-mockup.svg)
 
-Note: Include the location column in the actions as "Track Location"?
+This mockup shows how the item list might look.
+
+As with the previous mockups, there is a header with a logo in the top left corner, a navigation bar with buttons to navigate and a button in the top right corner to open a menu with user
+profile settings and logout button.
+
+Below the header, we have a section to control the item list. Firstly, in the top left corner, we have a title of the section, which is "Items" in this case. The reason is that the user
+can have multiple tabs and if the user has permission to also view the other lists, he can easily distinguish which tab is which. Next to the title, there is a search bar, which allows
+to quickly search for a specific item in the list. These two elements are on the left side of the section. To make the section look better, the other elements are on the right side of the section.
+From the right side, the first element is a button to add a new item. This button might be disabled if the user does not have permission to add items. Next to the button, there is a button
+that opens a way to filter the items according to certain criteria. Lastly, there is a small dropdown menu to change the number of items shown on the page.
+
+Below the control section, there is a list of items. The items are shown in a table with columns for the item name, ID, category, quantity, description, location, and actions. The header of the table
+with the column names is fixed, so the user can easily see the column names even when scrolling through the list. Additionally, the column names might be clicked to sort according to that column names.
+The items are shown in rows, with each row representing an item. The location column contains a button that opens the item location tracking screen when clicked. The actions column contains buttons to
+edit and remove the item. In the bottom of the list, there is a pagination section to navigate through the pages of items.
+
+This way of displaying the items is very common in web applications, so users are used to it. It allows the user to easily find the item he is looking for and perform actions on it.
