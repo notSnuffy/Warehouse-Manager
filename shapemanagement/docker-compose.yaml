@@ -6,5 +6,65 @@ services:
     container_name: shape-management
     environment:
       EUREKA_URL: "service-discovery:8761"
+      POSTGRE_URL: "postgresql://postgres:postgres@shape-database:5432/shape-management"
     depends_on:
       - service-discovery
+    networks:
+      - default
+      - shape-network
+  shape-database:
+    image: postgres:17
+    container_name: shape-database
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: shape-management
+    restart: unless-stopped
+    networks:
+      - shape-network
+    volumes:
+      - shape-db-data:/var/lib/postgresql/data
+      - ./seed.sql:/docker-entrypoint-initdb.d/seed.sql
+
+  shape-pg-admin:
+    image: dpage/pgadmin4:9
+    container_name: shape-pg-admin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
+    ports:
+      - "5050:80"
+    depends_on:
+      - shape-database
+    networks:
+      - shape-network
+    restart: unless-stopped
+    configs:
+      - source: servers.json
+        target: /pgadmin4/servers.json
+
+networks:
+  shape-network:
+    driver: bridge
+
+volumes:
+  shape-db-data:
+
+configs:
+  servers.json:
+    content: |
+      {
+        "Servers": {
+          "1": {
+            "Name": "Shape Database",
+            "Group": "Servers",
+            "Host": "shape-database",
+            "Port": 5432,
+            "Username": "postgres",
+            "SSLMode": "prefer",
+            "MaintenanceDB": "postgres"
+          }
+        }
+      }
