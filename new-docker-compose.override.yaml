@@ -8,3 +8,8 @@ services:
   furniture-management:
     volumes:
       - ./furnituremanagement/src:/app/src
+  gateway:
+    ports:
+      - "8084:8080"
+    volumes:
+      - ./gateway/src:/app/src

@@ -18,7 +18,7 @@ public class FurnitureManagementController {
     this.restClient = restClientBuilder.build();
   }
 
-  @GetMapping("/Eureka")
+  @GetMapping("/furniture")
   public String getFurniture() {
     ServiceInstance serviceInstance = discoveryClient.getInstances("shape-management").get(0);
     String url = serviceInstance.getUri() + "/shapes";

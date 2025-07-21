@@ -1,9 +1,9 @@
 services:
-  shape-management:
+  gateway:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: shape-management
+    container_name: gateway
     environment:
       EUREKA_URL: "service-discovery:8761"
     depends_on:

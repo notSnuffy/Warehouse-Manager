@@ -2,3 +2,4 @@ include:
   - servicediscovery/docker-compose.yaml
   - shapemanagement/docker-compose.yaml
   - furnituremanagement/docker-compose.yaml
+  - gateway/docker-compose.yaml
