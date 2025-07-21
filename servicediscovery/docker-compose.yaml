@@ -1,0 +1,6 @@
+services:
+  service-discovery:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: service-discovery

@@ -1,0 +1,12 @@
+services:
+  shape-management:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: shape-management
+    ports:
+      - "8083:8080"
+    environment:
+      EUREKA_URL: "service-discovery:8761"
+    depends_on:
+      - service-discovery

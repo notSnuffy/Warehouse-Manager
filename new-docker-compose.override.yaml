@@ -1,0 +1,10 @@
+services:
+  service-discovery:
+    ports:
+      - "8761:8761"
+  shape-management:
+    volumes:
+      - ./shapemanagement/src:/app/src
+  furniture-management:
+    volumes:
+      - ./furnituremanagement/src:/app/src

@@ -1,0 +1,12 @@
+services:
+  furniture-management:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: furniture-management
+    ports:
+      - "8084:8080"
+    environment:
+      EUREKA_URL: "service-discovery:8761"
+    depends_on:
+      - service-discovery
