@@ -4,9 +4,9 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class FurnituremanagementApplication {
+public class FurnitureManagementApplication {
 
   public static void main(String[] args) {
-    SpringApplication.run(FurnituremanagementApplication.class, args);
+    SpringApplication.run(FurnitureManagementApplication.class, args);
   }
 }

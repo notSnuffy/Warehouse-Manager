@@ -4,9 +4,9 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class ShapemanagementApplication {
+public class ShapeManagementApplication {
 
   public static void main(String[] args) {
-    SpringApplication.run(ShapemanagementApplication.class, args);
+    SpringApplication.run(ShapeManagementApplication.class, args);
   }
 }
