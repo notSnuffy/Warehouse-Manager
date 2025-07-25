@@ -1,0 +1,26 @@
+services:
+  service-discovery:
+    ports:
+      - "8761:8761"
+  shape-management:
+    volumes:
+      - ./services/shapemanagement/src:/app/src
+  furniture-management:
+    volumes:
+      - ./services/furnituremanagement/src:/app/src
+  gateway:
+    ports:
+      - "8084:8080"
+    volumes:
+      - ./services/gateway/src:/app/src
+  gui:
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./services/gui:/app
+      - /app/node_modules
+  gui-docs:
+    ports:
+      - "8008:80"
+    volumes:
+      - /usr/share/nginx/html

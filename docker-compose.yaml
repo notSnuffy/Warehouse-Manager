@@ -1,51 +1,6 @@
-services:
-  api:
-    build: ./API
-    ports:
-      - 8082:8080
-    volumes:
-      - ./API/src:/var/www/html/src
-      - /var/www/html/vendor
-  gui:
-    build: ./gui
-    ports:
-      - 3000:3000
-    volumes:
-      - ./gui:/app
-      - /app/node_modules
-  mongodb:
-    image: mongo
-    ports:
-      - 27017:27017
-    environment:
-      - MONGO_INITDB_ROOT_USERNAME=root
-      - MONGO_INITDB_ROOT_PASSWORD=password
-      - MONGO_INITDB_DATABASE=admin
-    volumes:
-      - mongo-data:/data/db
-      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js
-  mongo-express:
-    image: mongo-express
-    ports:
-      - 8081:8081
-    environment:
-      - ME_CONFIG_MONGODB_ADMINUSERNAME=root
-      - ME_CONFIG_MONGODB_ADMINPASSWORD=password
-      - ME_CONFIG_MONGODB_SERVER=mongodb
-      - ME_CONFIG_BASICAUTH=true
-      - ME_CONFIG_BASICAUTH_USERNAME=admin
-      - ME_CONFIG_BASICAUTH_PASSWORD=password
-    restart: always
-    depends_on:
-      - mongodb
-  docs:
-    build:
-      context: ./gui
-      dockerfile: Dockerfile-docs
-    ports:
-      - 8008:80
-    volumes:
-      - /usr/share/nginx/html
-volumes:
-  mongo-data:
-    driver: local
+include:
+  - services/servicediscovery/docker-compose.yaml
+  - services/shapemanagement/docker-compose.yaml
+  - services/furnituremanagement/docker-compose.yaml
+  - services/gateway/docker-compose.yaml
+  - services/gui/docker-compose.yaml
