@@ -80,7 +80,7 @@ class SelectShapeManager extends Manager {
         this.hide();
 
         this.#lastSelectedColor = shape.fillColor;
-        shape.setFillStyle(0xffffff);
+        //shape.setFillStyle(0xffffff);
         this.#lastSelected = shape;
 
         this.scene.children.bringToTop(shape);
@@ -115,7 +115,7 @@ class SelectShapeManager extends Manager {
     }
 
     if (this.#lastSelected) {
-      this.#lastSelected.setFillStyle(this.#lastSelectedColor);
+      //this.#lastSelected.setFillStyle(this.#lastSelectedColor);
       this.#lastSelected = null;
       this.#lastSelectedColor = null;
     }
