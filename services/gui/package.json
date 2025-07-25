@@ -6,7 +6,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "prepare": "cd .. && husky gui/.husky",
+    "prepare": "cd ../.. && husky services/gui/.husky",
     "format": "prettier --write .",
     "lint": "eslint --fix src/",
     "docs": "jsdoc -c jsdoc.json -p"

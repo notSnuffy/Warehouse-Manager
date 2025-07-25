@@ -1,2 +1,2 @@
-cd gui
+cd services/gui
 npx lint-staged --concurrent false
