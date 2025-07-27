@@ -10,9 +10,12 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import java.util.ArrayList;
+import java.util.List;
 
 /** Represents a shape in the warehouse management system. */
 @Entity
@@ -42,6 +45,14 @@ public class Shape {
   @OneToOne(cascade = CascadeType.ALL, optional = false)
   @JoinColumn(name = "properties_id", nullable = false)
   private Properties properties;
+
+  /** List of components that are part of this shape, if it is a container type. */
+  @OneToMany(mappedBy = "container", cascade = CascadeType.ALL, orphanRemoval = true)
+  private List<ShapeComponent> components = new ArrayList<>();
+
+  /** List of containers that this shape is part of, if it is a component type. */
+  @OneToMany(mappedBy = "component", cascade = CascadeType.ALL, orphanRemoval = true)
+  private List<ShapeComponent> containers = new ArrayList<>();
 
   /** Default constructor for JPA. */
   protected Shape() {}
