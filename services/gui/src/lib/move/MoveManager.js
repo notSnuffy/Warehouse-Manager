@@ -16,6 +16,20 @@ class MoveManager extends Manager {
    */
   constructor(scene) {
     super(scene);
+
+    this.moveWorker = new Worker(
+      new URL("../../workers/dragWorker.js", import.meta.url),
+    );
+
+    this.pending = null;
+
+    this.moveWorker.onmessage = (event) => {
+      const { withinBounds } = event.data;
+      if (this.pending && withinBounds) {
+        this.pending.shape.setPosition(this.pending.dragX, this.pending.dragY);
+        this.pending = null;
+      }
+    };
   }
 
   /**
@@ -46,44 +60,17 @@ class MoveManager extends Manager {
       if (this.scene.activeTool === "move") {
         const points = Object.values(getShapePoints(shape));
 
-        const minX = points.reduce(
-          (acc, point) => Math.min(acc, point.x),
-          points[0].x,
-        );
-        const maxX = points.reduce(
-          (acc, point) => Math.max(acc, point.x),
-          points[0].x,
-        );
-        const minY = points.reduce(
-          (acc, point) => Math.min(acc, point.y),
-          points[0].y,
-        );
-        const maxY = points.reduce(
-          (acc, point) => Math.max(acc, point.y),
-          points[0].y,
-        );
+        this.moveWorker.postMessage({
+          points,
+          dragX,
+          dragY,
+          sceneWidth: this.scene.cameras.main.width,
+          sceneHeight: this.scene.cameras.main.height,
+          shapeX: shape.x,
+          shapeY: shape.y,
+        });
 
-        const topHeightFromCenter = shape.y - minY;
-        const bottomHeightFromCenter = maxY - shape.y;
-        const leftWidthFromCenter = shape.x - minX;
-        const rightWidthFromCenter = maxX - shape.x;
-
-        const leftSideWithinBounds = dragX >= leftWidthFromCenter;
-        const rightSideWithinBounds =
-          dragX + rightWidthFromCenter <= this.scene.cameras.main.width;
-        const topSideWithinBounds = dragY >= topHeightFromCenter;
-        const bottomSideWithinBounds =
-          dragY + bottomHeightFromCenter <= this.scene.cameras.main.height;
-
-        const withinBounds =
-          leftSideWithinBounds &&
-          rightSideWithinBounds &&
-          topSideWithinBounds &&
-          bottomSideWithinBounds;
-
-        if (withinBounds) {
-          shape.setPosition(dragX, dragY);
-        }
+        this.pending = { shape, dragX, dragY };
       }
     });
   }
