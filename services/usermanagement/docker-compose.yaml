@@ -1,37 +1,37 @@
 services:
-  furniture-management:
+  user-management:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: furniture-management
+    container_name: user-management
     environment:
       EUREKA_URL: "service-discovery:8761"
       DB_TYPE: "postgresql"
-      DB_HOST: "furniture-database"
+      DB_HOST: "user-database"
       DB_PORT: "5432"
-      DB_NAME: "furniture-management"
+      DB_NAME: "user-management"
       DB_USER: "postgres"
       DB_PASSWORD: "postgres"
     depends_on:
       - service-discovery
     networks:
       - default
-      - furniture-network
-  furniture-database:
+      - user-network
+  user-database:
     image: postgres:17
-    container_name: furniture-database
+    container_name: user-database
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: furniture-management
+      POSTGRES_DB: user-management
     restart: always
     networks:
-      - furniture-network
+      - user-network
     volumes:
-      - furniture-db-data:/var/lib/postgresql/data
+      - user-db-data:/var/lib/postgresql/data
 networks:
-  furniture-network:
+  user-network:
     driver: bridge
 
 volumes:
-  furniture-db-data:
+  user-db-data:

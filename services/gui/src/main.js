@@ -51,6 +51,8 @@ import * as _bootstrap from "bootstrap";
  * @description This module provides functions for lines
  */
 
+console.log("URL:", window.location.href);
+
 const window_size = {
   width: "100%",
   height: "100%",

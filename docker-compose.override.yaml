@@ -8,11 +8,22 @@ services:
   furniture-management:
     volumes:
       - ./services/furnituremanagement/src:/app/src
+  floor-management:
+    volumes:
+      - ./services/floormanagement/src:/app/src
+  item-management:
+    volumes:
+      - ./services/itemmanagement/src:/app/src
+  user-management:
+    volumes:
+      - ./services/usermanagement/src:/app/src
   gateway:
     ports:
       - "8084:8080"
     volumes:
       - ./services/gateway/src:/app/src
+    environment:
+      USER_INTERFACE_URL: "http://gui:3000"
   gui:
     ports:
       - "3000:3000"
@@ -24,3 +35,34 @@ services:
       - "8008:80"
     volumes:
       - /usr/share/nginx/html
+
+  pg-admin:
+    image: dpage/pgadmin4:9
+    container_name: pg-admin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
+    ports:
+      - "5051:80"
+    depends_on:
+      - shape-database
+      - furniture-database
+      - floor-database
+      - item-database
+      - user-database
+    networks:
+      - shape-network
+      - furniture-network
+      - floor-network
+      - item-network
+      - user-network
+    restart: always
+    configs:
+      - source: servers
+        target: /pgadmin4/servers.json
+
+configs:
+  servers:
+    file: ./pgadmin-servers.json
