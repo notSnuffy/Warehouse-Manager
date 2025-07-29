@@ -1,0 +1,49 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "Shape Database",
+      "Group": "Servers",
+      "Host": "shape-database",
+      "Port": 5432,
+      "Username": "postgres",
+      "SSLMode": "prefer",
+      "MaintenanceDB": "postgres"
+    },
+    "2": {
+      "Name": "Furniture Database",
+      "Group": "Servers",
+      "Host": "furniture-database",
+      "Port": 5432,
+      "Username": "postgres",
+      "SSLMode": "prefer",
+      "MaintenanceDB": "postgres"
+    },
+    "3": {
+      "Name": "Floor Database",
+      "Group": "Servers",
+      "Host": "floor-database",
+      "Port": 5432,
+      "Username": "postgres",
+      "SSLMode": "prefer",
+      "MaintenanceDB": "postgres"
+    },
+    "4": {
+      "Name": "Item Database",
+      "Group": "Servers",
+      "Host": "item-database",
+      "Port": 5432,
+      "Username": "postgres",
+      "SSLMode": "prefer",
+      "MaintenanceDB": "postgres"
+    },
+    "5": {
+      "Name": "User Database",
+      "Group": "Servers",
+      "Host": "user-database",
+      "Port": 5432,
+      "Username": "postgres",
+      "SSLMode": "prefer",
+      "MaintenanceDB": "postgres"
+    }
+  }
+}

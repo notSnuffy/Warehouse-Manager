@@ -6,5 +6,32 @@ services:
     container_name: furniture-management
     environment:
       EUREKA_URL: "service-discovery:8761"
+      DB_TYPE: "postgresql"
+      DB_HOST: "furniture-database"
+      DB_PORT: "5432"
+      DB_NAME: "furniture-management"
+      DB_USER: "postgres"
+      DB_PASSWORD: "postgres"
     depends_on:
       - service-discovery
+    networks:
+      - default
+      - furniture-network
+  furniture-database:
+    image: postgres:17
+    container_name: furniture-database
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: furniture-management
+    restart: always
+    networks:
+      - furniture-network
+    volumes:
+      - furniture-db-data:/var/lib/postgresql/data
+networks:
+  furniture-network:
+    driver: bridge
+
+volumes:
+  furniture-db-data:

@@ -61,7 +61,7 @@ class ShapeEditor extends Phaser.Scene {
    * @constructor
    */
   constructor() {
-    super("Game");
+    super("ShapeEditor");
   }
 
   /**
@@ -148,13 +148,7 @@ class ShapeEditor extends Phaser.Scene {
     const saveShape = function () {
       for (let i = 0; i < this.#shapes.length; i++) {
         const shape = this.#shapes[i];
-        console.log(
-          shape.x,
-          shape.y,
-          shape.width,
-          shape.height,
-          shape.fillColor.toString(16),
-        );
+        console.log(shape.x, shape.y, shape.width, shape.height);
       }
     }.bind(this);
 
@@ -172,20 +166,121 @@ class ShapeEditor extends Phaser.Scene {
 
     this.cameras.main.setBackgroundColor(0x000000);
 
-    this.#shapes.push(this.add.rectangle(100, 300, 100, 100, 0xff0000));
-    this.#shapes.push(this.add.rectangle(300, 300, 100, 300, 0xff0000));
-    this.#shapes.push(this.add.ellipse(600, 500, 50, 100, 0xff0000));
-    this.#shapes.push(this.add.arc(700, 700, 50, 0, 180, false, 0xff0000));
-    this.#shapes.push(
-      this.add.polygon(
-        400,
-        400,
-        "40 0 40 20 100 20 100 80 40 80 40 100 0 50",
-        0xff0000,
-      ),
-    );
+    const container = this.add.container(300, 300);
+    this.#shapes.push(container);
 
-    this.#shapes[1].setRotation(0);
+    container.add([
+      this.add.rectangle(-150, -150, 100, 100, 0xff0000).setOrigin(0, 0),
+      this.add.rectangle(-50, -50, 200, 200, 0xff0000).setOrigin(0, 0),
+      this.add.ellipse(50, -150, 100, 100, 0x00ff00).setOrigin(0, 0),
+    ]);
+    const rect = container.getBounds();
+    container.setSize(rect.width, rect.height);
+
+    container.getTopLeft = function () {
+      const globalX = this.x;
+      const globalY = this.y;
+      const localX = -(this.displayWidth / 2);
+      const localY = -(this.displayHeight / 2);
+      const rotatedLocalX =
+        localX * Math.cos(this.rotation) - localY * Math.sin(this.rotation);
+      const rotatedLocalY =
+        localX * Math.sin(this.rotation) + localY * Math.cos(this.rotation);
+      const containerX = globalX + rotatedLocalX;
+      const containerY = globalY + rotatedLocalY;
+      return { x: containerX, y: containerY };
+    };
+    container.getTopRight = function () {
+      const globalX = this.x;
+      const globalY = this.y;
+      const localX = this.displayWidth / 2;
+      const localY = -(this.displayHeight / 2);
+      const rotatedLocalX =
+        localX * Math.cos(this.rotation) - localY * Math.sin(this.rotation);
+      const rotatedLocalY =
+        localX * Math.sin(this.rotation) + localY * Math.cos(this.rotation);
+      const containerX = globalX + rotatedLocalX;
+      const containerY = globalY + rotatedLocalY;
+      return { x: containerX, y: containerY };
+    };
+    container.getBottomLeft = function () {
+      const globalX = this.x;
+      const globalY = this.y;
+      const localX = -(this.displayWidth / 2);
+      const localY = this.displayHeight / 2;
+      const rotatedLocalX =
+        localX * Math.cos(this.rotation) - localY * Math.sin(this.rotation);
+      const rotatedLocalY =
+        localX * Math.sin(this.rotation) + localY * Math.cos(this.rotation);
+      const containerX = globalX + rotatedLocalX;
+      const containerY = globalY + rotatedLocalY;
+      return { x: containerX, y: containerY };
+    };
+    container.getBottomRight = function () {
+      const globalX = this.x;
+      const globalY = this.y;
+      const localX = this.displayWidth / 2;
+      const localY = this.displayHeight / 2;
+      const rotatedLocalX =
+        localX * Math.cos(this.rotation) - localY * Math.sin(this.rotation);
+      const rotatedLocalY =
+        localX * Math.sin(this.rotation) + localY * Math.cos(this.rotation);
+      const containerX = globalX + rotatedLocalX;
+      const containerY = globalY + rotatedLocalY;
+      return { x: containerX, y: containerY };
+    };
+    container.getLeftCenter = function () {
+      const globalX = this.x;
+      const globalY = this.y;
+      const localX = -(this.displayWidth / 2);
+      const localY = 0;
+      const rotatedLocalX =
+        localX * Math.cos(this.rotation) - localY * Math.sin(this.rotation);
+      const rotatedLocalY =
+        localX * Math.sin(this.rotation) + localY * Math.cos(this.rotation);
+      const containerX = globalX + rotatedLocalX;
+      const containerY = globalY + rotatedLocalY;
+      return { x: containerX, y: containerY };
+    };
+    container.getRightCenter = function () {
+      const globalX = this.x;
+      const globalY = this.y;
+      const localX = this.displayWidth / 2;
+      const localY = 0;
+      const rotatedLocalX =
+        localX * Math.cos(this.rotation) - localY * Math.sin(this.rotation);
+      const rotatedLocalY =
+        localX * Math.sin(this.rotation) + localY * Math.cos(this.rotation);
+      const containerX = globalX + rotatedLocalX;
+      const containerY = globalY + rotatedLocalY;
+      return { x: containerX, y: containerY };
+    };
+    container.getTopCenter = function () {
+      const globalX = this.x;
+      const globalY = this.y;
+      const localX = 0;
+      const localY = -(this.displayHeight / 2);
+      const rotatedLocalX =
+        localX * Math.cos(this.rotation) - localY * Math.sin(this.rotation);
+      const rotatedLocalY =
+        localX * Math.sin(this.rotation) + localY * Math.cos(this.rotation);
+      const containerX = globalX + rotatedLocalX;
+      const containerY = globalY + rotatedLocalY;
+      return { x: containerX, y: containerY };
+    };
+    container.getBottomCenter = function () {
+      const globalX = this.x;
+      const globalY = this.y;
+      const localX = 0;
+      const localY = this.displayHeight / 2;
+      const rotatedLocalX =
+        localX * Math.cos(this.rotation) - localY * Math.sin(this.rotation);
+      const rotatedLocalY =
+        localX * Math.sin(this.rotation) + localY * Math.cos(this.rotation);
+      const containerX = globalX + rotatedLocalX;
+      const containerY = globalY + rotatedLocalY;
+      return { x: containerX, y: containerY };
+    };
 
     for (let i = 0; i < this.#shapes.length; i++) {
       let shape = this.#shapes[i];

@@ -1,6 +1,5 @@
 import { Boot } from "./scenes/Boot";
 import { Preloader } from "./scenes/Preloader";
-import { MainMenu } from "./scenes/MainMenu";
 import { ShapeEditor } from "./scenes/ShapeEditor";
 import Phaser from "phaser";
 import "./styles.scss";
@@ -52,6 +51,8 @@ import * as _bootstrap from "bootstrap";
  * @description This module provides functions for lines
  */
 
+console.log("URL:", window.location.href);
+
 const window_size = {
   width: "100%",
   height: "100%",
@@ -67,7 +68,7 @@ const config = {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
   },
-  scene: [Boot, Preloader, MainMenu, ShapeEditor],
+  scene: [Boot, Preloader, ShapeEditor],
 };
 
 export default new Phaser.Game(config);

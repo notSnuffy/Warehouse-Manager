@@ -4,3 +4,6 @@ include:
   - services/furnituremanagement/docker-compose.yaml
   - services/gateway/docker-compose.yaml
   - services/gui/docker-compose.yaml
+  - services/floormanagement/docker-compose.yaml
+  - services/itemmanagement/docker-compose.yaml
+  - services/usermanagement/docker-compose.yaml

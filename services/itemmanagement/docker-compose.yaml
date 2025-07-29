@@ -1,0 +1,37 @@
+services:
+  item-management:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: item-management
+    environment:
+      EUREKA_URL: "service-discovery:8761"
+      DB_TYPE: "postgresql"
+      DB_HOST: "item-database"
+      DB_PORT: "5432"
+      DB_NAME: "item-management"
+      DB_USER: "postgres"
+      DB_PASSWORD: "postgres"
+    depends_on:
+      - service-discovery
+    networks:
+      - default
+      - item-network
+  item-database:
+    image: postgres:17
+    container_name: item-database
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: item-management
+    restart: always
+    networks:
+      - item-network
+    volumes:
+      - item-db-data:/var/lib/postgresql/data
+networks:
+  item-network:
+    driver: bridge
+
+volumes:
+  item-db-data:

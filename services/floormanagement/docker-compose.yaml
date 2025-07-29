@@ -1,0 +1,37 @@
+services:
+  floor-management:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: floor-management
+    environment:
+      EUREKA_URL: "service-discovery:8761"
+      DB_TYPE: "postgresql"
+      DB_HOST: "floor-database"
+      DB_PORT: "5432"
+      DB_NAME: "floor-management"
+      DB_USER: "postgres"
+      DB_PASSWORD: "postgres"
+    depends_on:
+      - service-discovery
+    networks:
+      - default
+      - floor-network
+  floor-database:
+    image: postgres:17
+    container_name: floor-database
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: floor-management
+    restart: always
+    networks:
+      - floor-network
+    volumes:
+      - floor-db-data:/var/lib/postgresql/data
+networks:
+  floor-network:
+    driver: bridge
+
+volumes:
+  floor-db-data:
