@@ -1,6 +1,5 @@
 package com.warehousemanager.shapemanagement;
 
-import com.warehousemanager.shapemanagement.entities.Properties;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,32 +14,47 @@ public class ShapeDataTransferObject {
   /** If the shape should be included in the public shape library. */
   private boolean isPublic = false;
 
-  /** Properties associated with the shape, such as position and dimensions. */
-  private Properties properties;
-
   /** Class representing a component of a shape. */
   public static class ComponentDataTransferObject {
     /** Identifier for which shape this represets. */
     private Long shapeId;
 
-    /** Identifier for the container the shape is in. */
-    private Long containerId;
+    /** X position of the shape in the warehouse. */
+    private int positionX;
 
-    /** Properties that override the default properties of the shape. */
-    private Properties propertiesOverride;
+    /** Y position of the shape in the warehouse. */
+    private int positionY;
+
+    /** Width of the shape in the warehouse. */
+    private Integer width;
+
+    /** Height of the shape in the warehouse. */
+    private Integer height;
+
+    /** Rotation of the shape in radians. */
+    private int rotation = 0;
+
+    /** Start angle of the arc in degrees. */
+    private Integer arcStartAngle;
+
+    /** End angle of the arc in degrees. */
+    private Integer arcEndAngle;
+
+    /** Radius of the arc in pixels. */
+    private Integer arcRadius;
+
+    /** List of components that this shape contains. */
+    private List<ComponentDataTransferObject> components = new ArrayList<>();
 
     /**
      * Constructor for ComponentDataTransferObject.
      *
-     * @param shapeId the ID of the shape
-     * @param containerId the ID of the container
-     * @param propertiesOverride the properties to override
+     * @param positionX the X position of the shape
+     * @param positionY the Y position of the shape
      */
-    public ComponentDataTransferObject(
-        Long shapeId, Long containerId, Properties propertiesOverride) {
-      this.shapeId = shapeId;
-      this.containerId = containerId;
-      this.propertiesOverride = propertiesOverride;
+    public ComponentDataTransferObject(int positionX, int positionY) {
+      this.positionX = positionX;
+      this.positionY = positionY;
     }
 
     /**
@@ -53,25 +67,161 @@ public class ShapeDataTransferObject {
     }
 
     /**
-     * Gets the ID of the container.
+     * Sets the ID of the shape.
      *
-     * @return the ID of the container
+     * @param shapeId the new ID of the shape
      */
-    public Long getContainerId() {
-      return containerId;
+    public void setShapeId(Long shapeId) {
+      this.shapeId = shapeId;
     }
 
     /**
-     * Gets the properties that override the default properties of the shape.
+     * Gets the X position of the shape in the warehouse.
      *
-     * @return the properties override
+     * @return the X position of the shape
      */
-    public Properties getPropertiesOverride() {
-      return propertiesOverride;
+    public int getPositionX() {
+      return positionX;
+    }
+
+    /**
+     * Gets the Y position of the shape in the warehouse.
+     *
+     * @return the Y position of the shape
+     */
+    public int getPositionY() {
+      return positionY;
+    }
+
+    /**
+     * Gets the width of the shape in the warehouse.
+     *
+     * @return the width of the shape
+     */
+    public Integer getWidth() {
+      return width;
+    }
+
+    /**
+     * Sets the width of the shape in the warehouse.
+     *
+     * @param width the new width of the shape
+     */
+    public void setWidth(Integer width) {
+      this.width = width;
+    }
+
+    /**
+     * Gets the height of the shape in the warehouse.
+     *
+     * @return the height of the shape
+     */
+    public Integer getHeight() {
+      return height;
+    }
+
+    /**
+     * Sets the height of the shape in the warehouse.
+     *
+     * @param height the new height of the shape
+     */
+    public void setHeight(Integer height) {
+      this.height = height;
+    }
+
+    /**
+     * Gets the rotation of the shape in radians.
+     *
+     * @return the rotation of the shape
+     */
+    public int getRotation() {
+      return rotation;
+    }
+
+    /**
+     * Sets the rotation of the shape in radians.
+     *
+     * @param rotation the new rotation of the shape
+     */
+    public void setRotation(int rotation) {
+      this.rotation = rotation;
+    }
+
+    /**
+     * Gets the start angle of the arc in degrees.
+     *
+     * @return the start angle of the arc
+     */
+    public Integer getArcStartAngle() {
+      return arcStartAngle;
+    }
+
+    /**
+     * Sets the start angle of the arc in degrees.
+     *
+     * @param arcStartAngle the new start angle of the arc
+     */
+    public void setArcStartAngle(Integer arcStartAngle) {
+      this.arcStartAngle = arcStartAngle;
+    }
+
+    /**
+     * Gets the end angle of the arc in degrees.
+     *
+     * @return the end angle of the arc
+     */
+    public Integer getArcEndAngle() {
+      return arcEndAngle;
+    }
+
+    /**
+     * Sets the end angle of the arc in degrees.
+     *
+     * @param arcEndAngle the new end angle of the arc
+     */
+    public void setArcEndAngle(Integer arcEndAngle) {
+      this.arcEndAngle = arcEndAngle;
+    }
+
+    /**
+     * Gets the radius of the arc in pixels.
+     *
+     * @return the radius of the arc
+     */
+    public Integer getArcRadius() {
+      return arcRadius;
+    }
+
+    /**
+     * Sets the radius of the arc in pixels.
+     *
+     * @param arcRadius the new radius of the arc
+     */
+    public void setArcRadius(Integer arcRadius) {
+      this.arcRadius = arcRadius;
+    }
+
+    /**
+     * Gets the list of components associated with this shape.
+     *
+     * @return the list of components
+     */
+    public List<ComponentDataTransferObject> getComponents() {
+      return components;
+    }
+
+    /**
+     * Sets the list of components associated with this shape.
+     *
+     * @param components the new list of components
+     */
+    public void setComponents(List<ComponentDataTransferObject> components) {
+      this.components = components;
     }
   }
 
-  private List<ComponentDataTransferObject> components = new ArrayList<>();
+  /** Root component of the shape, which may contain other components. */
+  private ComponentDataTransferObject root;
 
   /**
    * Gets the name of the shape.
@@ -128,38 +278,20 @@ public class ShapeDataTransferObject {
   }
 
   /**
-   * Gets the properties associated with the shape.
+   * Gets the root component of the shape, which may contain other components.
    *
-   * @return the properties of the shape
+   * @return the root component of the shape
    */
-  public Properties getProperties() {
-    return properties;
+  public ComponentDataTransferObject getRoot() {
+    return root;
   }
 
   /**
-   * Sets the properties associated with the shape.
+   * Sets the root component of the shape, which may contain other components.
    *
-   * @param properties the new properties of the shape
+   * @param root the new root component of the shape
    */
-  public void setProperties(Properties properties) {
-    this.properties = properties;
-  }
-
-  /**
-   * Gets the list of components associated with the shape.
-   *
-   * @return the list of components
-   */
-  public List<ComponentDataTransferObject> getComponents() {
-    return components;
-  }
-
-  /**
-   * Sets the list of components associated with the shape.
-   *
-   * @param components the new list of components
-   */
-  public void setComponents(List<ComponentDataTransferObject> components) {
-    this.components = components;
+  public void setRoot(ComponentDataTransferObject root) {
+    this.root = root;
   }
 }

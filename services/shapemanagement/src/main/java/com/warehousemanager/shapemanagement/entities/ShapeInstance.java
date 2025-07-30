@@ -5,12 +5,18 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.ManyToOne;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import java.util.ArrayList;
+import java.util.List;
 
-/** Represents properties associated with a shape in the warehouse management system. */
+/** Represents specific instances of shapes in the warehouse management system. */
 @Entity
-public class Properties {
+public class ShapeInstance {
   /** Unique identifier for the shape. */
   @Id
   @GeneratedValue(strategy = GenerationType.SEQUENCE)
@@ -50,18 +56,33 @@ public class Properties {
   @Min(5)
   private Integer arcRadius;
 
+  /** The shape that this instance represents. */
+  @ManyToOne
+  @JoinColumn(name = "shape_id", nullable = false)
+  private Shape shape;
+
+  /** Components of the shape instance, representing sub-components or parts of the shape. */
+  @ManyToMany
+  @JoinTable(
+      name = "shape_instance_components",
+      joinColumns = @JoinColumn(name = "container_id"),
+      inverseJoinColumns = @JoinColumn(name = "component_id"))
+  private List<ShapeInstance> components = new ArrayList<>();
+
   /** Default constructor for JPA. */
-  protected Properties() {}
+  protected ShapeInstance() {}
 
   /**
-   * Constructs Properties with the specified parameters.
+   * Constructs ShapeInstance with the specified parameters.
    *
-   * @param positionX the X position of the shape
-   * @param positionY the Y position of the shape
+   * @param positionX the X position of the shape instance
+   * @param positionY the Y position of the shape instance
+   * @param shape the shape that this instance represents
    */
-  public Properties(int positionX, int positionY) {
+  public ShapeInstance(int positionX, int positionY, Shape shape) {
     this.positionX = positionX;
     this.positionY = positionY;
+    this.shape = shape;
   }
 
   /**
@@ -215,5 +236,50 @@ public class Properties {
    */
   public void setArcRadius(Integer arcRadius) {
     this.arcRadius = arcRadius;
+  }
+
+  /**
+   * Gets the shape that this instance represents.
+   *
+   * @return the shape of this instance
+   */
+  public Shape getShape() {
+    return shape;
+  }
+
+  /**
+   * Sets the shape that this instance represents.
+   *
+   * @param shape the new shape of this instance
+   */
+  public void setShape(Shape shape) {
+    this.shape = shape;
+  }
+
+  /**
+   * Gets the components of the shape instance.
+   *
+   * @return the list of components
+   */
+  public List<ShapeInstance> getComponents() {
+    return components;
+  }
+
+  /**
+   * Sets the components of the shape instance.
+   *
+   * @param components the new list of components
+   */
+  public void setComponents(List<ShapeInstance> components) {
+    this.components = components;
+  }
+
+  /**
+   * Adds a component to the shape instance.
+   *
+   * @param component the component to add
+   */
+  public void addComponent(ShapeInstance component) {
+    this.components.add(component);
   }
 }

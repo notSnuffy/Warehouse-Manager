@@ -1,7 +1,6 @@
 package com.warehousemanager.shapemanagement.entities;
 
 import com.warehousemanager.shapemanagement.ShapeType;
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -9,13 +8,8 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.OneToOne;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
-import java.util.ArrayList;
-import java.util.List;
 
 /** Represents a shape in the warehouse management system. */
 @Entity
@@ -41,18 +35,9 @@ public class Shape {
   @Column(nullable = false)
   private boolean isPublic = false;
 
-  /** Properties associated with the shape, such as position and dimensions. */
-  @OneToOne(cascade = CascadeType.ALL, optional = false)
-  @JoinColumn(name = "properties_id", nullable = false)
-  private Properties properties;
-
-  /** List of components that are part of this shape, if it is a container type. */
-  @OneToMany(mappedBy = "container", cascade = CascadeType.ALL, orphanRemoval = true)
-  private List<ShapeComponent> components = new ArrayList<>();
-
-  /** List of containers that this shape is part of, if it is a component type. */
-  @OneToMany(mappedBy = "component", cascade = CascadeType.ALL, orphanRemoval = true)
-  private List<ShapeComponent> containers = new ArrayList<>();
+  /** If the shape should be shown in the list of shapes, i.e. it was not deleted. */
+  @Column(nullable = false)
+  private boolean isVisible = true;
 
   /** Default constructor for JPA. */
   protected Shape() {}
@@ -62,12 +47,10 @@ public class Shape {
    *
    * @param name the name of the shape
    * @param type the type of the shape
-   * @param properties the properties associated with the shape
    */
-  public Shape(String name, ShapeType type, Properties properties) {
+  public Shape(String name, ShapeType type) {
     this.name = name;
     this.type = type;
-    this.properties = properties;
   }
 
   /**
@@ -125,7 +108,7 @@ public class Shape {
   }
 
   /**
-   * Sets the visibility of the shape.
+   * Sets the publicity of the shape.
    *
    * @param isPublic true if the shape should be public, false otherwise
    */
@@ -134,20 +117,20 @@ public class Shape {
   }
 
   /**
-   * Gets the properties associated with the shape.
+   * Checks if the shape is visible.
    *
-   * @return the properties of the shape
+   * @return true if the shape is visible, false otherwise
    */
-  public Properties getProperties() {
-    return properties;
+  public boolean isVisible() {
+    return isVisible;
   }
 
   /**
-   * Sets the properties associated with the shape.
+   * Sets the visibility of the shape.
    *
-   * @param properties the new properties of the shape
+   * @param isVisible true if the shape should be visible, false otherwise
    */
-  public void setProperties(Properties properties) {
-    this.properties = properties;
+  public void setVisible(boolean isVisible) {
+    this.isVisible = isVisible;
   }
 }
