@@ -47,9 +47,7 @@ public class ShapeDtoMapper {
       ShapeInstance parent) {
 
     Shape shape =
-        root.getShapeId() != null
-            ? shapeRepository.findById(root.getShapeId()).orElseThrow()
-            : null;
+        root.getShapeId() != -1 ? shapeRepository.findById(root.getShapeId()).orElseThrow() : null;
     logger.info(
         "Converting component with shapeId: {} to entity",
         root.getShapeId() != null ? root.getShapeId() : "null");

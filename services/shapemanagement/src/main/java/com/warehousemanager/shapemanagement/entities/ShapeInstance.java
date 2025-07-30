@@ -24,37 +24,37 @@ public class ShapeInstance {
 
   /** X position of the shape in the warehouse. */
   @Column(nullable = false)
-  private int positionX;
+  private double positionX;
 
   /** Y position of the shape in the warehouse. */
   @Column(nullable = false)
-  private int positionY;
+  private double positionY;
 
   /** Width of the shape in the warehouse. */
   @Min(10)
-  private Integer width;
+  private Double width;
 
   /** Height of the shape in the warehouse. */
   @Min(10)
-  private Integer height;
+  private Double height;
 
   /** Rotation of the shape in radians. */
   @Column(nullable = false)
-  private int rotation = 0;
+  private double rotation = 0;
 
   /** Start angle of the arc in degrees. */
   @Min(0)
   @Max(360)
-  private Integer arcStartAngle;
+  private Double arcStartAngle;
 
   /** End angle of the arc in degrees. */
   @Min(0)
   @Max(360)
-  private Integer arcEndAngle;
+  private Double arcEndAngle;
 
   /** Radius of the arc in pixels. */
   @Min(5)
-  private Integer arcRadius;
+  private Double arcRadius;
 
   /** The shape that this instance represents. */
   @ManyToOne
@@ -79,7 +79,7 @@ public class ShapeInstance {
    * @param positionY the Y position of the shape instance
    * @param shape the shape that this instance represents
    */
-  public ShapeInstance(int positionX, int positionY, Shape shape) {
+  public ShapeInstance(double positionX, double positionY, Shape shape) {
     this.positionX = positionX;
     this.positionY = positionY;
     this.shape = shape;
@@ -99,7 +99,7 @@ public class ShapeInstance {
    *
    * @return the X position of the shape
    */
-  public int getPositionX() {
+  public double getPositionX() {
     return positionX;
   }
 
@@ -108,7 +108,7 @@ public class ShapeInstance {
    *
    * @param positionX the new X position of the shape
    */
-  public void setPositionX(int positionX) {
+  public void setPositionX(double positionX) {
     this.positionX = positionX;
   }
 
@@ -117,7 +117,7 @@ public class ShapeInstance {
    *
    * @return the Y position of the shape
    */
-  public int getPositionY() {
+  public double getPositionY() {
     return positionY;
   }
 
@@ -126,7 +126,7 @@ public class ShapeInstance {
    *
    * @param positionY the new Y position of the shape
    */
-  public void setPositionY(int positionY) {
+  public void setPositionY(double positionY) {
     this.positionY = positionY;
   }
 
@@ -135,7 +135,7 @@ public class ShapeInstance {
    *
    * @return the width of the shape
    */
-  public Integer getWidth() {
+  public Double getWidth() {
     return width;
   }
 
@@ -144,7 +144,7 @@ public class ShapeInstance {
    *
    * @param width the new width of the shape
    */
-  public void setWidth(Integer width) {
+  public void setWidth(Double width) {
     this.width = width;
   }
 
@@ -153,7 +153,7 @@ public class ShapeInstance {
    *
    * @return the height of the shape
    */
-  public Integer getHeight() {
+  public Double getHeight() {
     return height;
   }
 
@@ -162,7 +162,7 @@ public class ShapeInstance {
    *
    * @param height the new height of the shape
    */
-  public void setHeight(Integer height) {
+  public void setHeight(Double height) {
     this.height = height;
   }
 
@@ -171,7 +171,7 @@ public class ShapeInstance {
    *
    * @return the rotation of the shape
    */
-  public int getRotation() {
+  public double getRotation() {
     return rotation;
   }
 
@@ -180,7 +180,7 @@ public class ShapeInstance {
    *
    * @param rotation the new rotation of the shape
    */
-  public void setRotation(int rotation) {
+  public void setRotation(double rotation) {
     this.rotation = rotation;
   }
 
@@ -189,7 +189,7 @@ public class ShapeInstance {
    *
    * @return the start angle of the arc
    */
-  public Integer getArcStartAngle() {
+  public Double getArcStartAngle() {
     return arcStartAngle;
   }
 
@@ -198,7 +198,7 @@ public class ShapeInstance {
    *
    * @param arcStartAngle the new start angle of the arc
    */
-  public void setArcStartAngle(Integer arcStartAngle) {
+  public void setArcStartAngle(Double arcStartAngle) {
     this.arcStartAngle = arcStartAngle;
   }
 
@@ -207,7 +207,7 @@ public class ShapeInstance {
    *
    * @return the end angle of the arc
    */
-  public Integer getArcEndAngle() {
+  public Double getArcEndAngle() {
     return arcEndAngle;
   }
 
@@ -216,7 +216,7 @@ public class ShapeInstance {
    *
    * @param arcEndAngle the new end angle of the arc
    */
-  public void setArcEndAngle(Integer arcEndAngle) {
+  public void setArcEndAngle(Double arcEndAngle) {
     this.arcEndAngle = arcEndAngle;
   }
 
@@ -225,7 +225,7 @@ public class ShapeInstance {
    *
    * @return the radius of the arc
    */
-  public Integer getArcRadius() {
+  public Double getArcRadius() {
     return arcRadius;
   }
 
@@ -234,7 +234,7 @@ public class ShapeInstance {
    *
    * @param arcRadius the new radius of the arc
    */
-  public void setArcRadius(Integer arcRadius) {
+  public void setArcRadius(Double arcRadius) {
     this.arcRadius = arcRadius;
   }
 

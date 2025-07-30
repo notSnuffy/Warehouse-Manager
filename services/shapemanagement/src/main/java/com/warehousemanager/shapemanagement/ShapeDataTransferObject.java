@@ -1,11 +1,19 @@
 package com.warehousemanager.shapemanagement;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import java.util.ArrayList;
 import java.util.List;
 
 /** Data Transfer Object (DTO) for Shape entity. */
 public class ShapeDataTransferObject {
   /** Name of the shape. */
+  @NotBlank(message = "Shape name cannot be blank")
+  @Size(max = 255, message = "Shape name cannot exceed 255 characters")
   private String name;
 
   /** Type of the shape, represented by an enum. */
@@ -14,37 +22,52 @@ public class ShapeDataTransferObject {
   /** If the shape should be included in the public shape library. */
   private boolean isPublic = false;
 
+  /** Root component of the shape, which may contain other components. */
+  @Valid private ComponentDataTransferObject root;
+
   /** Class representing a component of a shape. */
+  @Valid
   public static class ComponentDataTransferObject {
     /** Identifier for which shape this represets. */
+    @NotNull(message = "Shape ID cannot be null")
     private Long shapeId;
 
     /** X position of the shape in the warehouse. */
-    private int positionX;
+    @NotNull(message = "Position X cannot be null")
+    private double positionX;
 
     /** Y position of the shape in the warehouse. */
-    private int positionY;
+    @NotNull(message = "Position Y cannot be null")
+    private double positionY;
 
     /** Width of the shape in the warehouse. */
-    private Integer width;
+    @Min(value = 10, message = "Width must be at least 10 pixels")
+    private Double width;
 
     /** Height of the shape in the warehouse. */
-    private Integer height;
+    @Min(value = 10, message = "Height must be at least 10 pixels")
+    private Double height;
 
     /** Rotation of the shape in radians. */
-    private int rotation = 0;
+    @NotNull(message = "Rotation cannot be null")
+    private double rotation = 0;
 
     /** Start angle of the arc in degrees. */
-    private Integer arcStartAngle;
+    @Min(value = 0, message = "Arc start angle must be at least 0 degrees")
+    @Max(value = 360, message = "Arc start angle must not exceed 360 degrees")
+    private Double arcStartAngle;
 
     /** End angle of the arc in degrees. */
-    private Integer arcEndAngle;
+    @Min(value = 0, message = "Arc end angle must be at least 0 degrees")
+    @Max(value = 360, message = "Arc end angle must not exceed 360 degrees")
+    private Double arcEndAngle;
 
     /** Radius of the arc in pixels. */
-    private Integer arcRadius;
+    @Min(value = 5, message = "Arc radius must be at least 5 pixels")
+    private Double arcRadius;
 
     /** List of components that this shape contains. */
-    private List<ComponentDataTransferObject> components = new ArrayList<>();
+    @Valid private List<ComponentDataTransferObject> components = new ArrayList<>();
 
     /**
      * Constructor for ComponentDataTransferObject.
@@ -80,7 +103,7 @@ public class ShapeDataTransferObject {
      *
      * @return the X position of the shape
      */
-    public int getPositionX() {
+    public double getPositionX() {
       return positionX;
     }
 
@@ -89,7 +112,7 @@ public class ShapeDataTransferObject {
      *
      * @return the Y position of the shape
      */
-    public int getPositionY() {
+    public double getPositionY() {
       return positionY;
     }
 
@@ -98,7 +121,7 @@ public class ShapeDataTransferObject {
      *
      * @return the width of the shape
      */
-    public Integer getWidth() {
+    public Double getWidth() {
       return width;
     }
 
@@ -107,7 +130,7 @@ public class ShapeDataTransferObject {
      *
      * @param width the new width of the shape
      */
-    public void setWidth(Integer width) {
+    public void setWidth(Double width) {
       this.width = width;
     }
 
@@ -116,7 +139,7 @@ public class ShapeDataTransferObject {
      *
      * @return the height of the shape
      */
-    public Integer getHeight() {
+    public Double getHeight() {
       return height;
     }
 
@@ -125,7 +148,7 @@ public class ShapeDataTransferObject {
      *
      * @param height the new height of the shape
      */
-    public void setHeight(Integer height) {
+    public void setHeight(Double height) {
       this.height = height;
     }
 
@@ -134,7 +157,7 @@ public class ShapeDataTransferObject {
      *
      * @return the rotation of the shape
      */
-    public int getRotation() {
+    public double getRotation() {
       return rotation;
     }
 
@@ -143,7 +166,7 @@ public class ShapeDataTransferObject {
      *
      * @param rotation the new rotation of the shape
      */
-    public void setRotation(int rotation) {
+    public void setRotation(double rotation) {
       this.rotation = rotation;
     }
 
@@ -152,7 +175,7 @@ public class ShapeDataTransferObject {
      *
      * @return the start angle of the arc
      */
-    public Integer getArcStartAngle() {
+    public Double getArcStartAngle() {
       return arcStartAngle;
     }
 
@@ -161,7 +184,7 @@ public class ShapeDataTransferObject {
      *
      * @param arcStartAngle the new start angle of the arc
      */
-    public void setArcStartAngle(Integer arcStartAngle) {
+    public void setArcStartAngle(Double arcStartAngle) {
       this.arcStartAngle = arcStartAngle;
     }
 
@@ -170,7 +193,7 @@ public class ShapeDataTransferObject {
      *
      * @return the end angle of the arc
      */
-    public Integer getArcEndAngle() {
+    public Double getArcEndAngle() {
       return arcEndAngle;
     }
 
@@ -179,7 +202,7 @@ public class ShapeDataTransferObject {
      *
      * @param arcEndAngle the new end angle of the arc
      */
-    public void setArcEndAngle(Integer arcEndAngle) {
+    public void setArcEndAngle(Double arcEndAngle) {
       this.arcEndAngle = arcEndAngle;
     }
 
@@ -188,7 +211,7 @@ public class ShapeDataTransferObject {
      *
      * @return the radius of the arc
      */
-    public Integer getArcRadius() {
+    public Double getArcRadius() {
       return arcRadius;
     }
 
@@ -197,7 +220,7 @@ public class ShapeDataTransferObject {
      *
      * @param arcRadius the new radius of the arc
      */
-    public void setArcRadius(Integer arcRadius) {
+    public void setArcRadius(Double arcRadius) {
       this.arcRadius = arcRadius;
     }
 
@@ -219,9 +242,6 @@ public class ShapeDataTransferObject {
       this.components = components;
     }
   }
-
-  /** Root component of the shape, which may contain other components. */
-  private ComponentDataTransferObject root;
 
   /**
    * Gets the name of the shape.
