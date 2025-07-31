@@ -27,6 +27,7 @@ class MoveManager extends Manager {
       const { withinBounds } = event.data;
       if (this.pending && withinBounds) {
         this.pending.shape.setPosition(this.pending.dragX, this.pending.dragY);
+        this.scene.pointExtremes = event.data.pointExtremes;
         this.pending = null;
       }
     };
@@ -68,6 +69,7 @@ class MoveManager extends Manager {
           sceneHeight: this.scene.cameras.main.height,
           shapeX: shape.x,
           shapeY: shape.y,
+          pointExtremes: this.scene.pointExtremes,
         });
 
         this.pending = { shape, dragX, dragY };

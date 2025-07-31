@@ -2,6 +2,7 @@ import Phaser from "phaser";
 import MoveManager from "../lib/move/MoveManager";
 import SelectShapeManager from "../lib/select/SelectShapeManager";
 import ShapeEditorUIInitializer from "../lib/ShapeEditorUIInitializer";
+import { getShapePoints } from "../lib/functions/shapes";
 import { API_URL } from "../config";
 
 /**
@@ -62,6 +63,20 @@ class ShapeEditor extends Phaser.Scene {
    */
   constructor() {
     super("ShapeEditor");
+    this.saveShapeWorker = new Worker(
+      new URL("../workers/saveShapeWorker.js", import.meta.url),
+      { type: "module" },
+    );
+    //this.saveShapeWorker.onmessage = (event) => {
+    //  console.log("Shape save worker response received");
+    //  console.log("Shape saved successfully:", event.data);
+    //};
+    this.saveShapeWorker.onerror = (error) => {
+      console.log("❌ Worker Error:", error);
+    };
+    //this.saveShapeWorker.onmessageerror = (error) => {
+    //  console.error("Message error in shape save worker:", error);
+    //};
   }
 
   /**
@@ -146,10 +161,159 @@ class ShapeEditor extends Phaser.Scene {
     }.bind(this);
 
     const saveShape = function () {
-      for (let i = 0; i < this.#shapes.length; i++) {
-        const shape = this.#shapes[i];
-        console.log(shape.x, shape.y, shape.width, shape.height);
-      }
+      console.log("Saving shapes:");
+      //this.saveShapeWorker.postMessage({
+      //shapes: this.#shapes,
+      //});
+      console.log("Shape save worker started");
+      const shapes = this.#shapes;
+
+      let mostLeft = Infinity;
+      let mostRight = -Infinity;
+      let mostTop = Infinity;
+      let mostBottom = -Infinity;
+
+      shapes.forEach((shape) => {
+        const points = Object.values(getShapePoints(shape));
+        const minX = points.reduce((acc, p) => Math.min(acc, p.x), points[0].x);
+        const maxX = points.reduce((acc, p) => Math.max(acc, p.x), points[0].x);
+        const minY = points.reduce((acc, p) => Math.min(acc, p.y), points[0].y);
+        const maxY = points.reduce((acc, p) => Math.max(acc, p.y), points[0].y);
+
+        mostLeft = Math.min(mostLeft, minX);
+        mostRight = Math.max(mostRight, maxX);
+        mostTop = Math.min(mostTop, minY);
+        mostBottom = Math.max(mostBottom, maxY);
+      });
+
+      const boundingBox = {
+        left: mostLeft,
+        right: mostRight,
+        top: mostTop,
+        bottom: mostBottom,
+        width: mostRight - mostLeft,
+        height: mostBottom - mostTop,
+        centerX: (mostLeft + mostRight) / 2,
+        centerY: (mostTop + mostBottom) / 2,
+      };
+
+      const rootContainer = {
+        shapeId: -1,
+        positionX: boundingBox.centerX,
+        positionY: boundingBox.centerY,
+        width: boundingBox.width,
+        height: boundingBox.height,
+        rotation: 0,
+        components: [],
+      };
+
+      const getShapeId = (shape) => {
+        if (shape.id) {
+          return shape.id;
+        }
+        console.log(shape.type);
+        switch (shape.type) {
+          case "Rectangle":
+            return 1;
+          case "Ellipse":
+            return 2;
+          case "Arc":
+            return 3;
+          case "Polygon":
+            return 4;
+          default:
+            return null; // Default case
+        }
+      };
+
+      const convertShapeCoordinatesToContainer = (shape, container) => {
+        const adjustedX = shape.x - container.positionX;
+        const adjustedY = shape.y - container.positionY;
+
+        return {
+          x: adjustedX,
+          y: adjustedY,
+        };
+      };
+      console.log("Converting shapes to components...");
+      const shapeComponents = shapes.map((shape) => {
+        let shapeId = getShapeId(shape);
+        let adjustedCoordinates = convertShapeCoordinatesToContainer(
+          shape,
+          rootContainer,
+        );
+        let shapeComponent = {
+          shapeId: shapeId,
+          positionX: adjustedCoordinates.x,
+          positionY: adjustedCoordinates.y,
+          width: shape.displayWidth,
+          height: shape.displayHeight,
+          rotation: shape.rotation,
+          arcStartAngle: shape.arcStartAngle || null,
+          arcEndAngle: shape.arcEndAngle || null,
+          arcRadius: shape.arcRadius || null,
+          components: [],
+        };
+        console.log(shapeComponent);
+
+        const convertContainerChildren = (
+          children,
+          parent,
+          parentComponent,
+        ) => {
+          children.forEach((child) => {
+            let childShapeId = getShapeId(child);
+
+            const childWorldCenterCoordinates = child.getCenter(
+              undefined,
+              true,
+            );
+            const childWidth = Phaser.Math.Distance.BetweenPoints(
+              child.getLeftCenter(undefined, true),
+              child.getRightCenter(undefined, true),
+            );
+            const childHeight = Phaser.Math.Distance.BetweenPoints(
+              child.getTopCenter(undefined, true),
+              child.getBottomCenter(undefined, true),
+            );
+
+            const { tx, ty } = parent.getWorldTransformMatrix();
+            console.log(tx, ty);
+
+            const dx = childWorldCenterCoordinates.x - tx;
+            const dy = childWorldCenterCoordinates.y - ty;
+
+            const rotatedLocalX =
+              dx * Math.cos(-parent.rotation) - dy * Math.sin(-parent.rotation);
+            const rotatedLocalY =
+              dx * Math.sin(-parent.rotation) + dy * Math.cos(-parent.rotation);
+
+            let childComponent = {
+              shapeId: childShapeId,
+              positionX: rotatedLocalX,
+              positionY: rotatedLocalY,
+              width: childWidth,
+              height: childHeight,
+              rotation: child.rotation,
+              arcStartAngle: child.arcStartAngle || null,
+              arcEndAngle: child.arcEndAngle || null,
+              arcRadius: child.arcRadius || null,
+              components: [],
+            };
+            parentComponent.components.push(childComponent);
+            console.log(parentComponent);
+            if (child.type === "Container") {
+              convertContainerChildren(child.getAll(), child, childComponent);
+            }
+          });
+        };
+        if (shape.type === "Container") {
+          convertContainerChildren(shape.getAll(), shape, shapeComponent);
+        }
+        return shapeComponent;
+      });
+      rootContainer.components = shapeComponents;
+      console.log(rootContainer);
     }.bind(this);
 
     this.#selectManager = new SelectShapeManager(this);
@@ -170,16 +334,18 @@ class ShapeEditor extends Phaser.Scene {
     this.#shapes.push(container);
 
     container.add([
-      this.add.rectangle(-150, -150, 100, 100, 0xff0000).setOrigin(0, 0),
-      this.add.rectangle(-50, -50, 200, 200, 0xff0000).setOrigin(0, 0),
-      this.add.ellipse(50, -150, 100, 100, 0x00ff00).setOrigin(0, 0),
+      this.add.rectangle(-100, -100, 100, 100, 0xff0000),
+      this.add.rectangle(50, 50, 200, 200, 0xff0000),
+      this.add.ellipse(100, -100, 100, 100, 0x00ff00),
     ]);
     const rect = container.getBounds();
     container.setSize(rect.width, rect.height);
+    container.setRotation(Math.PI / 4);
 
     container.getTopLeft = function () {
-      const globalX = this.x;
-      const globalY = this.y;
+      const { tx, ty } = this.getWorldTransformMatrix();
+      const globalX = tx;
+      const globalY = ty;
       const localX = -(this.displayWidth / 2);
       const localY = -(this.displayHeight / 2);
       const rotatedLocalX =
@@ -191,8 +357,9 @@ class ShapeEditor extends Phaser.Scene {
       return { x: containerX, y: containerY };
     };
     container.getTopRight = function () {
-      const globalX = this.x;
-      const globalY = this.y;
+      const { tx, ty } = this.getWorldTransformMatrix();
+      const globalX = tx;
+      const globalY = ty;
       const localX = this.displayWidth / 2;
       const localY = -(this.displayHeight / 2);
       const rotatedLocalX =
@@ -204,8 +371,9 @@ class ShapeEditor extends Phaser.Scene {
       return { x: containerX, y: containerY };
     };
     container.getBottomLeft = function () {
-      const globalX = this.x;
-      const globalY = this.y;
+      const { tx, ty } = this.getWorldTransformMatrix();
+      const globalX = tx;
+      const globalY = ty;
       const localX = -(this.displayWidth / 2);
       const localY = this.displayHeight / 2;
       const rotatedLocalX =
@@ -217,8 +385,9 @@ class ShapeEditor extends Phaser.Scene {
       return { x: containerX, y: containerY };
     };
     container.getBottomRight = function () {
-      const globalX = this.x;
-      const globalY = this.y;
+      const { tx, ty } = this.getWorldTransformMatrix();
+      const globalX = tx;
+      const globalY = ty;
       const localX = this.displayWidth / 2;
       const localY = this.displayHeight / 2;
       const rotatedLocalX =
@@ -230,8 +399,9 @@ class ShapeEditor extends Phaser.Scene {
       return { x: containerX, y: containerY };
     };
     container.getLeftCenter = function () {
-      const globalX = this.x;
-      const globalY = this.y;
+      const { tx, ty } = this.getWorldTransformMatrix();
+      const globalX = tx;
+      const globalY = ty;
       const localX = -(this.displayWidth / 2);
       const localY = 0;
       const rotatedLocalX =
@@ -243,8 +413,9 @@ class ShapeEditor extends Phaser.Scene {
       return { x: containerX, y: containerY };
     };
     container.getRightCenter = function () {
-      const globalX = this.x;
-      const globalY = this.y;
+      const { tx, ty } = this.getWorldTransformMatrix();
+      const globalX = tx;
+      const globalY = ty;
       const localX = this.displayWidth / 2;
       const localY = 0;
       const rotatedLocalX =
@@ -256,8 +427,9 @@ class ShapeEditor extends Phaser.Scene {
       return { x: containerX, y: containerY };
     };
     container.getTopCenter = function () {
-      const globalX = this.x;
-      const globalY = this.y;
+      const { tx, ty } = this.getWorldTransformMatrix();
+      const globalX = tx;
+      const globalY = ty;
       const localX = 0;
       const localY = -(this.displayHeight / 2);
       const rotatedLocalX =
@@ -269,8 +441,9 @@ class ShapeEditor extends Phaser.Scene {
       return { x: containerX, y: containerY };
     };
     container.getBottomCenter = function () {
-      const globalX = this.x;
-      const globalY = this.y;
+      const { tx, ty } = this.getWorldTransformMatrix();
+      const globalX = tx;
+      const globalY = ty;
       const localX = 0;
       const localY = this.displayHeight / 2;
       const rotatedLocalX =

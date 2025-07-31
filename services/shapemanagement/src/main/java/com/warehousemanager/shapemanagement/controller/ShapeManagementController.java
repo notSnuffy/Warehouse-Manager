@@ -12,7 +12,9 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -56,5 +58,16 @@ public class ShapeManagementController {
     shapeInstanceRepository.saveAll(instances);
 
     return savedShape;
+  }
+
+  @PutMapping("/shapes/{id}")
+  public Shape updateShape(
+      @PathVariable Long id, @Valid @RequestBody ShapeDataTransferObject shapeDataTransferObject) {
+    Shape existingShape =
+        shapeRepository.findById(id).orElseThrow(() -> new RuntimeException("Shape not found"));
+    Logger logger = LoggerFactory.getLogger(ShapeManagementController.class);
+    logger.info("Updating shape with ID: {}", id);
+    shapeInstanceRepository.deleteById(1L);
+    return new Shape(shapeDataTransferObject.getName(), shapeDataTransferObject.getType());
   }
 }
