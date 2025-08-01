@@ -1,5 +1,6 @@
 import { Modal } from "bootstrap";
 import { DEFAULT_SHAPES } from "../scenes/ShapeEditor";
+import { API_URL } from "../config";
 
 /**
  * @class ShapeEditorUIInitializer
@@ -331,7 +332,7 @@ class ShapeEditorUIInitializer {
     });
 
     const saveButton = document.getElementById("saveButton");
-    saveButton.addEventListener("click", function () {
+    saveButton.addEventListener("click", async function () {
       selectHide();
 
       const shapeName = document.getElementById("shapeName").value;
@@ -346,7 +347,34 @@ class ShapeEditorUIInitializer {
         return;
       }
 
-      saveShape();
+      console.log("ADD WAY TO SET PUBLIC FLAG");
+      let publicFlag = false;
+
+      let shape = {
+        name: shapeName,
+        type: "CONTAINER",
+        public: publicFlag,
+        root: saveShape(),
+      };
+
+      console.log("Shape to save:", shape);
+      try {
+        const response = await fetch(API_URL + "/shape-management/shapes", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(shape),
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const _data = await response.json();
+        console.log("Shape saved successfully:", _data);
+      } catch (error) {
+        console.error(error);
+      }
     });
   }
 }
