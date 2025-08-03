@@ -1,6 +1,7 @@
 import { Modal } from "bootstrap";
 import { DEFAULT_SHAPES } from "../scenes/ShapeEditor";
 import { API_URL } from "../config";
+import { saveShapeInstance } from "../lib/functions/shapes";
 
 /**
  * @class ShapeEditorUIInitializer
@@ -127,17 +128,16 @@ class ShapeEditorUIInitializer {
    * @param {Function} handleMoveButtonClick - Function to handle move button click
    * @param {Function} handleSelectButtonClick - Function to handle select button click
    * @param {Function} addShape - Function to add a shape
-   * @param {string[]} shapes - Array of shapes
-   * @param {Function} saveShape - Function to save a shape
+   * @param {string[]} allowedShapes - Array of allowed shapes
    * @param {Function} selectHide - Function to hide selection
+   * @param {Array} editorShapes - Array of shapes in the editor
    * @static
    */
   static initialize(
     handleMoveButtonClick,
     handleSelectButtonClick,
     addShape,
-    shapes,
-    saveShape,
+    allowedShapes,
     selectHide,
     editorShapes,
   ) {
@@ -204,7 +204,7 @@ class ShapeEditorUIInitializer {
       handleMoveButtonClick,
     );
     this.#addButtonHandler("selectButton", "click", handleSelectButtonClick);
-    for (const shape of shapes) {
+    for (const shape of allowedShapes) {
       const button = document.getElementById("add-" + shape);
       button.addEventListener("click", function () {
         ShapeEditorUIInitializer.#showModal(button);
@@ -355,7 +355,7 @@ class ShapeEditorUIInitializer {
         name: shapeName,
         type: "CONTAINER",
         public: publicFlag,
-        root: saveShape(editorShapes),
+        root: saveShapeInstance(editorShapes),
       };
 
       console.log("Shape to save:", shape);

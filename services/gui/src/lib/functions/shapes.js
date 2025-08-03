@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import * as Shapes from "../../shapes";
 
 /**
  * Retrieves the key points of a shape
@@ -151,7 +152,8 @@ function saveShapeInstance(shapes) {
           arcStartAngle: child.startAngle || null,
           arcEndAngle: child.endAngle || null,
           arcRadius: child.radius || null,
-          polygonPoints: child.pathData || null,
+          polygonPoints:
+            childShapeId === ShapeTypes.POLYGON ? child.pathData : null,
           components: [],
         };
         parentComponent.components.push(childComponent);
@@ -170,4 +172,193 @@ function saveShapeInstance(shapes) {
   return rootContainer;
 }
 
-export { getShapePoints, saveShapeInstance };
+const ShapeCommands = Object.freeze({
+  CREATE_RECTANGLE: "createRectangle",
+  CREATE_ELLIPSE: "createEllipse",
+  CREATE_ARC: "createArc",
+  CREATE_POLYGON: "createPolygon",
+  BEGIN_CONTAINER: "beginContainer",
+  END_CONTAINER: "endContainer",
+});
+
+/**
+ * Saves the shape as a set of instructions to execute to recreate it
+ * @param {Object} rootContainer - The root container to save shapes from
+ * @return {string} An array of instructions in JSON format
+ */
+function saveShapeAsInstructions(rootContainer) {
+  const instructions = [];
+
+  const getShapeCommandName = (shapeId) => {
+    switch (shapeId) {
+      case ShapeTypes.RECTANGLE:
+        return ShapeCommands.CREATE_RECTANGLE;
+      case ShapeTypes.ELLIPSE:
+        return ShapeCommands.CREATE_ELLIPSE;
+      case ShapeTypes.ARC:
+        return ShapeCommands.CREATE_ARC;
+      case ShapeTypes.POLYGON:
+        return ShapeCommands.CREATE_POLYGON;
+      default:
+        return ShapeCommands.BEGIN_CONTAINER;
+    }
+  };
+
+  const convertShapeToInstruction = (shape) => {
+    const commandName = getShapeCommandName(shape.shapeId);
+    const instruction = {
+      command: commandName,
+      parameters: {
+        x: shape.positionX,
+        y: shape.positionY,
+        width: shape.width,
+        height: shape.height,
+        rotation: shape.rotation,
+      },
+    };
+
+    if (shape.shapeId === ShapeTypes.ARC) {
+      instruction.parameters.startAngle = shape.arcStartAngle;
+      instruction.parameters.endAngle = shape.arcEndAngle;
+      instruction.parameters.radius = shape.arcRadius;
+    }
+
+    if (shape.shapeId === ShapeTypes.POLYGON) {
+      instruction.parameters.points = shape.polygonPoints;
+    }
+
+    instructions.push(instruction);
+
+    if (shape.components && shape.components.length > 0) {
+      shape.components.forEach((childShape) => {
+        convertShapeToInstruction(childShape);
+      });
+
+      instructions.push({
+        command: ShapeCommands.END_CONTAINER,
+      });
+    }
+
+    return instruction;
+  };
+  convertShapeToInstruction(rootContainer);
+  return JSON.stringify(instructions, null, 2);
+}
+
+function buildShapeFromInstructions(instructions, scene) {
+  console.log(instructions);
+  const containerStack = [];
+  const shapes = [];
+
+  instructions.forEach((instruction) => {
+    const commandName = instruction.command;
+    const parameters = instruction.parameters;
+
+    switch (commandName) {
+      case ShapeCommands.CREATE_RECTANGLE: {
+        const rectangle = new Shapes.Rectangle(
+          scene,
+          parameters.x,
+          parameters.y,
+          parameters.width,
+          parameters.height,
+        );
+        rectangle.setRotation(parameters.rotation);
+        if (containerStack.length > 0) {
+          const parentContainer = containerStack[containerStack.length - 1];
+          parentContainer.add(rectangle);
+        } else {
+          shapes.push(rectangle);
+        }
+        break;
+      }
+      case ShapeCommands.CREATE_ELLIPSE: {
+        const ellipse = new Shapes.Ellipse(
+          scene,
+          parameters.x,
+          parameters.y,
+          parameters.width,
+          parameters.height,
+        );
+        ellipse.setRotation(parameters.rotation);
+        if (containerStack.length > 0) {
+          const parentContainer = containerStack[containerStack.length - 1];
+          parentContainer.add(ellipse);
+        } else {
+          shapes.push(ellipse);
+        }
+        break;
+      }
+      case ShapeCommands.CREATE_ARC: {
+        const arc = new Shapes.Arc(
+          scene,
+          parameters.x,
+          parameters.y,
+          parameters.radius,
+          parameters.startAngle,
+          parameters.endAngle,
+        );
+        arc.setRotation(parameters.rotation);
+        if (containerStack.length > 0) {
+          const parentContainer = containerStack[containerStack.length - 1];
+          parentContainer.add(arc);
+        } else {
+          shapes.push(arc);
+        }
+        break;
+      }
+      case ShapeCommands.CREATE_POLYGON: {
+        const polygon = new Shapes.Polygon(
+          scene,
+          parameters.x,
+          parameters.y,
+          parameters.points,
+        );
+        polygon.setRotation(parameters.rotation);
+        if (containerStack.length > 0) {
+          const parentContainer = containerStack[containerStack.length - 1];
+          parentContainer.add(polygon);
+          parentContainer.update();
+        } else {
+          shapes.push(polygon);
+        }
+        break;
+      }
+      case ShapeCommands.BEGIN_CONTAINER: {
+        const container = new Shapes.Container(
+          scene,
+          parameters.x,
+          parameters.y,
+        );
+        container.setSize(parameters.width, parameters.height);
+        container.setRotation(parameters.rotation);
+
+        if (containerStack.length > 0) {
+          const parentContainer = containerStack[containerStack.length - 1];
+          parentContainer.add(container);
+        } else {
+          shapes.push(container);
+        }
+        containerStack.push(container);
+
+        break;
+      }
+      case ShapeCommands.END_CONTAINER: {
+        if (containerStack.length > 0) {
+          containerStack.pop();
+        } else {
+          console.warn("No container to end, ignoring END_CONTAINER command.");
+        }
+        break;
+      }
+    }
+  });
+  return shapes;
+}
+
+export {
+  getShapePoints,
+  saveShapeInstance,
+  saveShapeAsInstructions,
+  buildShapeFromInstructions,
+};
