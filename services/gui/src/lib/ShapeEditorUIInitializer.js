@@ -139,6 +139,7 @@ class ShapeEditorUIInitializer {
     shapes,
     saveShape,
     selectHide,
+    editorShapes,
   ) {
     if (ShapeEditorUIInitializer.#initialized) {
       return;
@@ -354,7 +355,7 @@ class ShapeEditorUIInitializer {
         name: shapeName,
         type: "CONTAINER",
         public: publicFlag,
-        root: saveShape(),
+        root: saveShape(editorShapes),
       };
 
       console.log("Shape to save:", shape);
