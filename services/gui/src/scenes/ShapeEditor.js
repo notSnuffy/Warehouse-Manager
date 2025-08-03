@@ -3,7 +3,7 @@ import MoveManager from "../lib/move/MoveManager";
 import SelectShapeManager from "../lib/select/SelectShapeManager";
 import ShapeEditorUIInitializer from "../lib/ShapeEditorUIInitializer";
 import { getShapePoints } from "../lib/functions/shapes";
-import { API_URL } from "../config";
+import * as Shapes from "../shapes";
 
 /**
  * Default shapes
@@ -63,20 +63,6 @@ class ShapeEditor extends Phaser.Scene {
    */
   constructor() {
     super("ShapeEditor");
-    this.saveShapeWorker = new Worker(
-      new URL("../workers/saveShapeWorker.js", import.meta.url),
-      { type: "module" },
-    );
-    //this.saveShapeWorker.onmessage = (event) => {
-    //  console.log("Shape save worker response received");
-    //  console.log("Shape saved successfully:", event.data);
-    //};
-    this.saveShapeWorker.onerror = (error) => {
-      console.log("❌ Worker Error:", error);
-    };
-    //this.saveShapeWorker.onmessageerror = (error) => {
-    //  console.error("Message error in shape save worker:", error);
-    //};
   }
 
   /**
@@ -84,9 +70,7 @@ class ShapeEditor extends Phaser.Scene {
    * @param {Object} data - Data passed from the previous scene
    * @public
    */
-  init(data) {
-    this.hello = data;
-  }
+  init() {}
 
   /**
    * Creates the scene
@@ -249,9 +233,10 @@ class ShapeEditor extends Phaser.Scene {
           width: shape.displayWidth,
           height: shape.displayHeight,
           rotation: shape.rotation,
-          arcStartAngle: shape.arcStartAngle || null,
-          arcEndAngle: shape.arcEndAngle || null,
-          arcRadius: shape.arcRadius || null,
+          arcStartAngle: shape.startAngle || null,
+          arcEndAngle: shape.endAngle || null,
+          arcRadius: shape.radius || null,
+          polygonPoints: shape.pathData || null,
           components: [],
         };
         console.log(shapeComponent);
@@ -295,9 +280,10 @@ class ShapeEditor extends Phaser.Scene {
               width: childWidth,
               height: childHeight,
               rotation: child.rotation,
-              arcStartAngle: child.arcStartAngle || null,
-              arcEndAngle: child.arcEndAngle || null,
-              arcRadius: child.arcRadius || null,
+              arcStartAngle: child.startAngle || null,
+              arcEndAngle: child.endAngle || null,
+              arcRadius: child.radius || null,
+              polygonPoints: child.pathData || null,
               components: [],
             };
             parentComponent.components.push(childComponent);
@@ -313,7 +299,7 @@ class ShapeEditor extends Phaser.Scene {
         return shapeComponent;
       });
       rootContainer.components = shapeComponents;
-      console.log(rootContainer);
+      return rootContainer;
     }.bind(this);
 
     this.#selectManager = new SelectShapeManager(this);
@@ -330,130 +316,39 @@ class ShapeEditor extends Phaser.Scene {
 
     this.cameras.main.setBackgroundColor(0x000000);
 
-    const container = this.add.container(300, 300);
-    this.#shapes.push(container);
+    //const container = new Shapes.Container(this, 300, 300);
+    //this.#shapes.push(container);
 
-    container.add([
-      this.add.rectangle(-100, -100, 100, 100, 0xff0000),
-      this.add.rectangle(50, 50, 200, 200, 0xff0000),
-      this.add.ellipse(100, -100, 100, 100, 0x00ff00),
-    ]);
-    const rect = container.getBounds();
-    container.setSize(rect.width, rect.height);
-    container.setRotation(Math.PI / 4);
+    //container.add([
+    //  new Shapes.Rectangle(this, -100, -100, 100, 100, 0xff0000),
+    //  new Shapes.Rectangle(this, 50, 50, 200, 200, 0xff0000),
+    //  new Shapes.Ellipse(this, 100, -100, 100, 100, 0x00ff00),
+    //]);
 
-    container.getTopLeft = function () {
-      const { tx, ty } = this.getWorldTransformMatrix();
-      const globalX = tx;
-      const globalY = ty;
-      const localX = -(this.displayWidth / 2);
-      const localY = -(this.displayHeight / 2);
-      const rotatedLocalX =
-        localX * Math.cos(this.rotation) - localY * Math.sin(this.rotation);
-      const rotatedLocalY =
-        localX * Math.sin(this.rotation) + localY * Math.cos(this.rotation);
-      const containerX = globalX + rotatedLocalX;
-      const containerY = globalY + rotatedLocalY;
-      return { x: containerX, y: containerY };
-    };
-    container.getTopRight = function () {
-      const { tx, ty } = this.getWorldTransformMatrix();
-      const globalX = tx;
-      const globalY = ty;
-      const localX = this.displayWidth / 2;
-      const localY = -(this.displayHeight / 2);
-      const rotatedLocalX =
-        localX * Math.cos(this.rotation) - localY * Math.sin(this.rotation);
-      const rotatedLocalY =
-        localX * Math.sin(this.rotation) + localY * Math.cos(this.rotation);
-      const containerX = globalX + rotatedLocalX;
-      const containerY = globalY + rotatedLocalY;
-      return { x: containerX, y: containerY };
-    };
-    container.getBottomLeft = function () {
-      const { tx, ty } = this.getWorldTransformMatrix();
-      const globalX = tx;
-      const globalY = ty;
-      const localX = -(this.displayWidth / 2);
-      const localY = this.displayHeight / 2;
-      const rotatedLocalX =
-        localX * Math.cos(this.rotation) - localY * Math.sin(this.rotation);
-      const rotatedLocalY =
-        localX * Math.sin(this.rotation) + localY * Math.cos(this.rotation);
-      const containerX = globalX + rotatedLocalX;
-      const containerY = globalY + rotatedLocalY;
-      return { x: containerX, y: containerY };
-    };
-    container.getBottomRight = function () {
-      const { tx, ty } = this.getWorldTransformMatrix();
-      const globalX = tx;
-      const globalY = ty;
-      const localX = this.displayWidth / 2;
-      const localY = this.displayHeight / 2;
-      const rotatedLocalX =
-        localX * Math.cos(this.rotation) - localY * Math.sin(this.rotation);
-      const rotatedLocalY =
-        localX * Math.sin(this.rotation) + localY * Math.cos(this.rotation);
-      const containerX = globalX + rotatedLocalX;
-      const containerY = globalY + rotatedLocalY;
-      return { x: containerX, y: containerY };
-    };
-    container.getLeftCenter = function () {
-      const { tx, ty } = this.getWorldTransformMatrix();
-      const globalX = tx;
-      const globalY = ty;
-      const localX = -(this.displayWidth / 2);
-      const localY = 0;
-      const rotatedLocalX =
-        localX * Math.cos(this.rotation) - localY * Math.sin(this.rotation);
-      const rotatedLocalY =
-        localX * Math.sin(this.rotation) + localY * Math.cos(this.rotation);
-      const containerX = globalX + rotatedLocalX;
-      const containerY = globalY + rotatedLocalY;
-      return { x: containerX, y: containerY };
-    };
-    container.getRightCenter = function () {
-      const { tx, ty } = this.getWorldTransformMatrix();
-      const globalX = tx;
-      const globalY = ty;
-      const localX = this.displayWidth / 2;
-      const localY = 0;
-      const rotatedLocalX =
-        localX * Math.cos(this.rotation) - localY * Math.sin(this.rotation);
-      const rotatedLocalY =
-        localX * Math.sin(this.rotation) + localY * Math.cos(this.rotation);
-      const containerX = globalX + rotatedLocalX;
-      const containerY = globalY + rotatedLocalY;
-      return { x: containerX, y: containerY };
-    };
-    container.getTopCenter = function () {
-      const { tx, ty } = this.getWorldTransformMatrix();
-      const globalX = tx;
-      const globalY = ty;
-      const localX = 0;
-      const localY = -(this.displayHeight / 2);
-      const rotatedLocalX =
-        localX * Math.cos(this.rotation) - localY * Math.sin(this.rotation);
-      const rotatedLocalY =
-        localX * Math.sin(this.rotation) + localY * Math.cos(this.rotation);
-      const containerX = globalX + rotatedLocalX;
-      const containerY = globalY + rotatedLocalY;
-      return { x: containerX, y: containerY };
-    };
-    container.getBottomCenter = function () {
-      const { tx, ty } = this.getWorldTransformMatrix();
-      const globalX = tx;
-      const globalY = ty;
-      const localX = 0;
-      const localY = this.displayHeight / 2;
-      const rotatedLocalX =
-        localX * Math.cos(this.rotation) - localY * Math.sin(this.rotation);
-      const rotatedLocalY =
-        localX * Math.sin(this.rotation) + localY * Math.cos(this.rotation);
-      const containerX = globalX + rotatedLocalX;
-      const containerY = globalY + rotatedLocalY;
-      return { x: containerX, y: containerY };
-    };
+    this.#shapes.push(
+      new Shapes.Arc(
+        this,
+        151,
+        115,
+        50,
+        0,
+        180,
+        false,
+        0x0000ff,
+      ).setDisplaySize(301, 230),
+    );
+    this.#shapes.push(
+      new Shapes.Polygon(
+        this,
+        400,
+        400,
+        [0, 0, 50, 50, 0, 50],
+        0xffff00,
+      ).setDisplaySize(100, 200),
+    );
+    //const rect = container.getBounds();
+    //container.setSize(rect.width, rect.height);
+    //container.setRotation(Math.PI / 4);
 
     for (let i = 0; i < this.#shapes.length; i++) {
       let shape = this.#shapes[i];
@@ -464,17 +359,6 @@ class ShapeEditor extends Phaser.Scene {
     }
 
     this.input.on("pointerdown", this.#selectManager.hide, this.#selectManager);
-
-    try {
-      const response = await fetch(API_URL);
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const _data = await response.json();
-    } catch (error) {
-      console.error(error);
-    }
   }
 
   /**
