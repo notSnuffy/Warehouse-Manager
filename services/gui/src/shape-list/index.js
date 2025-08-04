@@ -8,6 +8,7 @@ const searchInputElement = document.getElementById("searchInput");
 const sortOrderElement = document.getElementById("sortOrder");
 const itemsPerPageElement = document.getElementById("itemsPerPage");
 const paginationControlsElement = document.getElementById("paginationControls");
+const addShapeButtonElement = document.getElementById("addShapeButton");
 
 const shapes = {};
 let currentPage = 1;
@@ -55,6 +56,10 @@ itemsPerPageElement.addEventListener("change", () => {
   itemsPerPage = parseInt(itemsPerPageElement.value, 10);
   currentPage = 1; // Reset to the first page on items per page change
   renderShapes(); // Re-render shapes on items per page change
+});
+
+addShapeButtonElement.addEventListener("click", () => {
+  window.location.href = "/";
 });
 
 async function fetchShapes() {
