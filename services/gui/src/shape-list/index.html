@@ -3,15 +3,67 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="../styles.scss" />
+    <link rel="stylesheet" href="styles.scss" />
     <title>Shape List</title>
   </head>
   <body>
-    <div class="container mt-5">
-      <h1 class="text-center text-white">Shape List</h1>
-      <ul class="list-group" id="shapeList"></ul>
+    <div class="container mt-5" style="height: 100vh">
+      <!-- Header Row -->
+      <div class="row align-items-center mb-4">
+        <div class="col-md-3">
+          <h2 class="text-white mb-0">Shape List</h2>
+        </div>
+
+        <div class="col-md-3">
+          <input
+            type="text"
+            class="form-control"
+            id="searchInput"
+            placeholder="Search shapes..."
+            list="shapeSuggestions"
+          />
+          <datalist id="shapeSuggestions"></datalist>
+        </div>
+
+        <div class="col-md-2">
+          <select class="form-select" id="itemsPerPage">
+            <option value="5">5 per page</option>
+            <option value="10" selected>10 per page</option>
+            <option value="25">25 per page</option>
+            <option value="50">50 per page</option>
+          </select>
+        </div>
+
+        <div class="col-md-2">
+          <select class="form-select" id="sortOrder">
+            <option value="name_ascending">Name (A–Z)</option>
+            <option value="name_descending">Name (Z–A)</option>
+            <option value="date_ascending">Date Created (Oldest First)</option>
+            <option value="date_descending" selected>
+              Date Created (Newest First)
+            </option>
+          </select>
+        </div>
+
+        <div class="col-md-2">
+          <button class="btn btn-primary w-100" id="addShapeButton">
+            Add New Shape
+          </button>
+        </div>
+      </div>
+
+      <!-- Shape List -->
+      <div class="border rounded overflow-auto" style="max-height: 80vh">
+        <ul class="list-group" id="shapeList"></ul>
+      </div>
+      <!-- Pagination Controls -->
+      <nav aria-label="Shape pagination" class="mt-4">
+        <ul
+          class="pagination justify-content-center"
+          id="paginationControls"
+        ></ul>
+      </nav>
     </div>
-    <button class="btn btn-primary" id="addShapeButton">Add New Shape</button>
     <script type="module" src="./index.js"></script>
   </body>
 </html>
