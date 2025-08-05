@@ -9,6 +9,9 @@ const sortOrderElement = document.getElementById("sortOrder");
 const itemsPerPageElement = document.getElementById("itemsPerPage");
 const paginationControlsElement = document.getElementById("paginationControls");
 const addShapeButtonElement = document.getElementById("addShapeButton");
+const shapeListItemTemplateElement = document.getElementById(
+  "shapeListItemTemplate",
+);
 
 const shapes = {};
 let currentPage = 1;
@@ -28,9 +31,6 @@ function fillShapesWithTestData() {
     testShapes[i] = {
       id: i,
       name: `Shape ${i}`,
-      type: "circle",
-      color: "red",
-      size: 10 + i,
     };
   }
   return testShapes;
@@ -126,7 +126,7 @@ function renderPaginationControls(shapes) {
 
   const addEllipsis = () => {
     const li = document.createElement("li");
-    li.className = "page-item disabled";
+    li.classList.add("page-item", "disabled");
     li.innerHTML = `<span class="page-link">…</span>`;
     paginationControlsElement.appendChild(li);
   };
@@ -187,28 +187,18 @@ async function removeShape(id) {
 }
 
 function addShapeToList(shape) {
-  const li = document.createElement("li");
-  li.textContent = shape.name;
-  li.classList.add("list-group-item");
+  const clone = shapeListItemTemplateElement.content.cloneNode(true);
 
-  const editButton = document.createElement("button");
-  editButton.textContent = "Edit";
-  editButton.classList.add("btn", "btn-primary", "btn-sm", "float-end", "me-2");
-  editButton.addEventListener("click", () => editShape(shape.id));
+  clone.querySelector(".shape-name").textContent = shape.name;
 
-  const removeButton = document.createElement("button");
-  removeButton.textContent = "Remove";
-  removeButton.classList.add("btn", "btn-danger", "btn-sm", "float-end");
-  removeButton.addEventListener("click", () => removeShape(shape.id));
+  clone
+    .querySelector(".edit-button")
+    .addEventListener("click", () => editShape(shape.id));
+  clone
+    .querySelector(".remove-button")
+    .addEventListener("click", () => removeShape(shape.id));
 
-  const buttonGroup = document.createElement("div");
-  buttonGroup.classList.add("btn-group", "float-end");
-  buttonGroup.appendChild(editButton);
-  buttonGroup.appendChild(removeButton);
-
-  li.appendChild(buttonGroup);
-
-  shapeListElement.appendChild(li);
+  shapeListElement.appendChild(clone);
 }
 
 function populateShapeSuggestions() {

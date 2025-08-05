@@ -56,6 +56,21 @@
       <div class="border rounded overflow-auto" style="max-height: 80vh">
         <ul class="list-group" id="shapeList"></ul>
       </div>
+
+      <template id="shapeListItemTemplate">
+        <li
+          class="list-group-item d-flex align-items-center justify-content-between"
+        >
+          <span class="shape-name"></span>
+          <div class="btn-group">
+            <button class="edit-button btn btn-primary btn-sm me-1">
+              Edit
+            </button>
+            <button class="remove-button btn btn-danger btn-sm">Remove</button>
+          </div>
+        </li>
+      </template>
+
       <!-- Pagination Controls -->
       <nav aria-label="Shape pagination" class="mt-4">
         <ul
