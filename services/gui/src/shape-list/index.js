@@ -17,9 +17,9 @@ const shapes = {};
 let currentPage = 1;
 let itemsPerPage = parseInt(itemsPerPageElement.value, 10);
 
-const testShapes = fillShapesWithTestData(); // Fill with test data for initial rendering
+const testShapes = fillShapesWithTestData();
 Object.keys(testShapes).forEach((key) => {
-  shapes[key] = testShapes[key]; // Initialize shapes with test data
+  shapes[key] = testShapes[key];
 });
 
 init();
@@ -43,19 +43,19 @@ async function init() {
 }
 
 searchInputElement.addEventListener("input", () => {
-  currentPage = 1; // Reset to the first page on search input change
-  renderShapes(); // Re-render shapes on search input change
+  currentPage = 1;
+  renderShapes();
 });
 
 sortOrderElement.addEventListener("change", () => {
-  currentPage = 1; // Reset to the first page on sort order change
-  renderShapes(); // Re-render shapes on sort order change
+  currentPage = 1;
+  renderShapes();
 });
 
 itemsPerPageElement.addEventListener("change", () => {
   itemsPerPage = parseInt(itemsPerPageElement.value, 10);
-  currentPage = 1; // Reset to the first page on items per page change
-  renderShapes(); // Re-render shapes on items per page change
+  currentPage = 1;
+  renderShapes();
 });
 
 addShapeButtonElement.addEventListener("click", () => {
@@ -70,7 +70,7 @@ async function fetchShapes() {
     }
     const data = await response.json();
     data.forEach((shape) => {
-      shapes[shape.id] = shape; // Store the shape in the shapes object
+      shapes[shape.id] = shape;
     });
   } catch (error) {
     console.error("Error fetching shapes:", error);
@@ -85,13 +85,13 @@ function paginateShapes(shapes) {
 }
 
 function renderShapes() {
-  shapeListElement.innerHTML = ""; // Clear the list
+  shapeListElement.innerHTML = "";
   const filteredShapes = filterShapes();
   const paginatedShapes = paginateShapes(filteredShapes);
   paginatedShapes.forEach((shape) => {
     addShapeToList(shape);
   });
-  renderPaginationControls(filteredShapes); // Render pagination controls
+  renderPaginationControls(filteredShapes);
 }
 
 function renderPaginationControls(shapes) {
@@ -178,9 +178,12 @@ async function removeShape(id) {
     //}
     // Remove the shape from the list
     //}
-    delete shapes[id]; // Remove the shape from the shapes object
-    renderShapes(); // Re-render the shapes list
-    populateShapeSuggestions(); // Update the shape suggestions
+
+    // Technically, we could remove just the specific shape from the DOM,
+    // but for simplicity, we re-render the entire list.
+    delete shapes[id];
+    renderShapes();
+    populateShapeSuggestions();
   } catch (error) {
     console.error("Error removing shape:", error);
   }
@@ -202,7 +205,7 @@ function addShapeToList(shape) {
 }
 
 function populateShapeSuggestions() {
-  shapeSuggestionsElement.innerHTML = ""; // Clear previous suggestions
+  shapeSuggestionsElement.innerHTML = "";
   Object.values(shapes).forEach((shape) => {
     const option = document.createElement("option");
     option.value = shape.id;
@@ -212,10 +215,8 @@ function populateShapeSuggestions() {
 }
 
 function filterShapes() {
-  const searchInput = document
-    .getElementById("searchInput")
-    .value.toLowerCase();
-  const sortOrder = document.getElementById("sortOrder").value;
+  const searchInput = searchInputElement.value.toLowerCase();
+  const sortOrder = sortOrderElement.value;
 
   const filteredShapes = Object.values(shapes).filter((shape) =>
     shape.name.toLowerCase().includes(searchInput),
