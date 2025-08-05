@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en" data-bs-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="styles.scss" />
+    <title>Item List</title>
+  </head>
+  <body>
+    <div class="container mt-5" style="height: 100vh">
+      <!-- Header Row -->
+      <div class="row align-items-center mb-4">
+        <div class="col-md-3">
+          <h2 class="text-white mb-0">Item List</h2>
+        </div>
+
+        <div class="col-md-3">
+          <input
+            type="text"
+            class="form-control"
+            id="searchInput"
+            placeholder="Search items..."
+            list="itemSuggestions"
+          />
+          <datalist id="itemSuggestions"></datalist>
+        </div>
+
+        <div class="col-md-2">
+          <select class="form-select" id="itemsPerPage">
+            <option value="5">5 per page</option>
+            <option value="10" selected>10 per page</option>
+            <option value="25">25 per page</option>
+            <option value="50">50 per page</option>
+          </select>
+        </div>
+
+        <div class="col-md-2">
+          <select class="form-select" id="sortOrder">
+            <option value="alphabetical_ascending">Alphabetical (A–Z)</option>
+            <option value="alphabetical_descending">Alphabetical (Z–A)</option>
+            <option value="date_ascending">Date Created (Oldest First)</option>
+            <option value="date_descending" selected>
+              Date Created (Newest First)
+            </option>
+          </select>
+        </div>
+
+        <div class="col-md-2">
+          <button class="btn btn-primary w-100" id="addItemButton">
+            Add New Item
+          </button>
+        </div>
+      </div>
+      <!-- Shape Table Container -->
+      <div class="border rounded table-responsive" style="max-height: 80vh">
+        <table
+          class="table table-dark table-striped table-bordered align-middle mb-0"
+        >
+          <thead>
+            <tr>
+              <th class="text-center sortable-column">Name</th>
+              <th class="text-center">ID</th>
+              <th class="text-center sortable-column">Category</th>
+              <th class="text-center sortable-column">Quantity</th>
+              <th class="text-center sortable-column">Description</th>
+              <th class="text-center">Location</th>
+              <th class="text-center">Action</th>
+            </tr>
+          </thead>
+          <tbody id="itemTableBody"></tbody>
+        </table>
+
+        <template id="itemTemplate">
+          <tr>
+            <td class="item-name text-center">Item Name</td>
+            <td class="item-id text-center">123</td>
+            <td class="item-category text-center">Category</td>
+            <td class="item-quantity text-center">100 pcs</td>
+            <td class="item-description text-truncate" style="max-width: 300px">
+              Description
+            </td>
+            <td class="item-location text-center">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                fill="currentColor"
+                class="bi bi-geo-alt-fill"
+                viewBox="0 0 16 16"
+              >
+                <path
+                  d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10m0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6"
+                />
+              </svg>
+            </td>
+            <td class="item-action text-center">
+              <div class="dropdown">
+                <button
+                  class="btn btn-sm btn-outline-light p-0"
+                  type="button"
+                  id="actionMenuButton"
+                  data-bs-toggle="dropdown"
+                  style="width: 32px; height: 32px; border-radius: 50%"
+                >
+                  +
+                </button>
+                <ul
+                  class="dropdown-menu dropdown-menu-end z-2000"
+                  style="min-width: 120px"
+                >
+                  <li>
+                    <a class="edit-button dropdown-item text-primary" href="#"
+                      >Edit</a
+                    >
+                  </li>
+                  <li>
+                    <a class="remove-button dropdown-item text-danger" href="#"
+                      >Remove</a
+                    >
+                  </li>
+                </ul>
+              </div>
+            </td>
+          </tr>
+        </template>
+      </div>
+
+      <!-- Pagination Controls -->
+      <nav aria-label="Item pagination" class="mt-4">
+        <ul
+          class="pagination justify-content-center"
+          id="paginationControls"
+        ></ul>
+      </nav>
+    </div>
+    <script type="module" src="./index.js"></script>
+  </body>
+</html>

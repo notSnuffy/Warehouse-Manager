@@ -182,6 +182,11 @@ async function removeShape(id) {
     // Technically, we could remove just the specific shape from the DOM,
     // but for simplicity, we re-render the entire list.
     delete shapes[id];
+
+    const totalPages = Math.ceil(Object.keys(shapes).length / itemsPerPage);
+    if (currentPage > totalPages) {
+      currentPage = totalPages;
+    }
     renderShapes();
     populateShapeSuggestions();
   } catch (error) {
