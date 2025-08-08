@@ -13,7 +13,7 @@ const config = {
   width: window_size.width,
   height: window_size.height,
   parent: "editorContainer",
-  backgroundColor: "#028af8",
+  backgroundColor: "#000000",
   scale: {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,

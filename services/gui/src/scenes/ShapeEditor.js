@@ -160,8 +160,6 @@ class ShapeEditor extends Phaser.Scene {
       this.#shapes,
     );
 
-    this.cameras.main.setBackgroundColor(0x000000);
-
     const container = new Shapes.Container(this, 300, 300);
     this.#shapes.push(container);
 

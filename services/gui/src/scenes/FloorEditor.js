@@ -1,3 +1,4 @@
+import { API_URL } from "../config";
 import Phaser from "phaser";
 
 class FloorEditor extends Phaser.Scene {
@@ -140,6 +141,63 @@ class FloorEditor extends Phaser.Scene {
         corner.setFillStyle(0xffffff);
       });
       this.#selectedCorners = [];
+    });
+
+    const saveButton = document.getElementById("saveButton");
+    saveButton.addEventListener("click", async () => {
+      const floorName = document.getElementById("floorName").value;
+      if (!floorName) {
+        alert("Please enter a floor name.");
+        return;
+      }
+
+      let floorData = {
+        name: floorName,
+        corners: [],
+        walls: [],
+      };
+
+      const cornersIds = new Map();
+
+      let cornerId = 1;
+      this.#graph.forEach((_neighbours, corner) => {
+        floorData.corners.push({
+          id: cornerId,
+          positionX: corner.x,
+          positionY: corner.y,
+        });
+        cornersIds.set(corner, cornerId);
+        cornerId++;
+      });
+      this.#graph.forEach((neighbours, parent) => {
+        neighbours.forEach((_wall, child) => {
+          floorData.walls.push({
+            startCornerId: cornersIds.get(parent),
+            endCornerId: cornersIds.get(child),
+          });
+        });
+      });
+
+      console.log("Floor data to save:", floorData);
+
+      try {
+        const response = await fetch(`${API_URL}/floor-management/floors`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(floorData),
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to save floor data.");
+        }
+
+        const result = await response.json();
+        console.log("Floor saved successfully:", result);
+      } catch (error) {
+        console.error("Error saving floor data:", error);
+      }
     });
 
     this.input.on("pointerdown", () => {
