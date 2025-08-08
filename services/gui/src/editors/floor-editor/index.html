@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en" data-bs-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="./styles.scss" />
+    <title>Floor Editor</title>
+  </head>
+  <body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark" id="menuBar">
+      <div class="container-fluid">
+        <div class="navbar-nav">
+          <button id="moveButton" class="btn btn-primary mr-2">Move</button>
+          <button id="selectButton" class="btn btn-primary mr-2">Select</button>
+        </div>
+        <form class="d-flex mx-auto" style="width: 50%">
+          <input
+            type="text"
+            class="form-control me-2"
+            id="floorName"
+            placeholder="Enter floor name"
+            aria-label="Floor Name"
+          />
+        </form>
+        <button id="saveButton" class="btn btn-primary">Save</button>
+      </div>
+    </nav>
+    <div class="container-fluid">
+      <div class="row">
+        <div class="col-md-2" id="itemsMenu">
+          <h3 class="text-white text-center">Add Elements</h3>
+          <h4 class="text-white text-center">Structure</h4>
+          <div class="d-grid">
+            <button class="btn btn-secondary mb-2" id="addCornerButton">
+              Corner
+            </button>
+          </div>
+        </div>
+        <div class="col-md-10 ps-0" id="editorContainer"></div>
+      </div>
+    </div>
+
+    <script type="module" src="./index.js"></script>
+  </body>
+</html>

@@ -3,252 +3,45 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="/styles.scss" />
-    <title>Warehouse Manager</title>
+    <link rel="stylesheet" href="./styles.scss" />
+    <title>Home</title>
   </head>
   <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark" id="menuBar">
-      <div class="container-fluid">
-        <div class="navbar-nav">
-          <button
-            id="shapeListButton"
-            class="btn btn-primary mr-2"
-            data-bs-toggle="modal"
-            data-bs-target="#shapeListModal"
-          >
-            Shapes
-          </button>
-          <button id="moveButton" class="btn btn-primary mr-2">Move</button>
-          <button id="selectButton" class="btn btn-primary mr-2">Select</button>
-        </div>
-        <form class="d-flex mx-auto" style="width: 50%">
-          <input
-            type="text"
-            class="form-control me-2"
-            id="shapeName"
-            placeholder="Enter shape name"
-            aria-label="Shape Name"
-          />
-        </form>
-        <button id="saveButton" class="btn btn-primary">Save</button>
+    <h1 class="text-center text-white mt-5">
+      Welcome to the Warehouse Manager
+    </h1>
+    <div class="container mt-5">
+      <h2 class="text-center text-white mt-3">Editors</h2>
+      <div class="text-center">
+        <a href="./editors/shape-editor/" class="btn btn-primary mb-3"
+          >Shape Editor</a
+        >
       </div>
-    </nav>
-    <div class="container-fluid">
+      <h2 class="text-center text-white mt-3">Lists</h2>
       <div class="row">
-        <div class="col-md-10" id="editorContainer"></div>
-        <div class="col-md-2" id="itemsMenu">
-          <h3 class="text-white">Add Shape</h3>
-          <div class="d-grid ga-2">
-            <button
-              class="btn btn-secondary mb-2"
-              data-shape="rectangle"
-              id="add-rectangle"
-            >
-              Rectangle
-            </button>
-            <button
-              class="btn btn-secondary mb-2"
-              data-shape="ellipse"
-              id="add-ellipse"
-            >
-              Ellipse
-            </button>
-            <button
-              class="btn btn-secondary mb-2"
-              data-shape="arc"
-              id="add-arc"
-            >
-              Arc
-            </button>
-            <button
-              class="btn btn-secondary mb-2"
-              data-shape="polygon"
-              id="add-polygon"
-            >
-              Polygon
-            </button>
-          </div>
+        <div class="col-md-3">
+          <a href="./shape-list/" class="btn btn-secondary mb-3 w-100"
+            >Shape List</a
+          >
+        </div>
+        <div class="col-md-3">
+          <a href="./furniture-list/" class="btn btn-secondary mb-3 w-100"
+            >Furniture List</a
+          >
+        </div>
+        <div class="col-md-3">
+          <a href="./floor-list/" class="btn btn-secondary mb-3 w-100"
+            >Floor List</a
+          >
+        </div>
+        <div class="col-md-3">
+          <a href="./item-list/" class="btn btn-secondary mb-3 w-100"
+            >Item List</a
+          >
         </div>
       </div>
     </div>
 
-    <div
-      class="modal fade"
-      id="newShapeModal"
-      tabindex="-1"
-      aria-labelledby="newShapeModalLabel"
-      aria-hidden="true"
-    >
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="newShapeModalLabel">Add New Shape</h5>
-            <button
-              type="button"
-              class="btn-close"
-              data-bs-dismiss="modal"
-              aria-label="Close"
-            ></button>
-          </div>
-          <div class="modal-body">
-            <form id="shapeForm">
-              <div class="form-group">
-                <label for="shapeType">Shape</label>
-                <input
-                  type="text"
-                  class="form-control"
-                  id="shapeType"
-                  readonly
-                />
-              </div>
-              <div class="form-group">
-                <label for="shapeX">X Position</label>
-                <input
-                  type="number"
-                  class="form-control"
-                  id="shapeX"
-                  required
-                  value="0"
-                />
-              </div>
-              <div class="form-group">
-                <label for="shapeY">Y Position</label>
-                <input
-                  type="number"
-                  class="form-control"
-                  id="shapeY"
-                  required
-                  value="0"
-                />
-              </div>
-              <div class="form-group" id="widthGroup">
-                <label for="shapeWidth">Width</label>
-                <input
-                  type="number"
-                  class="form-control"
-                  id="shapeWidth"
-                  required
-                  value="100"
-                  min="1"
-                />
-              </div>
-              <div class="form-group" id="heightGroup">
-                <label for="shapeHeight">Height</label>
-                <input
-                  type="number"
-                  class="form-control"
-                  id="shapeHeight"
-                  required
-                  value="100"
-                  min="1"
-                />
-              </div>
-              <div class="form-group" id="radiusGroup">
-                <label for="shapeRadius">Radius</label>
-                <input
-                  type="number"
-                  class="form-control"
-                  id="shapeRadius"
-                  required
-                  value="50"
-                  min="1"
-                />
-              </div>
-              <div class="form-group" id="angleGroup">
-                <label for="shapeAngle">Angle</label>
-                <input
-                  type="number"
-                  class="form-control"
-                  id="shapeAngle"
-                  required
-                  value="180"
-                  min="0"
-                  max="360"
-                />
-              </div>
-              <div class="form-group" id="polygonGroup">
-                <label for="shapePoints">Polygon Points</label>
-                <div id="polygonPoints"></div>
-                <button
-                  type="button"
-                  class="btn btn-primary"
-                  id="addPolygonPointButton"
-                >
-                  Add Point
-                </button>
-                <button
-                  type="button"
-                  class="btn btn-danger"
-                  id="removePolygonPointButton"
-                >
-                  Remove Point
-                </button>
-              </div>
-              <div class="form-group">
-                <label for="shapeColor">Color</label>
-                <input
-                  type="color"
-                  class="form-control form-control-color"
-                  id="shapeColor"
-                  value="#563d7c"
-                  title="Choose your color"
-                />
-              </div>
-            </form>
-          </div>
-          <div class="modal-footer">
-            <button
-              type="button"
-              class="btn btn-secondary"
-              data-bs-dismiss="modal"
-            >
-              Close
-            </button>
-            <button
-              type="button"
-              class="btn btn-primary"
-              id="addShapeConfirmButton"
-            >
-              Confirm
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div
-      class="modal fade"
-      id="shapeListModal"
-      tabindex="-1"
-      aria-labelledby="shapeListModalLabel"
-      aria-hidden="true"
-    >
-      <div class="modal-dialog modal-dialog-scrollable">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="shapeListModalLabel">Your Shapes</h5>
-            <button
-              type="button"
-              class="btn-close"
-              data-bs-dismiss="modal"
-              aria-label="Close"
-            ></button>
-          </div>
-          <div class="modal-body">
-            <ul class="list-group" id="shapeList"></ul>
-          </div>
-          <div class="modal-footer justify-content-between">
-            <button type="button" class="btn btn-primary">Add New</button>
-            <button
-              type="button"
-              class="btn btn-secondary"
-              data-bs-dismiss="modal"
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-    <script type="module" src="/main.js"></script>
+    <script type="module" src="./index.js"></script>
   </body>
 </html>

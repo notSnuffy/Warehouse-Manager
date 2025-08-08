@@ -1,0 +1,23 @@
+// Import all of Bootstrap's CSS
+@import "bootstrap/scss/bootstrap";
+
+body,
+html {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  font-family: Arial, sans-serif;
+}
+#menuBar {
+  background-color: #343a40;
+}
+#editorContainer {
+  background-color: #222;
+  height: calc(100vh - 56px); /* Adjust height to fit below navbar */
+}
+#itemsMenu {
+  background-color: #444;
+  padding: 10px;
+  overflow-y: auto;
+  height: calc(100vh - 56px); /* Adjust height to fit below navbar */
+}

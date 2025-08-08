@@ -1,0 +1,161 @@
+import Phaser from "phaser";
+
+class FloorEditor extends Phaser.Scene {
+  /**
+   * Graph representing the floor layout
+   * @type {Map<Phaser.GameObjects.Circle, Map<Phaser.GameObjects.Circle, Phaser.GameObjects.Line>>}
+   * @private
+   * @default new Map()
+   */
+  #graph = new Map();
+
+  /**
+   * Array to hold selected corners
+   * @type {Phaser.GameObjects.Circle[]}
+   * @private
+   * @default []
+   */
+  #selectedCorners = [];
+
+  /**
+   * Indicated the currently active tool
+   * @type {string}
+   * @default "move"
+   * @private
+   */
+  #activeTool = "move";
+
+  /**
+   * Constructor for the FloorEditor scene
+   * @constructor
+   */
+  constructor() {
+    super("FloorEditor");
+  }
+
+  /**
+   * Initializes the scene
+   * @public
+   */
+  init() {}
+
+  /**
+   * Creates a wall between two corners
+   * @private
+   * @param {Phaser.GameObjects.Circle} corner1 - The first corner
+   * @param {Phaser.GameObjects.Circle} corner2 - The second corner
+   * @return {void}
+   */
+  #createWall(corner1, corner2) {
+    if (corner1 === corner2) {
+      console.warn("Cannot create a wall between the same corner.");
+      return;
+    }
+
+    if (this.#graph.get(corner1).has(corner2)) {
+      console.warn("A wall already exists between these corners.");
+      return;
+    }
+
+    const wall = this.add
+      .line(0, 0, corner1.x, corner1.y, corner2.x, corner2.y, 0xffffff)
+      .setOrigin(0, 0)
+      .setLineWidth(10);
+
+    this.#graph.get(corner1).set(corner2, wall);
+    this.#graph.get(corner2).set(corner1, wall);
+  }
+
+  #updateWalls(corner) {
+    const connectedCorners = this.#graph.get(corner);
+
+    connectedCorners.forEach((wall, otherCorner) => {
+      wall.setTo(corner.x, corner.y, otherCorner.x, otherCorner.y);
+    });
+  }
+
+  /**
+   * Adds a corner to the floor editor
+   * @private
+   * @returns {void}
+   */
+  #addCorner() {
+    const corner = this.add
+      .circle(100, 100, 20, 0xffffff)
+      .setInteractive({ draggable: true });
+
+    this.#graph.set(corner, new Map());
+
+    corner.on("drag", (_pointer, dragX, dragY) => {
+      if (this.#activeTool !== "move") {
+        return;
+      }
+
+      corner.setPosition(dragX, dragY);
+      this.#updateWalls(corner);
+    });
+
+    corner.on("pointerdown", (_pointer, _x, _y, event) => {
+      event.stopPropagation();
+      if (this.#activeTool !== "select") {
+        return;
+      }
+
+      if (!this.#selectedCorners.includes(corner)) {
+        corner.setFillStyle(0xff0000);
+        this.#selectedCorners.push(corner);
+      }
+
+      if (this.#selectedCorners.length === 2) {
+        this.#createWall(this.#selectedCorners[0], this.#selectedCorners[1]);
+        this.#selectedCorners.forEach((c) => c.setFillStyle(0xffffff));
+        this.#selectedCorners = [];
+      }
+    });
+  }
+
+  /**
+   * Creates the scene
+   * @public
+   */
+  create() {
+    const addCornerButton = document.getElementById("addCornerButton");
+    addCornerButton.addEventListener("click", () => {
+      this.#addCorner();
+    });
+
+    const moveButton = document.getElementById("moveButton");
+    moveButton.addEventListener("click", () => {
+      this.#activeTool = "move";
+      this.#selectedCorners.forEach((corner) => {
+        corner.setFillStyle(0xffffff);
+      });
+      this.#selectedCorners = [];
+    });
+
+    const selectButton = document.getElementById("selectButton");
+    selectButton.addEventListener("click", () => {
+      this.#activeTool = "select";
+      this.#selectedCorners.forEach((corner) => {
+        corner.setFillStyle(0xffffff);
+      });
+      this.#selectedCorners = [];
+    });
+
+    this.input.on("pointerdown", () => {
+      if (this.#activeTool === "select") {
+        this.#selectedCorners.forEach((corner) => {
+          corner.setFillStyle(0xffffff);
+        });
+        this.#selectedCorners = [];
+      }
+    });
+  }
+  /**
+   * Updates the scene
+   * @public
+   */
+  update() {}
+}
+
+export { FloorEditor };
