@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en" data-bs-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="styles.scss" />
+    <title>Floor List</title>
+  </head>
+  <body>
+    <div class="container mt-5" style="height: 100vh">
+      <!-- Header Row -->
+      <div class="row align-items-center mb-4">
+        <div class="col-md-3">
+          <h2 class="text-white mb-0">Floor List</h2>
+        </div>
+
+        <div class="col-md-3">
+          <input
+            type="text"
+            class="form-control"
+            id="searchInput"
+            placeholder="Search floors..."
+            list="floorSuggestions"
+          />
+          <datalist id="floorSuggestions"></datalist>
+        </div>
+
+        <div class="col-md-2">
+          <select class="form-select" id="itemsPerPage">
+            <option value="5">5 per page</option>
+            <option value="10" selected>10 per page</option>
+            <option value="25">25 per page</option>
+            <option value="50">50 per page</option>
+          </select>
+        </div>
+
+        <div class="col-md-2">
+          <select class="form-select" id="sortOrder">
+            <option value="name_ascending">Name (A–Z)</option>
+            <option value="name_descending">Name (Z–A)</option>
+            <option value="date_ascending">Date Created (Oldest First)</option>
+            <option value="date_descending" selected>
+              Date Created (Newest First)
+            </option>
+          </select>
+        </div>
+
+        <div class="col-md-2">
+          <button class="btn btn-primary w-100" id="addFloorButton">
+            Add New Floor
+          </button>
+        </div>
+      </div>
+
+      <!-- Floor List -->
+      <div class="border rounded overflow-auto" style="max-height: 80vh">
+        <ul class="list-group" id="floorList"></ul>
+      </div>
+
+      <template id="floorListItemTemplate">
+        <li
+          class="list-group-item d-flex align-items-center justify-content-between"
+        >
+          <span class="floor-name"></span>
+          <div class="btn-group">
+            <button class="edit-button btn btn-primary btn-sm me-1">
+              Edit
+            </button>
+            <button class="remove-button btn btn-danger btn-sm">Remove</button>
+          </div>
+        </li>
+      </template>
+
+      <!-- Pagination Controls -->
+      <nav aria-label="Floor pagination" class="mt-4">
+        <ul
+          class="pagination justify-content-center"
+          id="paginationControls"
+        ></ul>
+      </nav>
+    </div>
+    <script type="module" src="./index.js"></script>
+  </body>
+</html>

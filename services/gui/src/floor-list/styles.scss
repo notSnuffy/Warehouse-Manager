@@ -1,0 +1,9 @@
+// Import all of Bootstrap's CSS
+@import "bootstrap/scss/bootstrap";
+
+body,
+html {
+  margin: 0;
+  height: 100%;
+  font-family: Arial, sans-serif;
+}
