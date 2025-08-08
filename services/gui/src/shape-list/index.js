@@ -1,6 +1,10 @@
 import "./styles.scss";
 import * as _bootstrap from "bootstrap";
 import { API_URL } from "../config";
+import {
+  paginateList,
+  renderPaginationControls,
+} from "../lib/functions/pagination";
 
 const shapeListElement = document.getElementById("shapeList");
 const shapeSuggestionsElement = document.getElementById("shapeSuggestions");
@@ -77,87 +81,26 @@ async function fetchShapes() {
   }
 }
 
-function paginateShapes(shapes) {
-  const totalShapes = shapes.length;
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = Math.min(startIndex + itemsPerPage, totalShapes);
-  return shapes.slice(startIndex, endIndex);
-}
-
 function renderShapes() {
   shapeListElement.innerHTML = "";
   const filteredShapes = filterShapes();
-  const paginatedShapes = paginateShapes(filteredShapes);
+  const paginatedShapes = paginateList(
+    filteredShapes,
+    currentPage,
+    itemsPerPage,
+  );
   paginatedShapes.forEach((shape) => {
     addShapeToList(shape);
   });
-  renderPaginationControls(filteredShapes);
-}
-
-function renderPaginationControls(shapes) {
-  const totalPages = Math.ceil(shapes.length / itemsPerPage);
-  const maxVisiblePages = 5;
-  paginationControlsElement.innerHTML = "";
-
-  if (totalPages <= 1) {
-    return;
-  }
-  const createPageItem = (
-    setPage,
-    itemLabel = setPage,
-    active = false,
-    disabled = false,
-  ) => {
-    const li = document.createElement("li");
-    li.className = `page-item ${active ? "active" : ""}${disabled ? "disabled" : ""}`;
-    li.innerHTML = `<a class="page-link" href="#">${itemLabel}</a>`;
-    if (!disabled && !active) {
-      li.addEventListener("click", () => {
-        currentPage = setPage;
-        renderShapes();
-      });
-    }
-    return li;
-  };
-
-  paginationControlsElement.appendChild(
-    createPageItem(currentPage - 1, "Previous", false, currentPage === 1),
-  );
-
-  const addEllipsis = () => {
-    const li = document.createElement("li");
-    li.classList.add("page-item", "disabled");
-    li.innerHTML = `<span class="page-link">…</span>`;
-    paginationControlsElement.appendChild(li);
-  };
-
-  let startPage = Math.max(currentPage - 2, 1);
-  let endPage = Math.min(currentPage + 2, totalPages);
-
-  if (currentPage <= 3) {
-    endPage = Math.min(maxVisiblePages, totalPages);
-  } else if (currentPage >= totalPages - 2) {
-    startPage = Math.max(totalPages - maxVisiblePages + 1, 1);
-  }
-
-  if (startPage > 1) {
-    paginationControlsElement.appendChild(createPageItem(1));
-    if (startPage > 2) addEllipsis();
-  }
-
-  for (let i = startPage; i <= endPage; i++) {
-    paginationControlsElement.appendChild(
-      createPageItem(i, i, i === currentPage),
-    );
-  }
-
-  if (endPage < totalPages) {
-    if (endPage < totalPages - 1) addEllipsis();
-    paginationControlsElement.appendChild(createPageItem(totalPages));
-  }
-
-  paginationControlsElement.appendChild(
-    createPageItem(currentPage + 1, "Next", false, currentPage === totalPages),
+  renderPaginationControls(
+    filteredShapes,
+    currentPage,
+    itemsPerPage,
+    paginationControlsElement,
+    (page) => {
+      currentPage = page;
+      renderShapes();
+    },
   );
 }
 
@@ -213,7 +156,7 @@ function populateShapeSuggestions() {
   shapeSuggestionsElement.innerHTML = "";
   Object.values(shapes).forEach((shape) => {
     const option = document.createElement("option");
-    option.value = shape.id;
+    option.value = shape.name;
     option.textContent = shape.name;
     shapeSuggestionsElement.appendChild(option);
   });

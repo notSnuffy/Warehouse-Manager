@@ -1,6 +1,10 @@
 import "./styles.scss";
 import * as _bootstrap from "bootstrap";
 import { API_URL } from "../config";
+import {
+  paginateList,
+  renderPaginationControls,
+} from "../lib/functions/pagination";
 
 const itemTableBodyElement = document.getElementById("itemTableBody");
 const itemTemplateElement = document.getElementById("itemTemplate");
@@ -142,49 +146,56 @@ function initializeSortableColumns() {
   });
 }
 
-function paginateItems(items) {
-  const totalItems = items.length;
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
-  return items.slice(startIndex, endIndex);
+function addItemToTable(item, paginatedItemsLength) {
+  const itemRow = itemTemplateElement.content.cloneNode(true);
+  itemRow.querySelector(".item-name").textContent = item.name;
+  itemRow.querySelector(".item-id").textContent = item.id;
+  itemRow.querySelector(".item-category").textContent = item.category;
+  itemRow.querySelector(".item-quantity").textContent = item.quantity;
+  const itemDescriptionElement = itemRow.querySelector(".item-description");
+  itemDescriptionElement.textContent = item.description;
+  itemDescriptionElement.title = item.description;
+
+  itemRow.querySelector(".edit-button").addEventListener("click", () => {
+    editItem(item.id);
+  });
+  itemRow.querySelector(".remove-button").addEventListener("click", () => {
+    removeItem(item.id);
+  });
+
+  // Quite an annoying hack to prevent the dropdown from being cut off when there are almost no items
+  const dropdown = itemRow.getElementById("actionMenuButton");
+  if (paginatedItemsLength < 3) {
+    dropdown.addEventListener("show.bs.dropdown", () => {
+      document.querySelector(".table-responsive").style.overflow = "visible";
+    });
+    dropdown.addEventListener("hide.bs.dropdown", () => {
+      document.querySelector(".table-responsive").style.overflow = "auto";
+    });
+  }
+
+  itemTableBodyElement.appendChild(itemRow);
 }
 
 function renderItems() {
   itemTableBodyElement.innerHTML = "";
   const filteredItems = filterItems();
-  const paginatedItems = paginateItems(filteredItems);
+  const paginatedItems = paginateList(filteredItems, currentPage, itemsPerPage);
 
   Object.values(paginatedItems).forEach((item) => {
-    const itemRow = itemTemplateElement.content.cloneNode(true);
-    itemRow.querySelector(".item-name").textContent = item.name;
-    itemRow.querySelector(".item-id").textContent = item.id;
-    itemRow.querySelector(".item-category").textContent = item.category;
-    itemRow.querySelector(".item-quantity").textContent = item.quantity;
-    const itemDescriptionElement = itemRow.querySelector(".item-description");
-    itemDescriptionElement.textContent = item.description;
-    itemDescriptionElement.title = item.description;
-
-    itemRow.querySelector(".edit-button").addEventListener("click", () => {
-      editItem(item.id);
-    });
-    itemRow.querySelector(".remove-button").addEventListener("click", () => {
-      removeItem(item.id);
-    });
-
-    // Quite an annoying hack to prevent the dropdown from being cut off when there are almost no items
-    const dropdown = itemRow.getElementById("actionMenuButton");
-    if (paginatedItems.length < 3) {
-      dropdown.addEventListener("show.bs.dropdown", () => {
-        document.querySelector(".table-responsive").style.overflow = "visible";
-      });
-      dropdown.addEventListener("hide.bs.dropdown", () => {
-        document.querySelector(".table-responsive").style.overflow = "auto";
-      });
-    }
-
-    itemTableBodyElement.appendChild(itemRow);
+    console.log(item);
+    addItemToTable(item, paginatedItems.length);
   });
-  renderPaginationControls(filteredItems);
+  renderPaginationControls(
+    filteredItems,
+    currentPage,
+    itemsPerPage,
+    paginationControlsElement,
+    (page) => {
+      currentPage = page;
+      renderItems();
+    },
+  );
 
   const sortableColumns = document.querySelectorAll(".sortable-column");
   sortableColumns.forEach((column) => {
@@ -200,73 +211,6 @@ function renderItems() {
       );
     }
   });
-}
-
-function renderPaginationControls(items) {
-  const totalPages = Math.ceil(items.length / itemsPerPage);
-  const maxVisiblePages = 5;
-  paginationControlsElement.innerHTML = "";
-
-  if (totalPages <= 1) {
-    return;
-  }
-  const createPageItem = (
-    setPage,
-    itemLabel = setPage,
-    active = false,
-    disabled = false,
-  ) => {
-    const li = document.createElement("li");
-    li.className = `page-item ${active ? "active" : ""}${disabled ? "disabled" : ""}`;
-    li.innerHTML = `<a class="page-link" href="#">${itemLabel}</a>`;
-    if (!disabled && !active) {
-      li.addEventListener("click", () => {
-        currentPage = setPage;
-        renderItems();
-      });
-    }
-    return li;
-  };
-
-  paginationControlsElement.appendChild(
-    createPageItem(currentPage - 1, "Previous", false, currentPage === 1),
-  );
-
-  const addEllipsis = () => {
-    const li = document.createElement("li");
-    li.className = "page-item disabled";
-    li.innerHTML = `<span class="page-link">…</span>`;
-    paginationControlsElement.appendChild(li);
-  };
-
-  let startPage = Math.max(currentPage - 2, 1);
-  let endPage = Math.min(currentPage + 2, totalPages);
-
-  if (currentPage <= 3) {
-    endPage = Math.min(maxVisiblePages, totalPages);
-  } else if (currentPage >= totalPages - 2) {
-    startPage = Math.max(totalPages - maxVisiblePages + 1, 1);
-  }
-
-  if (startPage > 1) {
-    paginationControlsElement.appendChild(createPageItem(1));
-    if (startPage > 2) addEllipsis();
-  }
-
-  for (let i = startPage; i <= endPage; i++) {
-    paginationControlsElement.appendChild(
-      createPageItem(i, i, i === currentPage),
-    );
-  }
-
-  if (endPage < totalPages) {
-    if (endPage < totalPages - 1) addEllipsis();
-    paginationControlsElement.appendChild(createPageItem(totalPages));
-  }
-
-  paginationControlsElement.appendChild(
-    createPageItem(currentPage + 1, "Next", false, currentPage === totalPages),
-  );
 }
 
 function editItem(id) {
@@ -304,7 +248,7 @@ function populateItemSuggestions() {
   itemSuggestionsElement.innerHTML = "";
   Object.values(items).forEach((item) => {
     const option = document.createElement("option");
-    option.value = item.id;
+    option.value = item.name;
     option.textContent = item.name;
     itemSuggestionsElement.appendChild(option);
   });
