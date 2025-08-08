@@ -41,7 +41,7 @@ function fillFloorsWithTestData() {
 }
 
 async function init() {
-  //await fetchFloors();
+  await fetchFloors();
   renderFloors();
   populateFloorSuggestions();
 }
@@ -66,7 +66,7 @@ addFloorButtonElement.addEventListener("click", () => {
   window.location.href = "/";
 });
 
-async function _fetchFloors() {
+async function fetchFloors() {
   try {
     const response = await fetch(API_URL + "/floor-management/floors");
     if (!response.ok) {
@@ -105,7 +105,7 @@ function renderFloors() {
 }
 
 function editFloor(id) {
-  window.location.href = `/?id=${id}`;
+  window.location.href = `/editors/floor-editor/?floorId=${id}`;
 }
 
 async function removeFloor(id) {
