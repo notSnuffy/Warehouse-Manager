@@ -77,12 +77,14 @@ class FloorEditor extends Phaser.Scene {
 
   /**
    * Adds a corner to the floor editor
+   * @param {number} positionX - The x-coordinate of the corner
+   * @param {number} positionY - The y-coordinate of the corner
    * @private
-   * @returns {void}
+   * @return {Phaser.GameObjects.Circle} - The created corner object
    */
-  #addCorner() {
+  #addCorner(positionX = 100, positionY = 100) {
     const corner = this.add
-      .circle(100, 100, 20, 0xffffff)
+      .circle(positionX, positionY, 20, 0xffffff)
       .setInteractive({ draggable: true });
 
     this.#graph.set(corner, new Map());
@@ -113,13 +115,67 @@ class FloorEditor extends Phaser.Scene {
         this.#selectedCorners = [];
       }
     });
+    return corner;
+  }
+
+  async #loadFloorData(floorId) {
+    try {
+      const response = await fetch(
+        `${API_URL}/floor-management/floors/${floorId}`,
+      );
+      if (!response.ok) {
+        throw new Error("Failed to fetch floor data.");
+      }
+      const floorData = await response.json();
+      console.log("Floor data fetched successfully:", floorData);
+      return floorData;
+    } catch (error) {
+      console.error("Error fetching floor data:", error);
+      alert("Failed to load floor data. Please check the console for details.");
+    }
+  }
+
+  async #loadFloor(floorId) {
+    const floorData = await this.#loadFloorData(floorId);
+    const floorNameInput = document.getElementById("floorName");
+    floorNameInput.value = floorData.name;
+
+    const cornerMap = new Map();
+
+    floorData.corners.forEach((cornerData) => {
+      const corner = this.#addCorner(
+        cornerData.positionX,
+        cornerData.positionY,
+      );
+      cornerMap.set(cornerData.id, corner);
+    });
+
+    floorData.walls.forEach((wallData) => {
+      const startCorner = cornerMap.get(wallData.startCornerId);
+      const endCorner = cornerMap.get(wallData.endCornerId);
+      if (startCorner && endCorner) {
+        // Check if the wall already exists
+        if (this.#graph.get(startCorner).has(endCorner)) {
+          return;
+        }
+        this.#createWall(startCorner, endCorner);
+      } else {
+        console.warn("Invalid corners for wall:", wallData);
+      }
+    });
   }
 
   /**
    * Creates the scene
    * @public
    */
-  create() {
+  async create() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const floorId = urlParams.get("floorId");
+    if (floorId) {
+      await this.#loadFloor(floorId);
+    }
+
     const addCornerButton = document.getElementById("addCornerButton");
     addCornerButton.addEventListener("click", () => {
       this.#addCorner();
