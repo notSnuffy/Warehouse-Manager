@@ -105,7 +105,7 @@ function renderShapes() {
 }
 
 function editShape(id) {
-  window.location.href = `/?id=${id}`;
+  window.location.href = `/editors/shape-editor/?shapeId=${id}`;
 }
 
 async function removeShape(id) {
