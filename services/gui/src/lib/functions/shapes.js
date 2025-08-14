@@ -122,6 +122,9 @@ function saveShapeInstance(shapes) {
         let childShapeId = getShapeId(child);
 
         const childWorldCenterCoordinates = child.getCenter(undefined, true);
+        console.log(
+          `Child World Center Coordinates: ${childWorldCenterCoordinates.x}, ${childWorldCenterCoordinates.y}`,
+        );
         const childWidth = Phaser.Math.Distance.BetweenPoints(
           child.getLeftCenter(undefined, true),
           child.getRightCenter(undefined, true),
@@ -209,8 +212,8 @@ function saveShapeAsInstructions(rootContainer) {
     const instruction = {
       command: commandName,
       parameters: {
-        x: shape.positionX,
-        y: shape.positionY,
+        positionX: shape.positionX,
+        positionY: shape.positionY,
         width: shape.width,
         height: shape.height,
         rotation: shape.rotation,
@@ -218,13 +221,13 @@ function saveShapeAsInstructions(rootContainer) {
     };
 
     if (shape.shapeId === ShapeTypes.ARC) {
-      instruction.parameters.startAngle = shape.arcStartAngle;
-      instruction.parameters.endAngle = shape.arcEndAngle;
-      instruction.parameters.radius = shape.arcRadius;
+      instruction.parameters.arcStartAngle = shape.arcStartAngle;
+      instruction.parameters.arcEndAngle = shape.arcEndAngle;
+      instruction.parameters.arcRadius = shape.arcRadius;
     }
 
     if (shape.shapeId === ShapeTypes.POLYGON) {
-      instruction.parameters.points = shape.polygonPoints;
+      instruction.parameters.polygonPoints = shape.polygonPoints;
     }
 
     instructions.push(instruction);
@@ -242,7 +245,7 @@ function saveShapeAsInstructions(rootContainer) {
     return instruction;
   };
   convertShapeToInstruction(rootContainer);
-  return JSON.stringify(instructions, null, 2);
+  return instructions;
 }
 
 function buildShapeFromInstructions(instructions, scene) {
@@ -258,8 +261,8 @@ function buildShapeFromInstructions(instructions, scene) {
       case ShapeCommands.CREATE_RECTANGLE: {
         const rectangle = new Shapes.Rectangle(
           scene,
-          parameters.x,
-          parameters.y,
+          parameters.positionX,
+          parameters.positionY,
           parameters.width,
           parameters.height,
         );
@@ -275,8 +278,8 @@ function buildShapeFromInstructions(instructions, scene) {
       case ShapeCommands.CREATE_ELLIPSE: {
         const ellipse = new Shapes.Ellipse(
           scene,
-          parameters.x,
-          parameters.y,
+          parameters.positionX,
+          parameters.positionY,
           parameters.width,
           parameters.height,
         );
@@ -292,11 +295,11 @@ function buildShapeFromInstructions(instructions, scene) {
       case ShapeCommands.CREATE_ARC: {
         const arc = new Shapes.Arc(
           scene,
-          parameters.x,
-          parameters.y,
-          parameters.radius,
-          parameters.startAngle,
-          parameters.endAngle,
+          parameters.positionX,
+          parameters.positionY,
+          parameters.arcRadius,
+          parameters.arcStartAngle,
+          parameters.arcEndAngle,
         );
         arc.setRotation(parameters.rotation);
         if (containerStack.length > 0) {
@@ -310,9 +313,9 @@ function buildShapeFromInstructions(instructions, scene) {
       case ShapeCommands.CREATE_POLYGON: {
         const polygon = new Shapes.Polygon(
           scene,
-          parameters.x,
-          parameters.y,
-          parameters.points,
+          parameters.positionX,
+          parameters.positionY,
+          parameters.polygonPoints,
         );
         polygon.setRotation(parameters.rotation);
         if (containerStack.length > 0) {
@@ -327,8 +330,8 @@ function buildShapeFromInstructions(instructions, scene) {
       case ShapeCommands.BEGIN_CONTAINER: {
         const container = new Shapes.Container(
           scene,
-          parameters.x,
-          parameters.y,
+          parameters.positionX,
+          parameters.positionY,
         );
         container.setSize(parameters.width, parameters.height);
         container.setRotation(parameters.rotation);

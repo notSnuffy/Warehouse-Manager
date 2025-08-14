@@ -1,18 +1,17 @@
 package com.warehousemanager.shapemanagement.entities;
 
+import com.warehousemanager.shapemanagement.Instruction;
+import com.warehousemanager.shapemanagement.InstructionListConverter;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinTable;
-import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
-import java.util.ArrayList;
 import java.util.List;
+import org.hibernate.annotations.ColumnTransformer;
 
 /** Represents specific instances of shapes in the warehouse management system. */
 @Entity
@@ -22,52 +21,19 @@ public class ShapeInstance {
   @GeneratedValue(strategy = GenerationType.SEQUENCE)
   private Long id;
 
-  /** X position of the shape in the warehouse. */
-  @Column(nullable = false)
-  private double positionX;
-
-  /** Y position of the shape in the warehouse. */
-  @Column(nullable = false)
-  private double positionY;
-
-  /** Width of the shape in the warehouse. */
-  @Min(10)
-  private Double width;
-
-  /** Height of the shape in the warehouse. */
-  @Min(10)
-  private Double height;
-
-  /** Rotation of the shape in radians. */
-  @Column(nullable = false)
-  private double rotation = 0;
-
-  /** Start angle of the arc in degrees. */
-  @Min(0)
-  @Max(360)
-  private Double arcStartAngle;
-
-  /** End angle of the arc in degrees. */
-  @Min(0)
-  @Max(360)
-  private Double arcEndAngle;
-
-  /** Radius of the arc in pixels. */
-  @Min(5)
-  private Double arcRadius;
-
   /** The shape that this instance represents. */
   @ManyToOne
   @JoinColumn(name = "shape_id", nullable = false)
   private Shape shape;
 
-  /** Components of the shape instance, representing sub-components or parts of the shape. */
-  @ManyToMany
-  @JoinTable(
-      name = "shape_instance_components",
-      joinColumns = @JoinColumn(name = "container_id"),
-      inverseJoinColumns = @JoinColumn(name = "component_id"))
-  private List<ShapeInstance> components = new ArrayList<>();
+  /** This shape is the base for creating other instances of the given shape. */
+  private boolean isTemplate = false;
+
+  /** Instructions for how to create this shape instance. */
+  @Column(columnDefinition = "jsonb")
+  @Convert(converter = InstructionListConverter.class)
+  @ColumnTransformer(write = "?::jsonb")
+  private List<Instruction> instructions;
 
   /** Default constructor for JPA. */
   protected ShapeInstance() {}
@@ -75,14 +41,11 @@ public class ShapeInstance {
   /**
    * Constructs ShapeInstance with the specified parameters.
    *
-   * @param positionX the X position of the shape instance
-   * @param positionY the Y position of the shape instance
    * @param shape the shape that this instance represents
    */
-  public ShapeInstance(double positionX, double positionY, Shape shape) {
-    this.positionX = positionX;
-    this.positionY = positionY;
+  public ShapeInstance(Shape shape, List<Instruction> instructions) {
     this.shape = shape;
+    this.instructions = instructions;
   }
 
   /**
@@ -92,150 +55,6 @@ public class ShapeInstance {
    */
   public Long getId() {
     return id;
-  }
-
-  /**
-   * Gets the X position of the shape.
-   *
-   * @return the X position of the shape
-   */
-  public double getPositionX() {
-    return positionX;
-  }
-
-  /**
-   * Sets the X position of the shape.
-   *
-   * @param positionX the new X position of the shape
-   */
-  public void setPositionX(double positionX) {
-    this.positionX = positionX;
-  }
-
-  /**
-   * Gets the Y position of the shape.
-   *
-   * @return the Y position of the shape
-   */
-  public double getPositionY() {
-    return positionY;
-  }
-
-  /**
-   * Sets the Y position of the shape.
-   *
-   * @param positionY the new Y position of the shape
-   */
-  public void setPositionY(double positionY) {
-    this.positionY = positionY;
-  }
-
-  /**
-   * Gets the width of the shape.
-   *
-   * @return the width of the shape
-   */
-  public Double getWidth() {
-    return width;
-  }
-
-  /**
-   * Sets the width of the shape.
-   *
-   * @param width the new width of the shape
-   */
-  public void setWidth(Double width) {
-    this.width = width;
-  }
-
-  /**
-   * Gets the height of the shape.
-   *
-   * @return the height of the shape
-   */
-  public Double getHeight() {
-    return height;
-  }
-
-  /**
-   * Sets the height of the shape.
-   *
-   * @param height the new height of the shape
-   */
-  public void setHeight(Double height) {
-    this.height = height;
-  }
-
-  /**
-   * Gets the rotation of the shape in radians.
-   *
-   * @return the rotation of the shape
-   */
-  public double getRotation() {
-    return rotation;
-  }
-
-  /**
-   * Sets the rotation of the shape in radians.
-   *
-   * @param rotation the new rotation of the shape
-   */
-  public void setRotation(double rotation) {
-    this.rotation = rotation;
-  }
-
-  /**
-   * Gets the start angle of the arc in degrees.
-   *
-   * @return the start angle of the arc
-   */
-  public Double getArcStartAngle() {
-    return arcStartAngle;
-  }
-
-  /**
-   * Sets the start angle of the arc in degrees.
-   *
-   * @param arcStartAngle the new start angle of the arc
-   */
-  public void setArcStartAngle(Double arcStartAngle) {
-    this.arcStartAngle = arcStartAngle;
-  }
-
-  /**
-   * Gets the end angle of the arc in degrees.
-   *
-   * @return the end angle of the arc
-   */
-  public Double getArcEndAngle() {
-    return arcEndAngle;
-  }
-
-  /**
-   * Sets the end angle of the arc in degrees.
-   *
-   * @param arcEndAngle the new end angle of the arc
-   */
-  public void setArcEndAngle(Double arcEndAngle) {
-    this.arcEndAngle = arcEndAngle;
-  }
-
-  /**
-   * Gets the radius of the arc in pixels.
-   *
-   * @return the radius of the arc
-   */
-  public Double getArcRadius() {
-    return arcRadius;
-  }
-
-  /**
-   * Sets the radius of the arc in pixels.
-   *
-   * @param arcRadius the new radius of the arc
-   */
-  public void setArcRadius(Double arcRadius) {
-    this.arcRadius = arcRadius;
   }
 
   /**
@@ -257,29 +76,38 @@ public class ShapeInstance {
   }
 
   /**
-   * Gets the components of the shape instance.
+   * Gets the instructions for how to create this shape instance.
    *
-   * @return the list of components
+   * @return the instructions for this shape instance
    */
-  public List<ShapeInstance> getComponents() {
-    return components;
+  public List<Instruction> getInstructions() {
+    return instructions;
   }
 
   /**
-   * Sets the components of the shape instance.
+   * Sets the instructions for how to create this shape instance.
    *
-   * @param components the new list of components
+   * @param instructions the new instructions for this shape instance
    */
-  public void setComponents(List<ShapeInstance> components) {
-    this.components = components;
+  public void setInstructions(List<Instruction> instructions) {
+    this.instructions = instructions;
   }
 
   /**
-   * Adds a component to the shape instance.
+   * Gets whether this shape instance is a template for creating other instances.
    *
-   * @param component the component to add
+   * @return true if this instance is a template, false otherwise
    */
-  public void addComponent(ShapeInstance component) {
-    this.components.add(component);
+  public boolean isTemplate() {
+    return isTemplate;
+  }
+
+  /**
+   * Sets whether this shape instance is a template for creating other instances.
+   *
+   * @param isTemplate true if this instance should be a template, false otherwise
+   */
+  public void setTemplate(boolean isTemplate) {
+    this.isTemplate = isTemplate;
   }
 }

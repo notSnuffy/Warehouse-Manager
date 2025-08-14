@@ -1,9 +1,6 @@
 package com.warehousemanager.shapemanagement;
 
 import com.warehousemanager.shapemanagement.entities.Shape;
-import com.warehousemanager.shapemanagement.entities.ShapeInstance;
-import com.warehousemanager.shapemanagement.repositories.ShapeRepository;
-import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,50 +35,5 @@ public class ShapeDtoMapper {
     shapeDataTransferObject.setType(shape.getType());
     shapeDataTransferObject.setPublic(shape.isPublic());
     return shapeDataTransferObject;
-  }
-
-  public static ShapeInstance convertComponentDtoToEntity(
-      ShapeDataTransferObject.ComponentDataTransferObject root,
-      ShapeRepository shapeRepository,
-      List<ShapeInstance> instances,
-      ShapeInstance parent) {
-
-    Shape shape =
-        root.getShapeId() != -1 ? shapeRepository.findById(root.getShapeId()).orElseThrow() : null;
-    logger.info(
-        "Converting component with shapeId: {} to entity",
-        root.getShapeId() != null ? root.getShapeId() : "null");
-    ShapeInstance shapeInstance =
-        new ShapeInstance(root.getPositionX(), root.getPositionY(), shape);
-
-    shapeInstance.setWidth(root.getWidth());
-    shapeInstance.setHeight(root.getHeight());
-    shapeInstance.setRotation(root.getRotation());
-    shapeInstance.setArcStartAngle(root.getArcStartAngle());
-    shapeInstance.setArcEndAngle(root.getArcEndAngle());
-    shapeInstance.setArcRadius(root.getArcRadius());
-    logger.info(
-        "Created ShapeInstance with positionX: {}, positionY: {}, width: {}, height: {}, rotation:"
-            + " {}, arcStartAngle: {}, arcEndAngle: {}, arcRadius: {}",
-        shapeInstance.getPositionX(),
-        shapeInstance.getPositionY(),
-        shapeInstance.getWidth(),
-        shapeInstance.getHeight(),
-        shapeInstance.getRotation(),
-        shapeInstance.getArcStartAngle(),
-        shapeInstance.getArcEndAngle(),
-        shapeInstance.getArcRadius());
-
-    if (parent != null) {
-      parent.addComponent(shapeInstance);
-    }
-
-    instances.add(shapeInstance);
-
-    for (ShapeDataTransferObject.ComponentDataTransferObject component : root.getComponents()) {
-      convertComponentDtoToEntity(component, shapeRepository, instances, shapeInstance);
-    }
-
-    return shapeInstance;
   }
 }

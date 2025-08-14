@@ -4,11 +4,11 @@ import com.warehousemanager.shapemanagement.ShapeDataTransferObject;
 import com.warehousemanager.shapemanagement.ShapeDtoMapper;
 import com.warehousemanager.shapemanagement.entities.Shape;
 import com.warehousemanager.shapemanagement.entities.ShapeInstance;
+import com.warehousemanager.shapemanagement.exceptions.ShapeTemplateDoesNotExistException;
 import com.warehousemanager.shapemanagement.repositories.ShapeInstanceRepository;
 import com.warehousemanager.shapemanagement.repositories.ShapeRepository;
 import jakarta.validation.Valid;
 import java.util.ArrayList;
-import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -34,9 +34,6 @@ public class ShapeManagementController {
     return shapeRepository.findAll();
   }
 
-  // curl -X POST localhost:8084/shape-management/shapes -H 'Content-type:application/json' -d
-  // '{"name":"Sharp Heart","type":"CONTAINER","root":{"positionX":10,"positionY":10, "components":
-  // [{"positionX":25,"positionY":25,"shapeId":1},{"positionX":30,"positionY":30,"shapeId":1}]}}'
   @PostMapping("/shapes")
   public Shape createShape(@Valid @RequestBody ShapeDataTransferObject shapeDataTransferObject) {
     Logger logger = LoggerFactory.getLogger(ShapeManagementController.class);
@@ -45,19 +42,31 @@ public class ShapeManagementController {
 
     Shape savedShape = shapeRepository.save(shape);
 
-    if (shapeDataTransferObject.getRoot() == null) {
-      return savedShape;
-    }
-
-    List<ShapeInstance> instances = new ArrayList<>();
-
+    logger.info("Shape created with ID: {}", savedShape.getId());
     ShapeInstance shapeInstance =
-        ShapeDtoMapper.convertComponentDtoToEntity(
-            shapeDataTransferObject.getRoot(), shapeRepository, instances, null);
-    shapeInstance.setShape(savedShape);
-    shapeInstanceRepository.saveAll(instances);
+        new ShapeInstance(
+            savedShape,
+            shapeDataTransferObject.getInstructions() != null
+                ? shapeDataTransferObject.getInstructions()
+                : new ArrayList<>());
+    shapeInstance.setTemplate(true);
+    logger.info("Creating ShapeInstance for shape ID: {}", savedShape.getId());
+    logger.info("ShapeInstance created with instructions: {}", shapeInstance.getInstructions());
+
+    shapeInstanceRepository.save(shapeInstance);
 
     return savedShape;
+  }
+
+  @GetMapping("/shapes/{id}/template")
+  public ShapeInstance getShapeTemplate(@PathVariable Long id) {
+    Logger logger = LoggerFactory.getLogger(ShapeManagementController.class);
+    logger.info("Fetching shape template with ID: {}", id);
+    ShapeInstance shapeInstance =
+        shapeInstanceRepository
+            .findShapeTemplateByIsTemplateTrueAndShapeId(id)
+            .orElseThrow(() -> new ShapeTemplateDoesNotExistException(id));
+    return shapeInstance;
   }
 
   @PutMapping("/shapes/{id}")

@@ -1,7 +1,10 @@
 import { Modal } from "bootstrap";
 import { DEFAULT_SHAPES } from "../scenes/ShapeEditor";
 import { API_URL } from "../config";
-import { saveShapeInstance } from "../lib/functions/shapes";
+import {
+  saveShapeInstance,
+  saveShapeAsInstructions,
+} from "../lib/functions/shapes";
 
 /**
  * @class ShapeEditorUIInitializer
@@ -91,11 +94,17 @@ class ShapeEditorUIInitializer {
       widthGroup.hidden = true;
       heightGroup.hidden = true;
       polygonGroup.hidden = false;
-    } else {
+    } else if (shape === "rectangle" || shape === "ellipse") {
       radiusGroup.hidden = true;
       angleGroup.hidden = true;
       widthGroup.hidden = false;
       heightGroup.hidden = false;
+      polygonGroup.hidden = true;
+    } else {
+      radiusGroup.hidden = true;
+      angleGroup.hidden = true;
+      widthGroup.hidden = true;
+      heightGroup.hidden = true;
       polygonGroup.hidden = true;
     }
 
@@ -130,7 +139,7 @@ class ShapeEditorUIInitializer {
    * @param {Function} addShape - Function to add a shape
    * @param {string[]} allowedShapes - Array of allowed shapes
    * @param {Function} selectHide - Function to hide selection
-   * @param {Array} editorShapes - Array of shapes in the editor
+   * @param {Function} getEditorShapes - Function to get editor shapes
    * @static
    */
   static initialize(
@@ -139,7 +148,7 @@ class ShapeEditorUIInitializer {
     addShape,
     allowedShapes,
     selectHide,
-    editorShapes,
+    getEditorShapes,
   ) {
     if (ShapeEditorUIInitializer.#initialized) {
       return;
@@ -252,11 +261,11 @@ class ShapeEditorUIInitializer {
             points: points,
             color: parseInt(color.slice(1), 16),
           });
-        } else {
+        } else if (shapeType === "rectangle" || shapeType === "ellipse") {
           const width = document.getElementById("shapeWidth").value;
           const height = document.getElementById("shapeHeight").value;
           x += width / 2;
-          y = height / 2;
+          y += height / 2;
           const color = document.getElementById("shapeColor").value;
 
           addShape(shapeType, {
@@ -265,6 +274,16 @@ class ShapeEditorUIInitializer {
             width: parseInt(width),
             height: parseInt(height),
             color: parseInt(color.slice(1), 16),
+          });
+        } else {
+          const color = document.getElementById("shapeColor").value;
+          const id = document.getElementById("add-" + shapeType).dataset.id;
+
+          addShape(shapeType, {
+            x: x,
+            y: y,
+            color: parseInt(color.slice(1), 16),
+            id: id,
           });
         }
 
@@ -332,6 +351,36 @@ class ShapeEditorUIInitializer {
       }
     });
 
+    const addItemButtonIntoList = (shapeName, shapeId) => {
+      const newShapeButton = document.createElement("button");
+      newShapeButton.classList.add("btn", "btn-secondary", "mb-2");
+      newShapeButton.dataset.shape = shapeName;
+      newShapeButton.dataset.id = shapeId;
+      newShapeButton.textContent = shapeName;
+      newShapeButton.id = "add-" + shapeName;
+      newShapeButton.addEventListener("click", function () {
+        ShapeEditorUIInitializer.#showModal(newShapeButton);
+      });
+      const itemsMenuButtons = document.getElementById("itemsMenuButtons");
+      itemsMenuButtons.appendChild(newShapeButton);
+    };
+
+    const populateShapeList = async () => {
+      try {
+        const response = await fetch(API_URL + "/shape-management/shapes");
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        data.forEach((shape) => {
+          addItemButtonIntoList(shape.name, shape.id);
+        });
+      } catch (error) {
+        console.error("Error fetching shapes:", error);
+      }
+    };
+    populateShapeList();
+
     const saveButton = document.getElementById("saveButton");
     saveButton.addEventListener("click", async function () {
       selectHide();
@@ -351,11 +400,15 @@ class ShapeEditorUIInitializer {
       console.log("ADD WAY TO SET PUBLIC FLAG");
       let publicFlag = false;
 
+      console.log(getEditorShapes());
+
       let shape = {
         name: shapeName,
         type: "CONTAINER",
         public: publicFlag,
-        root: saveShapeInstance(editorShapes),
+        instructions: saveShapeAsInstructions(
+          saveShapeInstance(getEditorShapes()),
+        ),
       };
 
       console.log("Shape to save:", shape);
@@ -371,8 +424,8 @@ class ShapeEditorUIInitializer {
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
-        const _data = await response.json();
-        console.log("Shape saved successfully:", _data);
+        const data = await response.json();
+        addItemButtonIntoList(data.name, data.id);
       } catch (error) {
         console.error(error);
       }

@@ -11,9 +11,9 @@ class Container extends Phaser.GameObjects.Container {
    * @param {Phaser.Scene} scene - The scene to which this container belongs.
    * @param {number} [x=0] - The x-coordinate of the container.
    * @param {number} [y=0] - The y-coordinate of the container.
-   * @param {Phaser.GameObjects.GameObject[]} [children=[]] - An array of child game objects to add to the container.
+   * @param {Phaser.GameObjects.GameObject[]} - An array of child game objects to add to the container.
    */
-  constructor(scene, x = 0, y = 0, children = []) {
+  constructor(scene, x = 0, y = 0, children) {
     super(scene, x, y, children);
     this.scene.add.existing(this);
   }
@@ -110,6 +110,15 @@ class Container extends Phaser.GameObjects.Container {
    */
   getBottomCenter() {
     return this.#calculateEdgePoint(0, this.displayHeight / 2);
+  }
+
+  /**
+   * Gets the center point of the container.
+   * @return {Object} An object containing the global x and y coordinates of the center point.
+   */
+  getCenter() {
+    const { tx, ty } = this.getWorldTransformMatrix();
+    return { x: tx, y: ty };
   }
 }
 

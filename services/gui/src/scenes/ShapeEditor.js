@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { API_URL } from "../config";
 import MoveManager from "../lib/move/MoveManager";
 import SelectShapeManager from "../lib/select/SelectShapeManager";
 import ShapeEditorUIInitializer from "../lib/ShapeEditorUIInitializer";
@@ -96,11 +97,12 @@ class ShapeEditor extends Phaser.Scene {
       this.#currentTool = "select";
     }.bind(this);
 
-    const addShape = function (shapeType, parameters) {
+    const addShape = async function (shapeType, parameters) {
       console.log(shapeType, parameters);
       if (shapeType === "rectangle") {
         this.#shapes.push(
-          this.add.rectangle(
+          new Shapes.Rectangle(
+            this,
             parameters.x,
             parameters.y,
             parameters.width,
@@ -110,7 +112,8 @@ class ShapeEditor extends Phaser.Scene {
         );
       } else if (shapeType === "ellipse") {
         this.#shapes.push(
-          this.add.ellipse(
+          new Shapes.Ellipse(
+            this,
             parameters.x,
             parameters.y,
             parameters.width,
@@ -120,7 +123,8 @@ class ShapeEditor extends Phaser.Scene {
         );
       } else if (shapeType === "arc") {
         this.#shapes.push(
-          this.add.arc(
+          new Shapes.Arc(
+            this,
             parameters.x,
             parameters.y,
             parameters.radius,
@@ -132,20 +136,41 @@ class ShapeEditor extends Phaser.Scene {
         );
       } else if (shapeType === "polygon") {
         this.#shapes.push(
-          this.add.polygon(
+          new Shapes.Polygon(
+            this,
             parameters.x,
             parameters.y,
             parameters.points,
             parameters.color,
           ),
         );
+      } else {
+        const id = parameters.id;
+
+        try {
+          const shapeInstance = await fetch(
+            API_URL + "/shape-management/shapes/" + id + "/template",
+          );
+          const shapeData = await shapeInstance.json();
+          const instructions = shapeData.instructions;
+          // Build from instructions returns array to make it more generic
+          // but we only expect one shape to be returned
+          const rebuiltShape = buildShapeFromInstructions(
+            instructions,
+            this,
+          )[0];
+
+          rebuiltShape.setPosition(parameters.x, parameters.y);
+
+          rebuiltShape.setInteractive({ draggable: true });
+          this.#moveManager.create(rebuiltShape);
+          this.#selectManager.create(rebuiltShape);
+
+          this.#shapes.push(rebuiltShape);
+        } catch (error) {
+          console.error("Error fetching shape template:", error);
+        }
       }
-
-      const shape = this.#shapes[this.#shapes.length - 1];
-
-      shape.setInteractive({ draggable: true });
-      this.#moveManager.create(shape);
-      this.#selectManager.create(shape);
     }.bind(this);
 
     this.#selectManager = new SelectShapeManager(this);
@@ -157,10 +182,10 @@ class ShapeEditor extends Phaser.Scene {
       addShape,
       DEFAULT_SHAPES,
       this.#selectManager.hide.bind(this.#selectManager),
-      this.#shapes,
+      () => this.#shapes,
     );
 
-    const container = new Shapes.Container(this, 300, 300);
+    const container = new Shapes.Container(this, 300, 300, []);
     this.#shapes.push(container);
 
     const rect1 = new Shapes.Rectangle(this, -100, -100, 100, 100, 0xff0000);
@@ -210,10 +235,7 @@ class ShapeEditor extends Phaser.Scene {
       }
       shape.destroy();
     });
-    const rebuiltShapes = buildShapeFromInstructions(
-      JSON.parse(instructions),
-      this,
-    );
+    const rebuiltShapes = buildShapeFromInstructions(instructions, this);
     console.log(rebuiltShapes);
     this.#shapes = rebuiltShapes;
 
