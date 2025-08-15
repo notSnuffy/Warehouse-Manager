@@ -155,6 +155,7 @@ class FurnitureEditor extends Phaser.Scene {
           rebuiltShape.setPosition(parameters.x, parameters.y);
 
           shape = rebuiltShape;
+          shape.id = parseInt(id, 10);
         } catch (error) {
           console.error("Error fetching shape template:", error);
         }
@@ -169,6 +170,8 @@ class FurnitureEditor extends Phaser.Scene {
       shape.setInteractive({ draggable: true });
       this.#moveManager.create(shape);
       this.#selectManager.create(shape);
+      console.log(this.#shapes);
+      console.log(this.#zones);
     }.bind(this);
 
     this.#selectManager = new SelectShapeManager(this);

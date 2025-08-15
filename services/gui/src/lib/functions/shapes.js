@@ -21,10 +21,10 @@ function getShapePoints(shape) {
 }
 
 const ShapeTypes = Object.freeze({
-  RECTANGLE: 1,
-  ELLIPSE: 2,
-  ARC: 3,
-  POLYGON: 4,
+  RECTANGLE: -5,
+  ELLIPSE: -4,
+  ARC: -3,
+  POLYGON: -2,
 });
 
 function saveShapeInstance(shapes) {
