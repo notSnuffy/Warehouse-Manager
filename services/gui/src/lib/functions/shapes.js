@@ -248,7 +248,14 @@ function saveShapeAsInstructions(rootContainer) {
   return instructions;
 }
 
-function buildShapeFromInstructions(instructions, scene) {
+/**
+ * Builds a shape from a set of instructions
+ * @param {Array} instructions - The instructions to build the shape from
+ * @param {Phaser.Scene} scene - The scene to which the shape belongs
+ * @param {number} [color=0xffffff] - The color of the shape
+ * @return {Array} An array of shape instances created from the instructions
+ */
+function buildShapeFromInstructions(instructions, scene, color = 0xffffff) {
   console.log(instructions);
   const containerStack = [];
   const shapes = [];
@@ -265,6 +272,7 @@ function buildShapeFromInstructions(instructions, scene) {
           parameters.positionY,
           parameters.width,
           parameters.height,
+          color,
         );
         rectangle.setRotation(parameters.rotation);
         if (containerStack.length > 0) {
@@ -282,6 +290,7 @@ function buildShapeFromInstructions(instructions, scene) {
           parameters.positionY,
           parameters.width,
           parameters.height,
+          color,
         );
         ellipse.setRotation(parameters.rotation);
         if (containerStack.length > 0) {
@@ -300,6 +309,8 @@ function buildShapeFromInstructions(instructions, scene) {
           parameters.arcRadius,
           parameters.arcStartAngle,
           parameters.arcEndAngle,
+          false,
+          color,
         );
         arc.setRotation(parameters.rotation);
         if (containerStack.length > 0) {
@@ -316,6 +327,7 @@ function buildShapeFromInstructions(instructions, scene) {
           parameters.positionX,
           parameters.positionY,
           parameters.polygonPoints,
+          color,
         );
         polygon.setRotation(parameters.rotation);
         if (containerStack.length > 0) {

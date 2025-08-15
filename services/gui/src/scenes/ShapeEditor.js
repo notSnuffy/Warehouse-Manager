@@ -209,6 +209,7 @@ class ShapeEditor extends Phaser.Scene {
           const rebuiltShape = buildShapeFromInstructions(
             instructions,
             this,
+            parameters.color,
           )[0];
 
           rebuiltShape.setPosition(parameters.x, parameters.y);
@@ -233,7 +234,6 @@ class ShapeEditor extends Phaser.Scene {
       handleMoveButtonClick,
       handleSelectButtonClick,
       addShape,
-      DEFAULT_SHAPES,
       this.#selectManager.hide.bind(this.#selectManager),
       () => this.#shapes,
     );
