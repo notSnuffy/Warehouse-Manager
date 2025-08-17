@@ -21,13 +21,18 @@ function getShapePoints(shape) {
 }
 
 const ShapeTypes = Object.freeze({
-  RECTANGLE: -5,
-  ELLIPSE: -4,
-  ARC: -3,
-  POLYGON: -2,
+  RECTANGLE: 1,
+  ELLIPSE: 2,
+  ARC: 3,
+  POLYGON: 4,
 });
 
-function saveShapeInstance(shapes) {
+/**
+ * Returns a wrapper container for the given shapes
+ * @param {Array} shapes - The shapes to wrap
+ * @return {Object} A container object that wraps the shapes
+ */
+function getContainerWrapper(shapes) {
   let mostLeft = Infinity;
   let mostRight = -Infinity;
   let mostTop = Infinity;
@@ -67,6 +72,24 @@ function saveShapeInstance(shapes) {
     components: [],
   };
 
+  return rootContainer;
+}
+
+const ShapeCommands = Object.freeze({
+  CREATE_RECTANGLE: "createRectangle",
+  CREATE_ELLIPSE: "createEllipse",
+  CREATE_ARC: "createArc",
+  CREATE_POLYGON: "createPolygon",
+  BEGIN_CONTAINER: "beginContainer",
+  END_CONTAINER: "endContainer",
+});
+
+/**
+ * Preprocesses shapes for instruction saving
+ * @param {Array} shapes - The shapes to preprocess
+ * @return {Array} An array of preprocessed shapes
+ */
+function preprocessShapesForSaving(shapes) {
   const getShapeId = (shape) => {
     if (shape.id) {
       return shape.id;
@@ -86,26 +109,15 @@ function saveShapeInstance(shapes) {
     }
   };
 
-  const convertShapeCoordinatesToContainer = (shape, container) => {
-    const adjustedX = shape.x - container.positionX;
-    const adjustedY = shape.y - container.positionY;
-
-    return {
-      x: adjustedX,
-      y: adjustedY,
-    };
-  };
-  console.log("Converting shapes to components...");
-  const shapeComponents = shapes.map((shape) => {
+  const preprocessedShapes = shapes.map((shape) => {
     let shapeId = getShapeId(shape);
-    let adjustedCoordinates = convertShapeCoordinatesToContainer(
-      shape,
-      rootContainer,
-    );
+
+    console.log(shapes);
+    console.log(shape.x);
     let shapeComponent = {
       shapeId: shapeId,
-      positionX: adjustedCoordinates.x,
-      positionY: adjustedCoordinates.y,
+      positionX: shape.x,
+      positionY: shape.y,
       width: shape.displayWidth,
       height: shape.displayHeight,
       rotation: shape.rotation,
@@ -171,25 +183,53 @@ function saveShapeInstance(shapes) {
     }
     return shapeComponent;
   });
+  console.log("Preprocessed Shapes:", preprocessedShapes);
+  return preprocessedShapes;
+}
+
+/**
+ * Gets shapes wrapped in a container
+ * @param {Array} shapes - Shapes in the editor
+ * @return {Object} The root container with wrapped shapes
+ */
+function getShapesWrappedInContainer(shapes) {
+  const convertShapeCoordinatesToContainer = (shape, container) => {
+    const adjustedX = shape.positionX - container.positionX;
+    const adjustedY = shape.positionY - container.positionY;
+
+    return {
+      x: adjustedX,
+      y: adjustedY,
+    };
+  };
+
+  const rootContainer = getContainerWrapper(shapes);
+  console.log("Root Container:", rootContainer);
+  const shapeComponents = preprocessShapesForSaving(shapes);
+  console.log("Shape Components:", shapeComponents);
+  shapeComponents.forEach((shape) => {
+    const adjustedCoordinates = convertShapeCoordinatesToContainer(
+      shape,
+      rootContainer,
+    );
+    console.log(
+      `Adjusted Coordinates for Shape ID ${shape.shapeId}: ${adjustedCoordinates.x}, ${adjustedCoordinates.y}`,
+    );
+    shape.positionX = adjustedCoordinates.x;
+    shape.positionY = adjustedCoordinates.y;
+    return shape;
+  });
+
   rootContainer.components = shapeComponents;
   return rootContainer;
 }
 
-const ShapeCommands = Object.freeze({
-  CREATE_RECTANGLE: "createRectangle",
-  CREATE_ELLIPSE: "createEllipse",
-  CREATE_ARC: "createArc",
-  CREATE_POLYGON: "createPolygon",
-  BEGIN_CONTAINER: "beginContainer",
-  END_CONTAINER: "endContainer",
-});
-
 /**
  * Saves the shape as a set of instructions to execute to recreate it
- * @param {Object} rootContainer - The root container to save shapes from
+ * @param {Object} shape - The shape to save
  * @return {string} An array of instructions in JSON format
  */
-function saveShapeAsInstructions(rootContainer) {
+function saveShapeAsInstructions(shape) {
   const instructions = [];
 
   const getShapeCommandName = (shapeId) => {
@@ -244,7 +284,7 @@ function saveShapeAsInstructions(rootContainer) {
 
     return instruction;
   };
-  convertShapeToInstruction(rootContainer);
+  convertShapeToInstruction(shape);
   return instructions;
 }
 
@@ -373,7 +413,8 @@ function buildShapeFromInstructions(instructions, scene, color = 0xffffff) {
 
 export {
   getShapePoints,
-  saveShapeInstance,
+  getShapesWrappedInContainer,
   saveShapeAsInstructions,
   buildShapeFromInstructions,
+  preprocessShapesForSaving,
 };

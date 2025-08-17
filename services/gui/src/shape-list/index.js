@@ -1,6 +1,7 @@
 import "./styles.scss";
 import * as _bootstrap from "bootstrap";
 import { API_URL } from "../config";
+import { DEFAULT_SHAPES } from "../scenes/ShapeEditor";
 import {
   paginateList,
   renderPaginationControls,
@@ -73,6 +74,8 @@ async function fetchShapes() {
       throw new Error("Network response was not ok");
     }
     const data = await response.json();
+    // Splice system shapes from the data
+    data.splice(0, DEFAULT_SHAPES.length);
     data.forEach((shape) => {
       shapes[shape.id] = shape;
     });

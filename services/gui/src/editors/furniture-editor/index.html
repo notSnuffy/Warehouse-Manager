@@ -42,6 +42,7 @@
             <button
               class="btn btn-secondary mb-2"
               data-shape="rectangle"
+              data-id="1"
               id="add-rectangle"
             >
               Rectangle
@@ -49,6 +50,7 @@
             <button
               class="btn btn-secondary mb-2"
               data-shape="ellipse"
+              data-id="2"
               id="add-ellipse"
             >
               Ellipse
@@ -56,6 +58,7 @@
             <button
               class="btn btn-secondary mb-2"
               data-shape="arc"
+              data-id="3"
               id="add-arc"
             >
               Arc
@@ -63,6 +66,7 @@
             <button
               class="btn btn-secondary mb-2"
               data-shape="polygon"
+              data-id="4"
               id="add-polygon"
             >
               Polygon
@@ -72,7 +76,6 @@
         <div class="col-md-10 ps-0" id="editorContainer"></div>
       </div>
     </div>
-
     <div
       class="modal fade"
       id="newShapeModal"
@@ -209,6 +212,60 @@
               type="button"
               class="btn btn-primary"
               id="addShapeConfirmButton"
+            >
+              Confirm
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div
+      class="modal fade"
+      id="additionalDataModal"
+      tabindex="-1"
+      aria-labelledby="additionalDataModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="additionalDataModalLabel">
+              Enter Additional Data
+            </h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <form id="shapeForm">
+              <div class="form-group">
+                <label for="topDownView">Top-Down View</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  list="topDownViewOptions"
+                  id="topDownView"
+                  placeholder="Select or type a view"
+                />
+                <datalist id="topDownViewOptions"> </datalist>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              Close
+            </button>
+            <button
+              type="button"
+              class="btn btn-primary"
+              id="additionalDataConfirmButton"
             >
               Confirm
             </button>

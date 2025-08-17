@@ -1,7 +1,7 @@
 import { DEFAULT_SHAPES } from "../scenes/ShapeEditor";
 import { API_URL } from "../config";
 import {
-  saveShapeInstance,
+  getShapesWrappedInContainer,
   saveShapeAsInstructions,
 } from "../lib/functions/shapes";
 import {
@@ -77,13 +77,13 @@ class ShapeEditorUIInitializer {
         }
       }
 
-      const allShapeItems = document.querySelectorAll("button[data-shape]");
-      for (const item of allShapeItems) {
-        if (item.dataset.shape === shapeName) {
-          alert("Shape name already exists");
-          return;
-        }
-      }
+      //const allShapeItems = document.querySelectorAll("button[data-shape]");
+      //for (const item of allShapeItems) {
+      //  if (item.dataset.shape === shapeName) {
+      //    alert("Shape name already exists");
+      //    return;
+      //  }
+      //}
 
       console.log("ADD WAY TO SET PUBLIC FLAG");
       let publicFlag = false;
@@ -101,7 +101,9 @@ class ShapeEditorUIInitializer {
         name: shapeName,
         type: "CONTAINER",
         public: publicFlag,
-        instructions: saveShapeAsInstructions(saveShapeInstance(shapes)),
+        instructions: saveShapeAsInstructions(
+          getShapesWrappedInContainer(shapes),
+        ),
       };
 
       console.log("Shape to save:", shape);
@@ -114,10 +116,11 @@ class ShapeEditorUIInitializer {
           body: JSON.stringify(shape),
         });
 
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
         const data = await response.json();
+        if (!response.ok) {
+          alert(data.errors.join("\n"));
+          return;
+        }
         addItemButtonIntoList(data.name, data.id);
       } catch (error) {
         console.error(error);

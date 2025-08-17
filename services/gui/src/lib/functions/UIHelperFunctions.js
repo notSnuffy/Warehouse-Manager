@@ -371,6 +371,8 @@ async function populateShapeList() {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     const data = await response.json();
+    // Splice system shapes from the data
+    data.splice(0, DEFAULT_SHAPES.length);
     data.forEach((shape) => {
       addItemButtonIntoList(shape.name, shape.id);
     });

@@ -21,7 +21,7 @@ public class Shape {
   private Long id;
 
   /** Name of the shape. */
-  @Column(nullable = false)
+  @Column(nullable = false, unique = true)
   @NotBlank(message = "Shape name cannot be blank")
   @Size(max = 255, message = "Shape name cannot exceed 255 characters")
   private String name;

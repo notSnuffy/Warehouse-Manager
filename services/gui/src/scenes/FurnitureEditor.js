@@ -183,6 +183,7 @@ class FurnitureEditor extends Phaser.Scene {
       addShape,
       this.#selectManager.hide.bind(this.#selectManager),
       () => this.#shapes,
+      () => this.#zones,
     );
 
     for (let i = 0; i < this.#shapes.length; i++) {

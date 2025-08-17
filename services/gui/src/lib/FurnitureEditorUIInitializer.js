@@ -3,6 +3,11 @@ import {
   initializeAddShapeModal,
   populateShapeList,
 } from "../lib/functions/UIHelperFunctions";
+import {
+  preprocessShapesForSaving,
+  saveShapeAsInstructions,
+} from "../lib/functions/shapes";
+import { Modal } from "bootstrap";
 
 /**
  * @class FurnitureEditorUIInitializer
@@ -17,6 +22,59 @@ class FurnitureEditorUIInitializer {
    * @static
    */
   static #initialized = false;
+
+  /**
+   * Map to store shape IDs
+   * @type {Map<string, string>}
+   * @private
+   * @static
+   * @default new Map()
+   */
+  static #shapeIdMap = new Map();
+
+  /**
+   * Pending furniture data
+   * @type {Object|null}
+   * @private
+   * @static
+   * @default null
+   */
+  static #pendingFurniture = null;
+
+  /**
+   * Adds an item to the top-down view data list
+   * @param {string} name - The name of the item
+   * @param {string} id - The ID of the item
+   * @static
+   * @private
+   */
+  static #addItemToTopDownViewDataList(name, id) {
+    const topDownViewDataList = document.getElementById("topDownViewOptions");
+
+    const option = document.createElement("option");
+    option.value = name;
+
+    FurnitureEditorUIInitializer.#shapeIdMap.set(name, id);
+
+    topDownViewDataList.appendChild(option);
+  }
+
+  static #populateTopDownViewDataList() {
+    const itemsMenuButtonsElement = document.getElementById("itemsMenuButtons");
+    const buttons = itemsMenuButtonsElement.querySelectorAll("button");
+
+    buttons.forEach((button) => {
+      const shapeName = button.dataset.shape;
+      const shapeId = parseInt(button.dataset.id, 10);
+      if (shapeName && shapeId) {
+        FurnitureEditorUIInitializer.#addItemToTopDownViewDataList(
+          shapeName,
+          shapeId,
+        );
+      }
+    });
+  }
+
   /**
    * Initializes the UI
    * @param {Function} handleMoveButtonClick - Function to handle move button click
@@ -24,14 +82,16 @@ class FurnitureEditorUIInitializer {
    * @param {Function} addShape - Function to add a shape
    * @param {Function} selectHide - Function to hide selection
    * @param {Function} getEditorShapes - Function to get editor shapes
+   * @param {Function} getEditorZones - Function to get editor zones
    * @static
    */
-  static initialize(
+  static async initialize(
     handleMoveButtonClick,
     handleSelectButtonClick,
     addShape,
     selectHide,
     getEditorShapes,
+    getEditorZones,
   ) {
     if (FurnitureEditorUIInitializer.#initialized) {
       return;
@@ -48,21 +108,22 @@ class FurnitureEditorUIInitializer {
     addButtonHandler("selectButton", "click", handleSelectButtonClick);
 
     initializeAddShapeModal(addShape);
-    const modalElement = document.getElementById("newShapeModal");
-    modalElement.addEventListener("show.bs.modal", function () {
+    const newShapeModalElement = document.getElementById("newShapeModal");
+    newShapeModalElement.addEventListener("show.bs.modal", function () {
       const isAddZone = document.getElementById("addZoneSwitch").checked;
       if (isAddZone) {
         document.getElementById("colorGroup").hidden = true;
       }
     });
-    modalElement.addEventListener("hide.bs.modal", function () {
+    newShapeModalElement.addEventListener("hide.bs.modal", function () {
       document.getElementById("colorGroup").hidden = false;
       const isAddZone = document.getElementById("addZoneSwitch").checked;
       if (isAddZone) {
         document.getElementById("shapeColor").value = "#563d7c";
       }
     });
-    populateShapeList();
+    await populateShapeList();
+    FurnitureEditorUIInitializer.#populateTopDownViewDataList();
 
     const saveButton = document.getElementById("saveButton");
     saveButton.addEventListener("click", async function () {
@@ -74,7 +135,96 @@ class FurnitureEditorUIInitializer {
         alert("Please enter a shape name");
         return;
       }
-      console.log(getEditorShapes());
+
+      const shapes = getEditorShapes();
+      const zones = getEditorZones();
+
+      if (shapes.length === 0) {
+        alert("Please add at least one shape before saving");
+        return;
+      }
+
+      const furnitureShapes = [];
+      const preprocessedShapes = preprocessShapesForSaving(shapes);
+      preprocessedShapes.forEach((shape) => {
+        furnitureShapes.push({
+          shapeId: shape.shapeId,
+          instructions: saveShapeAsInstructions(shape),
+        });
+      });
+
+      const furnitureZones = [];
+      const preprocessedZones = preprocessShapesForSaving(zones);
+      let index = 0;
+      preprocessedZones.forEach((zone) => {
+        furnitureZones.push({
+          name: "Zone " + ++index,
+          shapeId: zone.shapeId,
+          instructions: saveShapeAsInstructions(zone),
+        });
+      });
+
+      FurnitureEditorUIInitializer.#pendingFurniture = {
+        name: furnitureName,
+        shapes: furnitureShapes,
+        zones: furnitureZones,
+        topDownViewId: null,
+      };
+
+      const additionalDataModalElement = document.getElementById(
+        "additionalDataModal",
+      );
+      const additionalDataModal = new Modal(additionalDataModalElement);
+      additionalDataModal.show();
+    });
+
+    const additionalDataConfirmButtonElement = document.getElementById(
+      "additionalDataConfirmButton",
+    );
+    additionalDataConfirmButtonElement.addEventListener("click", async () => {
+      if (!FurnitureEditorUIInitializer.#pendingFurniture) {
+        console.error("No pending furniture data to save.");
+        return;
+      }
+
+      const topDownViewShapeName = document.getElementById("topDownView").value;
+      if (!topDownViewShapeName) {
+        alert("Please select a top-down view shape.");
+        return;
+      }
+      FurnitureEditorUIInitializer.#pendingFurniture.topDownViewId =
+        FurnitureEditorUIInitializer.#shapeIdMap.get(topDownViewShapeName);
+
+      console.log(
+        "Furniture to save:",
+        FurnitureEditorUIInitializer.#pendingFurniture,
+      );
+
+      try {
+        const response = await fetch("/furniture-management/furniture", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(FurnitureEditorUIInitializer.#pendingFurniture),
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          if (data.errors && data.errors.length > 0) {
+            alert(data.errors.join("\n"));
+          }
+          console.error("Failed to save furniture:", data);
+          return;
+        }
+        console.log("Furniture saved successfully:", data);
+        alert("Furniture saved successfully!");
+      } catch (error) {
+        console.error(error);
+      }
+      FurnitureEditorUIInitializer.#pendingFurniture = null;
+      const modalElement = document.getElementById("additionalDataModal");
+      const modal = Modal.getInstance(modalElement);
+      modal.hide();
     });
   }
 }

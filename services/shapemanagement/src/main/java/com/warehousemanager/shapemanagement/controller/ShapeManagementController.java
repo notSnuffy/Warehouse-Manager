@@ -2,6 +2,7 @@ package com.warehousemanager.shapemanagement.controller;
 
 import com.warehousemanager.shapemanagement.ShapeDataTransferObject;
 import com.warehousemanager.shapemanagement.ShapeDtoMapper;
+import com.warehousemanager.shapemanagement.ShapeInstanceDataTransferObject;
 import com.warehousemanager.shapemanagement.entities.Shape;
 import com.warehousemanager.shapemanagement.entities.ShapeInstance;
 import com.warehousemanager.shapemanagement.exceptions.ShapeTemplateDoesNotExistException;
@@ -9,6 +10,7 @@ import com.warehousemanager.shapemanagement.repositories.ShapeInstanceRepository
 import com.warehousemanager.shapemanagement.repositories.ShapeRepository;
 import jakarta.validation.Valid;
 import java.util.ArrayList;
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -67,6 +69,41 @@ public class ShapeManagementController {
             .findShapeTemplateByIsTemplateTrueAndShapeId(id)
             .orElseThrow(() -> new ShapeTemplateDoesNotExistException(id));
     return shapeInstance;
+  }
+
+  @PostMapping("/shapes/instances/batch")
+  public Iterable<ShapeInstance> createShapeInstances(
+      @Valid @RequestBody
+          Iterable<ShapeInstanceDataTransferObject> shapeInstanceDataTransferObjects) {
+    Logger logger = LoggerFactory.getLogger(ShapeManagementController.class);
+    logger.info("Creating shape instances in batch");
+
+    logger.info("ShapeInstanceDataTransferObjects: {}", shapeInstanceDataTransferObjects);
+    List<ShapeInstance> shapeInstances = new ArrayList<>();
+    for (ShapeInstanceDataTransferObject shapeInstanceDataTransferObject :
+        shapeInstanceDataTransferObjects) {
+      Shape shape =
+          shapeRepository
+              .findById(shapeInstanceDataTransferObject.shapeId())
+              .orElseThrow(
+                  () ->
+                      new RuntimeException(
+                          "Shape not found with ID: " + shapeInstanceDataTransferObject.shapeId()));
+      ShapeInstance shapeInstance =
+          new ShapeInstance(shape, shapeInstanceDataTransferObject.instructions());
+      shapeInstances.add(shapeInstance);
+      logger.info("Creating ShapeInstance for shape ID: {}", shape.getId());
+    }
+    Iterable<ShapeInstance> savedShapeInstances = shapeInstanceRepository.saveAll(shapeInstances);
+    logger.info(
+        "Shape instances created: {}", savedShapeInstances.spliterator().getExactSizeIfKnown());
+    for (ShapeInstance shapeInstance : savedShapeInstances) {
+      logger.info(
+          "ShapeInstance ID: {}, Shape ID: {}",
+          shapeInstance.getId(),
+          shapeInstance.getShape().getId());
+    }
+    return savedShapeInstances;
   }
 
   @PutMapping("/shapes/{id}")
