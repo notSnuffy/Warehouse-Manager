@@ -8,6 +8,7 @@ import {
   saveShapeAsInstructions,
 } from "../lib/functions/shapes";
 import { Modal } from "bootstrap";
+import { DEFAULT_SHAPES } from "../scenes/ShapeEditor";
 
 /**
  * @class FurnitureEditorUIInitializer
@@ -64,7 +65,10 @@ class FurnitureEditorUIInitializer {
     const buttons = itemsMenuButtonsElement.querySelectorAll("button");
 
     buttons.forEach((button) => {
-      const shapeName = button.dataset.shape;
+      let shapeName = button.dataset.shape;
+      if (DEFAULT_SHAPES.includes(shapeName)) {
+        shapeName = shapeName.charAt(0).toUpperCase() + shapeName.slice(1);
+      }
       const shapeId = parseInt(button.dataset.id, 10);
       if (shapeName && shapeId) {
         FurnitureEditorUIInitializer.#addItemToTopDownViewDataList(

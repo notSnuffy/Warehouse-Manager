@@ -3,10 +3,13 @@ package com.warehousemanager.furnituremanagement.controller;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 
 import com.warehousemanager.furnituremanagement.FurnitureDataTransferObject;
+import com.warehousemanager.furnituremanagement.FurnitureResponseDataTransferObject;
 import com.warehousemanager.furnituremanagement.Instruction;
 import com.warehousemanager.furnituremanagement.Shape;
 import com.warehousemanager.furnituremanagement.ShapeInstance;
+import com.warehousemanager.furnituremanagement.ShapeType;
 import com.warehousemanager.furnituremanagement.ZoneDataTransferObject;
+import com.warehousemanager.furnituremanagement.ZoneResponseDataTransferObject;
 import com.warehousemanager.furnituremanagement.entities.Furniture;
 import com.warehousemanager.furnituremanagement.entities.Zone;
 import com.warehousemanager.furnituremanagement.repositories.FurnitureRepository;
@@ -19,6 +22,7 @@ import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -59,11 +63,68 @@ public class FurnitureManagementController {
    * @return a string representation of the furniture management service response
    */
   @GetMapping("/furniture")
-  public String getFurniture() {
+  public Iterable<Furniture> getFurniture() {
+    logger.info("Received request to get all furniture");
+    Iterable<Furniture> furnitureList = furnitureRepository.findAll();
+    logger.info("Retrieved {} furniture items", furnitureList.spliterator().getExactSizeIfKnown());
+    return furnitureList;
+  }
+
+  /**
+   * Retrieves a specific furniture item by its ID.
+   *
+   * @param id the unique identifier of the furniture item
+   * @return the Furniture entity with the specified ID
+   */
+  @GetMapping("/furniture/{id}")
+  public FurnitureResponseDataTransferObject getFurnitureById(@PathVariable Long id) {
+    logger.info("Received request to get furniture with ID: {}", id);
+    Furniture furniture =
+        furnitureRepository
+            .findById(id)
+            .orElseThrow(() -> new IllegalArgumentException("Furniture not found with ID: " + id));
+    logger.info("Found furniture: {}", furniture);
     ServiceInstance serviceInstance = discoveryClient.getInstances("shape-management").get(0);
-    String url = serviceInstance.getUri() + "/shapes";
-    String response = restClient.get().uri(url).retrieve().body(String.class);
-    return "Furniture Management Service: " + response;
+    String baseUrl = serviceInstance.getUri() + "/shapes/";
+    List<ShapeInstance> shapeInstances = new ArrayList<>();
+    for (Long shapeId : furniture.getShapeIds()) {
+      ShapeInstance shapeInstance =
+          restClient
+              .get()
+              .uri(baseUrl + shapeId + "/instance")
+              .retrieve()
+              .body(new ParameterizedTypeReference<ShapeInstance>() {});
+
+      shapeInstances.add(shapeInstance);
+    }
+    logger.info("Shape instances retrieved: {}", shapeInstances);
+    ShapeType topDownView =
+        restClient
+            .get()
+            .uri(baseUrl + furniture.getTopDownViewId())
+            .retrieve()
+            .body(new ParameterizedTypeReference<ShapeType>() {});
+    logger.info("Top-down view shape instance retrieved: {}", topDownView);
+    List<ZoneResponseDataTransferObject> zones = new ArrayList<>();
+    for (Zone zone : furniture.getZones()) {
+      Long shapeId = zone.getShapeId();
+      ShapeType zoneShape =
+          restClient
+              .get()
+              .uri(baseUrl + shapeId)
+              .retrieve()
+              .body(new ParameterizedTypeReference<ShapeType>() {});
+      ZoneResponseDataTransferObject zoneResponse =
+          new ZoneResponseDataTransferObject(
+              zone.getId(), zone.getName(), zoneShape, zone.getInstructions());
+      zones.add(zoneResponse);
+    }
+    logger.info("Zones retrieved: {}", zones);
+    FurnitureResponseDataTransferObject furnitureResponse =
+        new FurnitureResponseDataTransferObject(
+            furniture.getId(), furniture.getName(), topDownView, shapeInstances, zones);
+    logger.info("Returning furniture response: {}", furnitureResponse);
+    return furnitureResponse;
   }
 
   /**

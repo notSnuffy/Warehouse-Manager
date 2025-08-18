@@ -70,6 +70,13 @@ class ShapeEditor extends Phaser.Scene {
         API_URL + "/shape-management/shapes/" + shapeId + "/template",
       );
       const shapeData = await shapeInstance.json();
+      if (!shapeInstance.ok) {
+        if (shapeData.errors && shapeData.errors.length > 0) {
+          alert(shapeData.errors.join("\n"));
+        }
+        console.error("Failed to load shape:", shapeData);
+        return;
+      }
 
       const shapeNameElement = document.getElementById("shapeName");
       shapeNameElement.value = shapeData.shape.name;

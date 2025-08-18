@@ -20,25 +20,43 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+/** Controller for managing shapes in the warehouse management system. */
 @RestController
 public class ShapeManagementController {
   private final ShapeRepository shapeRepository;
   private final ShapeInstanceRepository shapeInstanceRepository;
+  private static final Logger logger = LoggerFactory.getLogger(ShapeManagementController.class);
 
+  /**
+   * Constructs a ShapeManagementController with the specified repositories.
+   *
+   * @param shapeRepository the repository for managing shape entities
+   * @param shapeInstanceRepository the repository for managing shape instance entities
+   */
   public ShapeManagementController(
       ShapeRepository shapeRepository, ShapeInstanceRepository shapeInstanceRepository) {
     this.shapeRepository = shapeRepository;
     this.shapeInstanceRepository = shapeInstanceRepository;
   }
 
+  /**
+   * Retrieves all shapes from the shape management service.
+   *
+   * @return an iterable collection of all shapes
+   */
   @GetMapping("/shapes")
   public Iterable<Shape> getAllShapes() {
     return shapeRepository.findAll();
   }
 
+  /**
+   * Creates a new shape based on the provided shape data transfer object.
+   *
+   * @param shapeDataTransferObject the data transfer object containing shape details
+   * @return the created shape entity
+   */
   @PostMapping("/shapes")
   public Shape createShape(@Valid @RequestBody ShapeDataTransferObject shapeDataTransferObject) {
-    Logger logger = LoggerFactory.getLogger(ShapeManagementController.class);
     logger.info("Received request to create shape: {}", shapeDataTransferObject.getName());
     Shape shape = ShapeDtoMapper.mapToEntity(shapeDataTransferObject);
 
@@ -60,9 +78,32 @@ public class ShapeManagementController {
     return savedShape;
   }
 
+  /**
+   * Retrieves a shape by its ID.
+   *
+   * @param id the unique identifier of the shape
+   * @return the shape entity with the specified ID
+   */
+  @GetMapping("/shapes/{id}")
+  public Shape getShapeById(@PathVariable Long id) {
+    logger.info("Fetching shape with ID: {}", id);
+    Shape shape =
+        shapeRepository
+            .findById(id)
+            .orElseThrow(() -> new RuntimeException("Shape not found with ID: " + id));
+    logger.info("Found shape: {}", shape);
+    return shape;
+  }
+
+  /**
+   * Retrieves a shape template by its ID.
+   *
+   * @param id the unique identifier of the shape
+   * @return the shape instance representing the template
+   * @throws ShapeTemplateDoesNotExistException if no template exists for the given shape ID
+   */
   @GetMapping("/shapes/{id}/template")
   public ShapeInstance getShapeTemplate(@PathVariable Long id) {
-    Logger logger = LoggerFactory.getLogger(ShapeManagementController.class);
     logger.info("Fetching shape template with ID: {}", id);
     ShapeInstance shapeInstance =
         shapeInstanceRepository
@@ -71,11 +112,34 @@ public class ShapeManagementController {
     return shapeInstance;
   }
 
+  /**
+   * Retrieves a specific shape instance by its ID.
+   *
+   * @param id the unique identifier of the shape instance
+   * @return the shape instance with the specified ID
+   */
+  @GetMapping("/shapes/{id}/instance")
+  public ShapeInstance getShapeInstance(@PathVariable Long id) {
+    logger.info("Fetching shape instance with ID: {}", id);
+    ShapeInstance shapeInstance =
+        shapeInstanceRepository
+            .findById(id)
+            .orElseThrow(() -> new RuntimeException("Shape instance not found with ID: " + id));
+    logger.info("Found shape instance: {}", shapeInstance);
+    return shapeInstance;
+  }
+
+  /**
+   * Creates new shape instances in batch based on the provided data transfer objects.
+   *
+   * @param shapeInstanceDataTransferObjects the iterable collection of shape instance data transfer
+   *     objects
+   * @return an iterable collection of created shape instances
+   */
   @PostMapping("/shapes/instances/batch")
   public Iterable<ShapeInstance> createShapeInstances(
       @Valid @RequestBody
           Iterable<ShapeInstanceDataTransferObject> shapeInstanceDataTransferObjects) {
-    Logger logger = LoggerFactory.getLogger(ShapeManagementController.class);
     logger.info("Creating shape instances in batch");
 
     logger.info("ShapeInstanceDataTransferObjects: {}", shapeInstanceDataTransferObjects);

@@ -77,14 +77,6 @@ class ShapeEditorUIInitializer {
         }
       }
 
-      //const allShapeItems = document.querySelectorAll("button[data-shape]");
-      //for (const item of allShapeItems) {
-      //  if (item.dataset.shape === shapeName) {
-      //    alert("Shape name already exists");
-      //    return;
-      //  }
-      //}
-
       console.log("ADD WAY TO SET PUBLIC FLAG");
       let publicFlag = false;
 

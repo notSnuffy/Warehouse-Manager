@@ -43,7 +43,7 @@ function fillFurnitureWithTestData() {
 }
 
 async function init() {
-  //await fetchFurniture();
+  await fetchFurniture();
   renderFurniture();
   populateFurnitureSuggestions();
 }
@@ -68,15 +68,19 @@ addFurnitureButtonElement.addEventListener("click", () => {
   window.location.href = "/";
 });
 
-async function _fetchFurniture() {
+async function fetchFurniture() {
   try {
     const response = await fetch(API_URL + "/furniture-management/furniture");
-    if (!response.ok) {
-      throw new Error("Network response was not ok");
-    }
     const data = await response.json();
-    data.forEach((furniture) => {
-      furniture[furniture.id] = furniture;
+    console.log("Fetched furniture data:", data);
+    if (!response.ok) {
+      if (data.errors && data.errors.length > 0) {
+        alert(data.errors.join("\n"));
+      }
+      console.error("Failed to fetch furniture:", data);
+    }
+    data.forEach((furnitureData) => {
+      furniture[furnitureData.id] = furnitureData;
     });
   } catch (error) {
     console.error("Error fetching furniture:", error);
@@ -107,7 +111,7 @@ function renderFurniture() {
 }
 
 function editFurniture(id) {
-  window.location.href = `/?id=${id}`;
+  window.location.href = `/editors/furniture-editor/?furnitureId=${id}`;
 }
 
 async function removeFurniture(id) {

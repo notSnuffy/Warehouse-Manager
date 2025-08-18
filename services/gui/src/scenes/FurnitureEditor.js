@@ -67,6 +67,53 @@ class FurnitureEditor extends Phaser.Scene {
   }
 
   /**
+   * Loads the furniture by its ID
+   * @param {string} furnitureId - The ID of the furniture to load
+   * @private
+   * @async
+   */
+  async #loadFurniture(furnitureId) {
+    try {
+      const response = await fetch(
+        `${API_URL}/furniture-management/furniture/${furnitureId}`,
+      );
+      const furnitureData = await response.json();
+      if (!response.ok) {
+        if (furnitureData.errors && furnitureData.errors.length > 0) {
+          alert(furnitureData.errors.join("\n"));
+        }
+        console.error("Failed to load furniture:", furnitureData);
+        return;
+      }
+
+      if (furnitureData.shapes) {
+        furnitureData.shapes.forEach((shapeData) => {
+          const shape = buildShapeFromInstructions(
+            shapeData.instructions,
+            this,
+          )[0];
+          shape.id = shapeData.shape.id;
+          this.#shapes.push(shape);
+        });
+      }
+
+      if (furnitureData.zones) {
+        furnitureData.zones.forEach((zoneData) => {
+          const zone = buildShapeFromInstructions(
+            zoneData.instructions,
+            this,
+            0xeb7734,
+          )[0];
+          zone.id = zoneData.shape.id;
+          this.#zones.push(zone);
+        });
+      }
+    } catch (error) {
+      console.error("Error loading furniture:", error);
+    }
+  }
+
+  /**
    * Initializes the scene
    * @public
    */
@@ -77,6 +124,12 @@ class FurnitureEditor extends Phaser.Scene {
    * @public
    */
   async create() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const furnitureId = urlParams.get("furnitureId");
+    if (furnitureId) {
+      await this.#loadFurniture(furnitureId);
+    }
+
     /**
      * Handles the move button click event
      */
@@ -192,6 +245,14 @@ class FurnitureEditor extends Phaser.Scene {
 
       this.#moveManager.create(shape);
       this.#selectManager.create(shape);
+    }
+
+    for (let i = 0; i < this.#zones.length; i++) {
+      let zone = this.#zones[i];
+      zone.setInteractive({ draggable: true });
+
+      this.#moveManager.create(zone);
+      this.#selectManager.create(zone);
     }
 
     this.input.on("pointerdown", this.#selectManager.hide, this.#selectManager);
