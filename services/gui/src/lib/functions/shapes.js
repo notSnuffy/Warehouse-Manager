@@ -146,21 +146,18 @@ function preprocessShapesForSaving(shapes) {
           child.getBottomCenter(undefined, true),
         );
 
-        const { tx, ty } = parent.getWorldTransformMatrix();
-        console.log(tx, ty);
+        const parentWorldMatrix = parent.getWorldTransformMatrix();
+        parentWorldMatrix.invert();
 
-        const dx = childWorldCenterCoordinates.x - tx;
-        const dy = childWorldCenterCoordinates.y - ty;
-
-        const rotatedLocalX =
-          dx * Math.cos(-parent.rotation) - dy * Math.sin(-parent.rotation);
-        const rotatedLocalY =
-          dx * Math.sin(-parent.rotation) + dy * Math.cos(-parent.rotation);
+        const localCoordinates = parentWorldMatrix.transformPoint(
+          childWorldCenterCoordinates.x,
+          childWorldCenterCoordinates.y,
+        );
 
         let childComponent = {
           shapeId: childShapeId,
-          positionX: rotatedLocalX,
-          positionY: rotatedLocalY,
+          positionX: localCoordinates.x,
+          positionY: localCoordinates.y,
           width: childWidth,
           height: childHeight,
           rotation: child.rotation,
@@ -352,6 +349,7 @@ function buildShapeFromInstructions(instructions, scene, color = 0xffffff) {
           false,
           color,
         );
+        arc.setDisplaySize(parameters.width, parameters.height);
         arc.setRotation(parameters.rotation);
         if (containerStack.length > 0) {
           const parentContainer = containerStack[containerStack.length - 1];
@@ -369,6 +367,7 @@ function buildShapeFromInstructions(instructions, scene, color = 0xffffff) {
           parameters.polygonPoints,
           color,
         );
+        polygon.setDisplaySize(parameters.width, parameters.height);
         polygon.setRotation(parameters.rotation);
         if (containerStack.length > 0) {
           const parentContainer = containerStack[containerStack.length - 1];
