@@ -4,6 +4,7 @@ import static org.springframework.http.MediaType.APPLICATION_JSON;
 
 import com.warehousemanager.furnituremanagement.FurnitureDataTransferObject;
 import com.warehousemanager.furnituremanagement.FurnitureResponseDataTransferObject;
+import com.warehousemanager.furnituremanagement.FurnitureTopDownView;
 import com.warehousemanager.furnituremanagement.Instruction;
 import com.warehousemanager.furnituremanagement.Shape;
 import com.warehousemanager.furnituremanagement.ShapeInstance;
@@ -125,6 +126,33 @@ public class FurnitureManagementController {
             furniture.getId(), furniture.getName(), topDownView, shapeInstances, zones);
     logger.info("Returning furniture response: {}", furnitureResponse);
     return furnitureResponse;
+  }
+
+  /**
+   * Retrieves the top-down view template for a specific furniture.
+   *
+   * @param id the unique identifier of the furniture
+   * @return a FurnitureTopDownView containing the furniture ID and its top-down view shape instance
+   *     template
+   */
+  @GetMapping("/furniture/{id}/topDownView/template")
+  public FurnitureTopDownView getFurnitureTopDownViewTemplate(@PathVariable Long id) {
+    logger.info("Received request to get top-down view template for furniture with ID: {}", id);
+    Furniture furniture =
+        furnitureRepository
+            .findById(id)
+            .orElseThrow(() -> new IllegalArgumentException("Furniture not found with ID: " + id));
+    logger.info("Found furniture: {}", furniture);
+    ServiceInstance serviceInstance = discoveryClient.getInstances("shape-management").get(0);
+    String baseUrl = serviceInstance.getUri() + "/shapes/";
+    ShapeInstance topDownViewShape =
+        restClient
+            .get()
+            .uri(baseUrl + furniture.getTopDownViewId() + "/template")
+            .retrieve()
+            .body(new ParameterizedTypeReference<ShapeInstance>() {});
+    logger.info("Top-down view shape instance retrieved: {}", topDownViewShape);
+    return new FurnitureTopDownView(furniture.getId(), topDownViewShape);
   }
 
   /**

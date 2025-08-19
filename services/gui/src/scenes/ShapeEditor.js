@@ -219,6 +219,7 @@ class ShapeEditor extends Phaser.Scene {
             parameters.color,
           )[0];
 
+          rebuiltShape.id = id;
           rebuiltShape.setPosition(parameters.x, parameters.y);
 
           this.#shapes.push(rebuiltShape);
@@ -244,60 +245,6 @@ class ShapeEditor extends Phaser.Scene {
       this.#selectManager.hide.bind(this.#selectManager),
       () => this.#shapes,
     );
-
-    // const container = new Shapes.Container(this, 300, 300, []);
-    // this.#shapes.push(container);
-
-    // const rect1 = new Shapes.Rectangle(this, -100, -100, 100, 100, 0xff0000);
-    // const rect2 = new Shapes.Rectangle(this, 50, 50, 200, 200, 0xff0000);
-    // const rect3 = new Shapes.Rectangle(this, -100, 100, 100, 100, 0x0000ff);
-    // const rect4 = new Shapes.Rectangle(this, 100, -100, 100, 100, 0x00ffff);
-    // container.add([rect1, rect2, rect3, rect4]);
-
-    //container.add([
-    //  new Shapes.Rectangle(this, -100, -100, 100, 100, 0xff0000),
-    //  new Shapes.Rectangle(this, 50, 50, 200, 200, 0xff0000),
-    //  new Shapes.Ellipse(this, 100, -100, 100, 100, 0x00ff00),
-    //]);
-
-    //this.#shapes.push(
-    //  new Shapes.Arc(
-    //    this,
-    //    151,
-    //    115,
-    //    50,
-    //    0,
-    //    180,
-    //    false,
-    //    0x0000ff,
-    //  ).setDisplaySize(301, 230),
-    //);
-    //this.#shapes.push(
-    //  new Shapes.Polygon(
-    //    this,
-    //    400,
-    //    400,
-    //    [0, 0, 50, 50, 0, 50],
-    //    0xffff00,
-    //  ).setDisplaySize(100, 200),
-    //);
-    // const rect = container.getBounds();
-    // container.setSize(rect.width, rect.height);
-    // container.setRotation(Math.PI / 4);
-
-    // const rootContainer = saveShapeInstance(this.#shapes);
-    // const instructions = saveShapeAsInstructions(rootContainer);
-
-    // console.log(instructions);
-    // this.#shapes.forEach((shape) => {
-    //   if (shape.type === "Container") {
-    //     shape.removeAll(true);
-    //   }
-    //   shape.destroy();
-    // });
-    // const rebuiltShapes = buildShapeFromInstructions(instructions, this);
-    // console.log(rebuiltShapes);
-    // this.#shapes = rebuiltShapes;
 
     for (let i = 0; i < this.#shapes.length; i++) {
       let shape = this.#shapes[i];

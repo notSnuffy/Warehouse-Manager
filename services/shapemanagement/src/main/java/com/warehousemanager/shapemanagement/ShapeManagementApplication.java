@@ -1,7 +1,10 @@
 package com.warehousemanager.shapemanagement;
 
 import com.warehousemanager.shapemanagement.entities.Shape;
+import com.warehousemanager.shapemanagement.entities.ShapeInstance;
+import com.warehousemanager.shapemanagement.repositories.ShapeInstanceRepository;
 import com.warehousemanager.shapemanagement.repositories.ShapeRepository;
+import java.util.Arrays;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
@@ -18,7 +21,8 @@ public class ShapeManagementApplication {
   }
 
   @Bean
-  public CommandLineRunner commandLineRunner(ShapeRepository shapeRepository) {
+  public CommandLineRunner commandLineRunner(
+      ShapeRepository shapeRepository, ShapeInstanceRepository shapeInstanceRepository) {
     return args -> {
       logger.info("Shape Management Application started successfully.");
 
@@ -26,17 +30,70 @@ public class ShapeManagementApplication {
       rectangle.setPublic(false);
       shapeRepository.save(rectangle);
 
+      ShapeParameters rectangleParameters = new ShapeParameters();
+      rectangleParameters.positionX = 0;
+      rectangleParameters.positionY = 0;
+      rectangleParameters.width = 100.0;
+      rectangleParameters.height = 100.0;
+
+      Instruction rectangleInstruction = new Instruction("createRectangle", rectangleParameters);
+
+      ShapeInstance rectangleInstance =
+          new ShapeInstance(rectangle, Arrays.asList(rectangleInstruction));
+      rectangleInstance.setTemplate(true);
+      shapeInstanceRepository.save(rectangleInstance);
+
       Shape ellipse = new Shape("Ellipse", ShapeType.ELLIPSE);
       ellipse.setPublic(false);
       shapeRepository.save(ellipse);
+
+      ShapeParameters ellipseParameters = new ShapeParameters();
+      ellipseParameters.positionX = 0;
+      ellipseParameters.positionY = 0;
+      ellipseParameters.width = 100.0;
+      ellipseParameters.height = 100.0;
+
+      Instruction ellipseInstruction = new Instruction("createEllipse", ellipseParameters);
+
+      ShapeInstance ellipseInstance = new ShapeInstance(ellipse, Arrays.asList(ellipseInstruction));
+      ellipseInstance.setTemplate(true);
+      shapeInstanceRepository.save(ellipseInstance);
 
       Shape arc = new Shape("Arc", ShapeType.ARC);
       arc.setPublic(false);
       shapeRepository.save(arc);
 
+      ShapeParameters arcParameters = new ShapeParameters();
+      arcParameters.positionX = 0;
+      arcParameters.positionY = 0;
+      arcParameters.width = 100.0;
+      arcParameters.height = 100.0;
+      arcParameters.arcRadius = 50.0;
+      arcParameters.arcStartAngle = 0.0;
+      arcParameters.arcEndAngle = 180.0;
+
+      Instruction arcInstruction = new Instruction("createArc", arcParameters);
+
+      ShapeInstance arcInstance = new ShapeInstance(arc, Arrays.asList(arcInstruction));
+      arcInstance.setTemplate(true);
+      shapeInstanceRepository.save(arcInstance);
+
       Shape polygon = new Shape("Polygon", ShapeType.POLYGON);
       polygon.setPublic(false);
       shapeRepository.save(polygon);
+
+      ShapeParameters polygonParameters = new ShapeParameters();
+      polygonParameters.positionX = 0;
+      polygonParameters.positionY = 0;
+      polygonParameters.polygonPoints = Arrays.asList(0.0, 0.0, 50.0, 0.0, 50.0, 50.0, 0.0, 0.0);
+      polygonParameters.width = 50.0;
+      polygonParameters.height = 50.0;
+
+      Instruction polygonInstruction = new Instruction("createPolygon", polygonParameters);
+
+      ShapeInstance polygonInstance = new ShapeInstance(polygon, Arrays.asList(polygonInstruction));
+      polygonInstance.setTemplate(true);
+      shapeInstanceRepository.save(polygonInstance);
     };
   }
 }

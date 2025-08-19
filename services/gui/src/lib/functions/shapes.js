@@ -121,8 +121,8 @@ function preprocessShapesForSaving(shapes) {
       width: shape.displayWidth,
       height: shape.displayHeight,
       rotation: shape.rotation,
-      arcStartAngle: shape.startAngle || null,
-      arcEndAngle: shape.endAngle || null,
+      arcStartAngle: shape.startAngle ?? null,
+      arcEndAngle: shape.endAngle ?? null,
       arcRadius: shape.radius || null,
       polygonPoints: shapeId === ShapeTypes.POLYGON ? shape.pathData : null,
       components: [],
@@ -360,11 +360,14 @@ function buildShapeFromInstructions(instructions, scene, color = 0xffffff) {
         break;
       }
       case ShapeCommands.CREATE_POLYGON: {
+        // Phaser always automatically adds 0, 0 to the polygon points resulting in uncessary growing of the points upon saves.
+        const polygonPointsWithRemovedLastPoint =
+          parameters.polygonPoints.slice(0, -2);
         const polygon = new Shapes.Polygon(
           scene,
           parameters.positionX,
           parameters.positionY,
-          parameters.polygonPoints,
+          polygonPointsWithRemovedLastPoint,
           color,
         );
         polygon.setDisplaySize(parameters.width, parameters.height);

@@ -35,11 +35,124 @@
               Corner
             </button>
           </div>
+          <h4 class="text-white text-center">Furniture</h4>
+          <div class="d-grid" id="furnitureMenuButtons"></div>
         </div>
         <div class="col-md-10 ps-0" id="editorContainer"></div>
       </div>
     </div>
 
+    <div
+      class="modal fade"
+      id="newFurnitureModal"
+      tabindex="-1"
+      aria-labelledby="newFurnitureModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="newFurnitureModalLabel">
+              Add New Furniture
+            </h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <form id="furnitureForm">
+              <div class="form-group">
+                <input type="hidden" id="furnitureId" />
+              </div>
+              <div class="form-group">
+                <input type="hidden" id="furnitureName" />
+              </div>
+              <div class="form-group">
+                <label for="furnitureX">X Position</label>
+                <input
+                  type="number"
+                  class="form-control"
+                  id="furnitureX"
+                  required
+                  value="0"
+                />
+              </div>
+              <div class="form-group">
+                <label for="furnitureY">Y Position</label>
+                <input
+                  type="number"
+                  class="form-control"
+                  id="furnitureY"
+                  required
+                  value="0"
+                />
+              </div>
+              <div class="form-group">
+                <label for="furnitureWidth">Width</label>
+                <input
+                  type="number"
+                  class="form-control"
+                  id="furnitureWidth"
+                  required
+                  value="100"
+                  min="10"
+                />
+              </div>
+              <div class="form-group">
+                <label for="furnitureHeight">Height</label>
+                <input
+                  type="number"
+                  class="form-control"
+                  id="furnitureHeight"
+                  required
+                  value="100"
+                  min="10"
+                />
+              </div>
+              <div class="form-group">
+                <label for="furnitureColor">Color</label>
+                <input
+                  type="color"
+                  class="form-control form-control-color"
+                  id="furnitureColor"
+                  value="#ffffff"
+                  title="Choose your color"
+                />
+              </div>
+              <div class="form-group">
+                <label for="furnitureTextColor">Text Color</label>
+                <input
+                  type="color"
+                  class="form-control form-control-color"
+                  id="furnitureTextColor"
+                  value="#000000"
+                  title="Choose text color"
+                />
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              Close
+            </button>
+            <button
+              type="button"
+              class="btn btn-primary"
+              id="addFurnitureConfirmButton"
+            >
+              Confirm
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
     <script type="module" src="./index.js"></script>
   </body>
 </html>

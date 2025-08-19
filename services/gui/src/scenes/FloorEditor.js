@@ -1,5 +1,10 @@
 import { API_URL } from "../config";
 import Phaser from "phaser";
+import MoveManager from "../lib/move/MoveManager";
+import SelectShapeManager from "../lib/select/SelectShapeManager";
+import FloorEditorUIInitializer from "../lib/FloorEditorUIInitializer";
+import { buildShapeFromInstructions } from "../lib/functions/shapes";
+import * as Shapes from "../shapes";
 
 class FloorEditor extends Phaser.Scene {
   /**
@@ -11,6 +16,13 @@ class FloorEditor extends Phaser.Scene {
   #graph = new Map();
 
   /**
+   * Array of furniture in the scene
+   * @type {Phaser.GameObjects.Shape[]}
+   * @private
+   */
+  #furniture = [];
+
+  /**
    * Array to hold selected corners
    * @type {Phaser.GameObjects.Circle[]}
    * @private
@@ -19,13 +31,36 @@ class FloorEditor extends Phaser.Scene {
   #selectedCorners = [];
 
   /**
-   * Indicated the currently active tool
+   * Current tool selected
    * @type {string}
    * @default "move"
    * @private
    */
-  #activeTool = "move";
+  #currentTool = "move";
 
+  /**
+   * Getter for the currently active tool
+   */
+  get activeTool() {
+    return this.#currentTool;
+  }
+
+  /**
+   * Move manager
+   * @type {MoveManager}
+   * @default null
+   * @private
+   */
+  #moveManager = null;
+
+  /**
+   * Select manager
+   * Also handles rotation and resizing from resize:ResizeManager and rotation:RotationManager
+   * @type {SelectShapeManager}
+   * @default null
+   * @private
+   */
+  #selectManager = null;
   /**
    * Constructor for the FloorEditor scene
    * @constructor
@@ -90,7 +125,7 @@ class FloorEditor extends Phaser.Scene {
     this.#graph.set(corner, new Map());
 
     corner.on("drag", (_pointer, dragX, dragY) => {
-      if (this.#activeTool !== "move") {
+      if (this.#currentTool !== "move") {
         return;
       }
 
@@ -100,7 +135,7 @@ class FloorEditor extends Phaser.Scene {
 
     corner.on("pointerdown", (_pointer, _x, _y, event) => {
       event.stopPropagation();
-      if (this.#activeTool !== "select") {
+      if (this.#currentTool !== "select") {
         return;
       }
 
@@ -181,83 +216,94 @@ class FloorEditor extends Phaser.Scene {
       this.#addCorner();
     });
 
-    const moveButton = document.getElementById("moveButton");
-    moveButton.addEventListener("click", () => {
-      this.#activeTool = "move";
+    /**
+     * Handles the move button click event
+     */
+    const handleMoveButtonClick = function () {
+      this.#currentTool = "move";
       this.#selectedCorners.forEach((corner) => {
         corner.setFillStyle(0xffffff);
       });
       this.#selectedCorners = [];
-    });
+      this.#selectManager.hide();
+    }.bind(this);
 
-    const selectButton = document.getElementById("selectButton");
-    selectButton.addEventListener("click", () => {
-      this.#activeTool = "select";
+    const handleSelectButtonClick = function () {
+      this.#currentTool = "select";
       this.#selectedCorners.forEach((corner) => {
         corner.setFillStyle(0xffffff);
       });
       this.#selectedCorners = [];
-    });
+    }.bind(this);
 
-    const saveButton = document.getElementById("saveButton");
-    saveButton.addEventListener("click", async () => {
-      const floorName = document.getElementById("floorName").value;
-      if (!floorName) {
-        alert("Please enter a floor name.");
-        return;
-      }
-
-      let floorData = {
-        name: floorName,
-        corners: [],
-        walls: [],
-      };
-
-      const cornersIds = new Map();
-
-      let cornerId = 1;
-      this.#graph.forEach((_neighbours, corner) => {
-        floorData.corners.push({
-          id: cornerId,
-          positionX: corner.x,
-          positionY: corner.y,
-        });
-        cornersIds.set(corner, cornerId);
-        cornerId++;
-      });
-      this.#graph.forEach((neighbours, parent) => {
-        neighbours.forEach((_wall, child) => {
-          floorData.walls.push({
-            startCornerId: cornersIds.get(parent),
-            endCornerId: cornersIds.get(child),
-          });
-        });
-      });
-
-      console.log("Floor data to save:", floorData);
+    const addFurniture = async function (parameters) {
+      const id = parameters.id;
 
       try {
-        const response = await fetch(`${API_URL}/floor-management/floors`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(floorData),
-        });
-
+        const response = await fetch(
+          API_URL +
+            "/furniture-management/furniture/" +
+            id +
+            "/topDownView/template",
+        );
         if (!response.ok) {
-          throw new Error("Failed to save floor data.");
+          throw new Error("Failed to fetch furniture template.");
         }
 
-        const result = await response.json();
-        console.log("Floor saved successfully:", result);
+        const templateData = await response.json();
+        const instructions = templateData.shape.instructions;
+        // Build from instructions returns array to make it more generic
+        // but we only expect one shape to be returned
+        const rebuildTemplate = buildShapeFromInstructions(
+          instructions,
+          this,
+          parameters.color,
+        )[0];
+
+        rebuildTemplate.setPosition(parameters.x, parameters.y);
+        rebuildTemplate.setDisplaySize(parameters.width, parameters.height);
+
+        rebuildTemplate.id = id;
+        rebuildTemplate.setPosition(0, 0);
+        rebuildTemplate.setRotation(0);
+        const label = this.add.text(0, 0, parameters.name, {
+          fontSize: "16px",
+          color: parameters.textColor,
+        });
+        label.setOrigin(0.5, 0.5);
+
+        const container = new Shapes.Container(
+          this,
+          parameters.x,
+          parameters.y,
+          [rebuildTemplate, label],
+        );
+        container.setSize(parameters.width, parameters.height);
+        container.update();
+
+        this.#furniture.push(container);
+        container.setInteractive({ draggable: true });
+        this.#moveManager.create(container);
+        this.#selectManager.create(container);
       } catch (error) {
-        console.error("Error saving floor data:", error);
+        console.error("Error fetching shape template:", error);
       }
-    });
+    }.bind(this);
+
+    this.#selectManager = new SelectShapeManager(this);
+    this.#moveManager = new MoveManager(this);
+
+    FloorEditorUIInitializer.initialize(
+      handleMoveButtonClick,
+      handleSelectButtonClick,
+      addFurniture,
+      this.#selectManager.hide.bind(this.#selectManager),
+      () => this.#furniture,
+      () => this.#graph,
+    );
 
     this.input.on("pointerdown", () => {
-      if (this.#activeTool === "select") {
+      if (this.#currentTool === "select") {
         this.#selectedCorners.forEach((corner) => {
           corner.setFillStyle(0xffffff);
         });

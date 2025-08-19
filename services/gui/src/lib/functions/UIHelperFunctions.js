@@ -8,7 +8,7 @@ import { DEFAULT_SHAPES } from "../../scenes/ShapeEditor";
  * @returns {void}
  */
 function showAddShapeModal(button) {
-  const shape = button.getAttribute("data-shape");
+  const shape = button.dataset.shape;
   const modalElement = document.getElementById("newShapeModal");
   const shapeTypeInput = document.getElementById("shapeType");
   const modalTitle = document.getElementById("newShapeModalLabel");
@@ -164,11 +164,11 @@ function addValidationHandlersToAddShapeModal() {
 }
 
 /**
- * Adds a confirmation button handler to the modal.
+ * Adds a confirmation button handler to the add shape modal.
  * @param {Function} addShape - Function to call when the confirmation button is clicked.
  * @returns {void}
  */
-function addConfirmationButtonHandler(addShape) {
+function addShapeConfirmationButtonHandler(addShape) {
   document
     .getElementById("addShapeConfirmButton")
     .addEventListener("click", function () {
@@ -246,7 +246,7 @@ function addConfirmationButtonHandler(addShape) {
  * Adds a handler to add polygon points in the add shape modal.
  * @returns {void}
  */
-function AddHandlerToAddPolygonPoints() {
+function addHandlerToAddPolygonPoints() {
   const addPolygonPointButton = document.getElementById(
     "addPolygonPointButton",
   );
@@ -318,7 +318,7 @@ function addHandlerToRemovePolygonPoints() {
  * @returns {void}
  */
 function addPolygonPointHandlers() {
-  AddHandlerToAddPolygonPoints();
+  addHandlerToAddPolygonPoints();
   addHandlerToRemovePolygonPoints();
 }
 
@@ -329,7 +329,7 @@ function addPolygonPointHandlers() {
  */
 function initializeAddShapeModal(addShape) {
   addValidationHandlersToAddShapeModal();
-  addConfirmationButtonHandler(addShape);
+  addShapeConfirmationButtonHandler(addShape);
   addPolygonPointHandlers();
 }
 
@@ -381,9 +381,115 @@ async function populateShapeList() {
   }
 }
 
+/**
+ * Adds a confirmation button handler to the add furniture modal.
+ * @param {Function} addFurniture - Function to call when the confirmation button is clicked.
+ * @returns {void}
+ */
+function addFurnitureConfirmationButtonHandler(addFurniture) {
+  document
+    .getElementById("addFurnitureConfirmButton")
+    .addEventListener("click", function () {
+      const furnitureId = document.getElementById("furnitureId").value;
+      const name = document.getElementById("furnitureName").value;
+
+      let x = parseInt(document.getElementById("furnitureX").value);
+      let y = parseInt(document.getElementById("furnitureY").value);
+
+      const width = document.getElementById("furnitureWidth").value;
+      const height = document.getElementById("furnitureHeight").value;
+      x += width / 2;
+      y += height / 2;
+      const color = document.getElementById("furnitureColor").value;
+      const textColor = document.getElementById("furnitureTextColor").value;
+
+      addFurniture({
+        x: x,
+        y: y,
+        width: parseInt(width),
+        height: parseInt(height),
+        color: parseInt(color.slice(1), 16),
+        textColor: textColor,
+        id: furnitureId,
+        name: name,
+      });
+
+      const modalElement = document.getElementById("newFurnitureModal");
+      const modal = Modal.getInstance(modalElement);
+      modal.hide();
+    });
+}
+
+/**
+ * Initializes the add furniture modal.
+ * @param {Function} addFurniture - Function to call when the modal is confirmed.
+ * @returns {void}
+ */
+function initializeAddFurnitureModal(addFurniture) {
+  addFurnitureConfirmationButtonHandler(addFurniture);
+}
+
+function showAddFurnitureModal(button) {
+  const furniture = button.dataset.furniture;
+  const modalElement = document.getElementById("newFurnitureModal");
+  const modalTitle = document.getElementById("newFurnitureModalLabel");
+  const furnitureIdElement = document.getElementById("furnitureId");
+  const furnitureId = button.dataset.id;
+  furnitureIdElement.value = furnitureId;
+  const furnitureNameElement = document.getElementById("furnitureName");
+  furnitureNameElement.value = furniture;
+
+  modalTitle.textContent =
+    "Add New " + furniture.charAt(0).toUpperCase() + furniture.slice(1);
+
+  const modal = new Modal(modalElement);
+  modal.show();
+}
+
+/**
+ * Adds a new furniture button into the list of available furniture.
+ * @param {string} furnitureName - The name of the furniture.
+ * @param {string} furnitureId - The ID of the furniture.
+ * @returns {void}
+ */
+function addFurnitureButtonIntoList(furnitureName, furnitureId) {
+  const newFurnitureButton = document.createElement("button");
+  newFurnitureButton.classList.add("btn", "btn-secondary", "mb-2");
+  newFurnitureButton.dataset.furniture = furnitureName;
+  newFurnitureButton.dataset.id = furnitureId;
+  newFurnitureButton.textContent = furnitureName;
+  newFurnitureButton.id = "add-" + furnitureId;
+  newFurnitureButton.addEventListener("click", function () {
+    showAddFurnitureModal(newFurnitureButton);
+  });
+  const furnitureMenuButtons = document.getElementById("furnitureMenuButtons");
+  furnitureMenuButtons.appendChild(newFurnitureButton);
+}
+
+/**
+ * Populates the furniture list with available furniture from the API.
+ * @returns {Promise<void>}
+ */
+async function populateFurnitureList() {
+  try {
+    const response = await fetch(API_URL + "/furniture-management/furniture");
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+    data.forEach((furniture) => {
+      addFurnitureButtonIntoList(furniture.name, furniture.id);
+    });
+  } catch (error) {
+    console.error("Error fetching furniture:", error);
+  }
+}
+
 export {
   addButtonHandler,
   initializeAddShapeModal,
   populateShapeList,
+  populateFurnitureList,
+  initializeAddFurnitureModal,
   addItemButtonIntoList,
 };
