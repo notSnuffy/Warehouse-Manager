@@ -191,7 +191,8 @@ class FurnitureEditorUIInitializer {
         return;
       }
 
-      const topDownViewShapeName = document.getElementById("topDownView").value;
+      const topDownViewElement = document.getElementById("topDownView");
+      const topDownViewShapeName = topDownViewElement.value;
       if (!topDownViewShapeName) {
         alert("Please select a top-down view shape.");
         return;

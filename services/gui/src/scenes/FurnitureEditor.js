@@ -86,6 +86,12 @@ class FurnitureEditor extends Phaser.Scene {
         return;
       }
 
+      const furnitureNameElement = document.getElementById("furnitureName");
+      furnitureNameElement.value = furnitureData.name;
+
+      const topDownViewElement = document.getElementById("topDownView");
+      topDownViewElement.value = furnitureData.topDownView.name;
+
       if (furnitureData.shapes) {
         furnitureData.shapes.forEach((shapeData) => {
           const shape = buildShapeFromInstructions(
