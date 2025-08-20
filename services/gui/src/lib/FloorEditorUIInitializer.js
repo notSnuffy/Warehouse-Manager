@@ -97,37 +97,11 @@ class FloorEditorUIInitializer {
       });
 
       const editorFurniture = getEditorFurniture();
-      const extractedFurniture = editorFurniture.map((furniture) =>
-        furniture.getAt(0),
-      );
 
-      const getFurnitureWithWorldCoordinates = (furniture, container) => {
-        const furnitureWithWorldCoordinates = Object.create(
-          Object.getPrototypeOf(furniture),
-        );
-
-        Object.assign(furnitureWithWorldCoordinates, furniture);
-
-        furnitureWithWorldCoordinates.x = container.x;
-        furnitureWithWorldCoordinates.y = container.y;
-        furnitureWithWorldCoordinates.rotation = container.rotation;
-
-        return furnitureWithWorldCoordinates;
-      };
-
-      const furnitureInWorldCoordinates = extractedFurniture.map(
-        (furniture, index) =>
-          getFurnitureWithWorldCoordinates(furniture, editorFurniture[index]),
-      );
-
-      console.log(furnitureInWorldCoordinates);
-
-      const preprocessedFurniture = preprocessShapesForSaving(
-        furnitureInWorldCoordinates,
-      );
+      const preprocessedFurniture = preprocessShapesForSaving(editorFurniture);
       console.log("Editor furniture:", editorFurniture);
       const furniture = preprocessedFurniture.map((furniture, index) => ({
-        furnitureId: extractedFurniture[index].furnitureId,
+        furnitureId: editorFurniture[index].furnitureId,
         shapeId: furniture.shapeId,
         instructions: saveShapeAsInstructions(furniture),
       }));

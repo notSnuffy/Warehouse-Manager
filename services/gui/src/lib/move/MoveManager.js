@@ -27,6 +27,7 @@ class MoveManager extends Manager {
       const { withinBounds } = event.data;
       if (this.pending && withinBounds) {
         this.pending.shape.setPosition(this.pending.dragX, this.pending.dragY);
+        this.scene.events.emit("shapeMoved", this.pending.shape);
         this.pending = null;
       }
     };
@@ -54,6 +55,9 @@ class MoveManager extends Manager {
   create(shape) {
     shape.on("dragstart", () => {
       this.scene.children.bringToTop(shape);
+      if (shape.label) {
+        shape.label.setToTop();
+      }
     });
 
     shape.on("drag", (_, dragX, dragY) => {

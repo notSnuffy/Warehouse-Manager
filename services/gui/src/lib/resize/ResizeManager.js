@@ -269,6 +269,7 @@ class ResizeManager extends Manager {
 
     resizeHandle.on("drag", (_, dragX, dragY) => {
       this.#handleResizeDrag(dragX, dragY, shape);
+      this.scene.events.emit("resize:drag", shape);
     });
 
     resizeHandle.on("dragend", () => {

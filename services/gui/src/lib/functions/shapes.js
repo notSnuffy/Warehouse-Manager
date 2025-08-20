@@ -108,7 +108,6 @@ function preprocessShapesForSaving(shapes) {
         return null; // Default case
     }
   };
-
   const preprocessedShapes = shapes.map((shape) => {
     let shapeId = getShapeId(shape);
 
@@ -121,8 +120,8 @@ function preprocessShapesForSaving(shapes) {
       width: shape.displayWidth,
       height: shape.displayHeight,
       rotation: shape.rotation,
-      arcStartAngle: shape.startAngle ?? null,
-      arcEndAngle: shape.endAngle ?? null,
+      arcStartAngle: shape.startAngle || null,
+      arcEndAngle: shape.endAngle || null,
       arcRadius: shape.radius || null,
       polygonPoints: shapeId === ShapeTypes.POLYGON ? shape.pathData : null,
       components: [],
@@ -147,9 +146,8 @@ function preprocessShapesForSaving(shapes) {
         );
 
         const parentWorldMatrix = parent.getWorldTransformMatrix();
-        parentWorldMatrix.invert();
 
-        const localCoordinates = parentWorldMatrix.transformPoint(
+        const localCoordinates = parentWorldMatrix.applyInverse(
           childWorldCenterCoordinates.x,
           childWorldCenterCoordinates.y,
         );

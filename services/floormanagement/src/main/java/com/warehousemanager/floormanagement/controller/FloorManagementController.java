@@ -2,8 +2,10 @@ package com.warehousemanager.floormanagement.controller;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.warehousemanager.floormanagement.CornerDataTransferObject;
 import com.warehousemanager.floormanagement.FloorDataTransferObject;
+import com.warehousemanager.floormanagement.FloorResponseDataTransferObject;
 import com.warehousemanager.floormanagement.FurnitureInstanceId;
 import com.warehousemanager.floormanagement.WallDataTransferObject;
 import com.warehousemanager.floormanagement.entities.Corner;
@@ -15,6 +17,7 @@ import com.warehousemanager.floormanagement.repositories.WallRepository;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cloud.client.ServiceInstance;
@@ -102,13 +105,18 @@ public class FloorManagementController {
             .retrieve()
             .body(new ParameterizedTypeReference<List<FurnitureInstanceId>>() {});
     logger.info("Furniture instances created: {}", furnitureInstances);
+
+    logger.info(
+        "Saving floor with furniture instances: {}",
+        furnitureInstances.stream().map(FurnitureInstanceId::id).collect(Collectors.toList()));
     floor.setFurnitureIds(furnitureInstances.stream().map(FurnitureInstanceId::id).toList());
+    floor = floorRepository.save(floor);
 
     return floor;
   }
 
   @GetMapping("/floors/{id}")
-  public FloorDataTransferObject getFloorById(@PathVariable Long id) {
+  public FloorResponseDataTransferObject getFloorById(@PathVariable Long id) {
     Floor floor =
         floorRepository
             .findById(id)
@@ -132,13 +140,25 @@ public class FloorManagementController {
                         wall.getStartCorner().getId(), wall.getEndCorner().getId()))
             .toList();
 
-    FloorDataTransferObject floorDto =
-        new FloorDataTransferObject(
+    List<Long> furnitureIds = floor.getFurnitureIds();
+    ServiceInstance serviceInstance = discoveryClient.getInstances("furniture-management").get(0);
+    String url = serviceInstance.getUri() + "/furniture/instances/batch";
+    String furnitureIdsParameter =
+        furnitureIds.stream().map(String::valueOf).collect(Collectors.joining(","));
+    JsonNode furniture =
+        restClient
+            .get()
+            .uri(url + "?furnitureInstanceIds=" + furnitureIdsParameter)
+            .retrieve()
+            .body(JsonNode.class);
+
+    FloorResponseDataTransferObject floorDto =
+        new FloorResponseDataTransferObject(
+            floor.getId(),
             floor.getName(),
             cornerDataTransferObjects,
             wallDataTransferObjects,
-            List.of() // Assuming furniture is not handled in this method
-            );
+            furniture);
     return floorDto;
   }
 }

@@ -4,7 +4,6 @@ import MoveManager from "../lib/move/MoveManager";
 import SelectShapeManager from "../lib/select/SelectShapeManager";
 import FloorEditorUIInitializer from "../lib/FloorEditorUIInitializer";
 import { buildShapeFromInstructions } from "../lib/functions/shapes";
-import * as Shapes from "../shapes";
 
 class FloorEditor extends Phaser.Scene {
   /**
@@ -102,6 +101,12 @@ class FloorEditor extends Phaser.Scene {
     this.#graph.get(corner2).set(corner1, wall);
   }
 
+  /**
+   * Updates the walls connected to a corner
+   * @private
+   * @param {Phaser.GameObjects.Circle} corner - The corner to update walls for
+   * @return {void}
+   */
   #updateWalls(corner) {
     const connectedCorners = this.#graph.get(corner);
 
@@ -153,6 +158,14 @@ class FloorEditor extends Phaser.Scene {
     return corner;
   }
 
+  /**
+   * Loads the floor data from the API
+   * @param {string} floorId - The ID of the floor to load
+   * @private
+   * @returns {Promise<Object>} - The floor data
+   * @throws {Error} - If the fetch fails or the response is not ok
+   * @async
+   */
   async #loadFloorData(floorId) {
     try {
       const response = await fetch(
@@ -170,6 +183,12 @@ class FloorEditor extends Phaser.Scene {
     }
   }
 
+  /**
+   * Loads the floor by its ID
+   * @param {string} floorId - The ID of the floor to load
+   * @private
+   * @async
+   */
   async #loadFloor(floorId) {
     const floorData = await this.#loadFloorData(floorId);
     const floorNameInput = document.getElementById("floorName");
@@ -198,6 +217,36 @@ class FloorEditor extends Phaser.Scene {
         console.warn("Invalid corners for wall:", wallData);
       }
     });
+
+    floorData.furniture.forEach((furnitureData) => {
+      const furnitureInstructions =
+        furnitureData.topDownViewInstance.instructions;
+      const shapeId = furnitureData.topDownViewInstance.shape.id;
+      const furnitureId = furnitureData.furniture.id;
+      const name = furnitureData.furniture.name;
+
+      const furniture = buildShapeFromInstructions(
+        furnitureInstructions,
+        this,
+        0xffffff,
+      )[0];
+
+      furniture.id = shapeId;
+      furniture.furnitureId = furnitureId;
+
+      const label = this.add.text(furniture.x, furniture.y, name, {
+        fontSize: "16px",
+        color: "#00ff00",
+      });
+      label.setOrigin(0.5, 0.5);
+      furniture.label = label;
+
+      this.#furniture.push(furniture);
+      furniture.setInteractive({ draggable: true });
+      this.#moveManager.create(furniture);
+      this.#selectManager.create(furniture);
+    });
+    console.log(this.#furniture);
   }
 
   /**
@@ -205,6 +254,9 @@ class FloorEditor extends Phaser.Scene {
    * @public
    */
   async create() {
+    this.#selectManager = new SelectShapeManager(this);
+    this.#moveManager = new MoveManager(this);
+
     const urlParams = new URLSearchParams(window.location.search);
     const floorId = urlParams.get("floorId");
     if (floorId) {
@@ -260,42 +312,32 @@ class FloorEditor extends Phaser.Scene {
           parameters.color,
         )[0];
 
+        rebuildTemplate.id = templateData.shape.shape.id;
+        rebuildTemplate.furnitureId = parseInt(id, 10);
+
         rebuildTemplate.setPosition(parameters.x, parameters.y);
         rebuildTemplate.setDisplaySize(parameters.width, parameters.height);
 
-        rebuildTemplate.id = templateData.shape.shape.id;
-        rebuildTemplate.furnitureId = parseInt(id, 10);
-        rebuildTemplate.setPosition(0, 0);
-        // The container should have the rotation so we reset even though
-        // it should be impossible for newly added shape to have rotation
-        rebuildTemplate.setRotation(0);
-        const label = this.add.text(0, 0, parameters.name, {
-          fontSize: "16px",
-          color: parameters.textColor,
-        });
-        label.setOrigin(0.5, 0.5);
-
-        const container = new Shapes.Container(
-          this,
-          parameters.x,
-          parameters.y,
-          [rebuildTemplate, label],
+        const label = this.add.text(
+          rebuildTemplate.x,
+          rebuildTemplate.y,
+          parameters.name,
+          {
+            fontSize: "16px",
+            color: parameters.textColor,
+          },
         );
-        container.setSize(parameters.width, parameters.height);
-        container.setRotation(parameters.rotation);
-        container.update();
+        label.setOrigin(0.5, 0.5);
+        rebuildTemplate.label = label;
 
-        this.#furniture.push(container);
-        container.setInteractive({ draggable: true });
-        this.#moveManager.create(container);
-        this.#selectManager.create(container);
+        this.#furniture.push(rebuildTemplate);
+        rebuildTemplate.setInteractive({ draggable: true });
+        this.#moveManager.create(rebuildTemplate);
+        this.#selectManager.create(rebuildTemplate);
       } catch (error) {
         console.error("Error fetching shape template:", error);
       }
     }.bind(this);
-
-    this.#selectManager = new SelectShapeManager(this);
-    this.#moveManager = new MoveManager(this);
 
     FloorEditorUIInitializer.initialize(
       handleMoveButtonClick,
@@ -314,6 +356,21 @@ class FloorEditor extends Phaser.Scene {
         });
         this.#selectedCorners = [];
       }
+    });
+
+    this.events.on("shapeMoved", (shape) => {
+      shape.label.setPosition(shape.x, shape.y);
+      shape.label.setToTop();
+    });
+
+    this.events.on("shapeSelected", (shape) => {
+      shape.label.setPosition(shape.x, shape.y);
+      shape.label.setToTop();
+    });
+
+    this.events.on("resize:drag", (shape) => {
+      shape.label.setPosition(shape.x, shape.y);
+      shape.label.setToTop();
     });
   }
   /**

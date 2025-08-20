@@ -110,7 +110,10 @@ class ShapeEditorUIInitializer {
 
         const data = await response.json();
         if (!response.ok) {
-          alert(data.errors.join("\n"));
+          if (data.errors && data.errors.length > 0) {
+            alert(data.errors.join("\n"));
+          }
+          console.error("Failed to save shape:", data);
           return;
         }
         addItemButtonIntoList(data.name, data.id);
