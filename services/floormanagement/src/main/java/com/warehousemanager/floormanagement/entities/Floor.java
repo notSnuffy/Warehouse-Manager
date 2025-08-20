@@ -7,6 +7,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import java.util.List;
 
 /** Represents a floor in the warehouse. */
 @Entity
@@ -21,6 +22,9 @@ public class Floor {
   @NotBlank(message = "Floor name cannot be blank")
   @Size(max = 255, message = "Floor name cannot exceed 255 characters")
   private String name;
+
+  /** A list of furniture IDs associated with this floor. */
+  List<Long> furnitureIds;
 
   /** Default constructor for JPA. */
   protected Floor() {}
@@ -59,5 +63,23 @@ public class Floor {
    */
   public void setName(String name) {
     this.name = name;
+  }
+
+  /**
+   * Gets the list of furniture IDs associated with this floor.
+   *
+   * @return the list of furniture IDs
+   */
+  public List<Long> getFurnitureIds() {
+    return furnitureIds;
+  }
+
+  /**
+   * Sets the list of furniture IDs associated with this floor.
+   *
+   * @param furnitureIds the new list of furniture IDs
+   */
+  public void setFurnitureIds(List<Long> furnitureIds) {
+    this.furnitureIds = furnitureIds;
   }
 }

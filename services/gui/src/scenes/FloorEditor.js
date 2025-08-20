@@ -263,8 +263,11 @@ class FloorEditor extends Phaser.Scene {
         rebuildTemplate.setPosition(parameters.x, parameters.y);
         rebuildTemplate.setDisplaySize(parameters.width, parameters.height);
 
-        rebuildTemplate.id = id;
+        rebuildTemplate.id = templateData.shape.shape.id;
+        rebuildTemplate.furnitureId = parseInt(id, 10);
         rebuildTemplate.setPosition(0, 0);
+        // The container should have the rotation so we reset even though
+        // it should be impossible for newly added shape to have rotation
         rebuildTemplate.setRotation(0);
         const label = this.add.text(0, 0, parameters.name, {
           fontSize: "16px",
@@ -279,6 +282,7 @@ class FloorEditor extends Phaser.Scene {
           [rebuildTemplate, label],
         );
         container.setSize(parameters.width, parameters.height);
+        container.setRotation(parameters.rotation);
         container.update();
 
         this.#furniture.push(container);
@@ -303,6 +307,7 @@ class FloorEditor extends Phaser.Scene {
     );
 
     this.input.on("pointerdown", () => {
+      this.#selectManager.hide();
       if (this.#currentTool === "select") {
         this.#selectedCorners.forEach((corner) => {
           corner.setFillStyle(0xffffff);

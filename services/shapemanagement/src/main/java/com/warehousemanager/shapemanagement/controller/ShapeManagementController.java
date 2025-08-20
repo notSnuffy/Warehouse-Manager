@@ -129,6 +129,25 @@ public class ShapeManagementController {
     return shapeInstance;
   }
 
+  @PostMapping("/shapes/instances")
+  public ShapeInstance createShapeInstance(
+      @Valid @RequestBody ShapeInstanceDataTransferObject shapeInstanceDataTransferObject) {
+    logger.info("Creating shape instance with data: {}", shapeInstanceDataTransferObject);
+    Shape shape =
+        shapeRepository
+            .findById(shapeInstanceDataTransferObject.shapeId())
+            .orElseThrow(
+                () ->
+                    new RuntimeException(
+                        "Shape not found with ID: " + shapeInstanceDataTransferObject.shapeId()));
+    ShapeInstance shapeInstance =
+        new ShapeInstance(shape, shapeInstanceDataTransferObject.instructions());
+    logger.info("ShapeInstance created with instructions: {}", shapeInstance.getInstructions());
+    ShapeInstance savedShapeInstance = shapeInstanceRepository.save(shapeInstance);
+    logger.info("ShapeInstance created with ID: {}", savedShapeInstance.getId());
+    return savedShapeInstance;
+  }
+
   /**
    * Creates new shape instances in batch based on the provided data transfer objects.
    *

@@ -3,17 +3,23 @@ package com.warehousemanager.furnituremanagement.controller;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 
 import com.warehousemanager.furnituremanagement.FurnitureDataTransferObject;
+import com.warehousemanager.furnituremanagement.FurnitureInstanceCreateDataTransferObject;
 import com.warehousemanager.furnituremanagement.FurnitureResponseDataTransferObject;
 import com.warehousemanager.furnituremanagement.FurnitureTopDownView;
 import com.warehousemanager.furnituremanagement.Instruction;
 import com.warehousemanager.furnituremanagement.Shape;
 import com.warehousemanager.furnituremanagement.ShapeInstance;
+import com.warehousemanager.furnituremanagement.ShapeInstanceCreateObject;
 import com.warehousemanager.furnituremanagement.ShapeType;
 import com.warehousemanager.furnituremanagement.ZoneDataTransferObject;
 import com.warehousemanager.furnituremanagement.ZoneResponseDataTransferObject;
 import com.warehousemanager.furnituremanagement.entities.Furniture;
+import com.warehousemanager.furnituremanagement.entities.FurnitureInstance;
 import com.warehousemanager.furnituremanagement.entities.Zone;
+import com.warehousemanager.furnituremanagement.entities.ZoneInstance;
+import com.warehousemanager.furnituremanagement.repositories.FurnitureInstanceRepository;
 import com.warehousemanager.furnituremanagement.repositories.FurnitureRepository;
+import com.warehousemanager.furnituremanagement.repositories.ZoneInstanceRepository;
 import com.warehousemanager.furnituremanagement.repositories.ZoneRepository;
 import java.util.ArrayList;
 import java.util.List;
@@ -37,6 +43,8 @@ public class FurnitureManagementController {
   private final RestClient restClient;
   private final FurnitureRepository furnitureRepository;
   private final ZoneRepository zoneRepository;
+  private final FurnitureInstanceRepository furnitureInstanceRepository;
+  private final ZoneInstanceRepository zoneInstanceRepository;
   private static final Logger logger = LoggerFactory.getLogger(FurnitureManagementController.class);
 
   /**
@@ -51,11 +59,16 @@ public class FurnitureManagementController {
       DiscoveryClient discoveryClient,
       RestClient.Builder restClientBuilder,
       FurnitureRepository furnitureRepository,
-      ZoneRepository zoneRepository) {
+      ZoneRepository zoneRepository,
+      FurnitureInstanceRepository furnitureInstanceRepository,
+      ZoneInstanceRepository zoneInstanceRepository) {
+
     this.discoveryClient = discoveryClient;
     this.restClient = restClientBuilder.build();
     this.furnitureRepository = furnitureRepository;
     this.zoneRepository = zoneRepository;
+    this.furnitureInstanceRepository = furnitureInstanceRepository;
+    this.zoneInstanceRepository = zoneInstanceRepository;
   }
 
   /**
@@ -201,5 +214,60 @@ public class FurnitureManagementController {
     savedFurniture.setZones(zones);
 
     return savedFurniture;
+  }
+
+  @PostMapping("/furniture/instances/batch")
+  public Iterable<FurnitureInstance> createFurnitureInstances(
+      @RequestBody List<FurnitureInstanceCreateDataTransferObject> furnitureDataTransferObjects) {
+    logger.info("Received request to create multiple furniture instances");
+    ServiceInstance serviceInstance = discoveryClient.getInstances("shape-management").get(0);
+    String url = serviceInstance.getUri() + "/shapes/instances";
+    List<FurnitureInstance> createdFurniture = new ArrayList<>();
+    for (FurnitureInstanceCreateDataTransferObject furnitureDataTransferObject :
+        furnitureDataTransferObjects) {
+      logger.info(
+          "Creating furniture instance for furniture ID: {}",
+          furnitureDataTransferObject.furnitureId());
+      Furniture furniture =
+          furnitureRepository
+              .findById(furnitureDataTransferObject.furnitureId())
+              .orElseThrow(
+                  () ->
+                      new RuntimeException(
+                          "Furniture not found with ID: "
+                              + furnitureDataTransferObject.furnitureId()));
+      ShapeInstanceCreateObject shapeInstanceCreateObject =
+          new ShapeInstanceCreateObject(
+              furnitureDataTransferObject.shapeId(), furnitureDataTransferObject.instructions());
+      ShapeInstance topDownViewInstance =
+          restClient
+              .post()
+              .uri(url)
+              .contentType(APPLICATION_JSON)
+              .body(shapeInstanceCreateObject)
+              .retrieve()
+              .body(new ParameterizedTypeReference<ShapeInstance>() {});
+      logger.info("Top-down view shape instance created: {}", topDownViewInstance);
+      FurnitureInstance furnitureInstance =
+          new FurnitureInstance(furniture, topDownViewInstance.id());
+      createdFurniture.add(furnitureInstance);
+    }
+    logger.info("Created {} furniture instances", createdFurniture.size());
+    Iterable<FurnitureInstance> savedFurnitureInstances =
+        furnitureInstanceRepository.saveAll(createdFurniture);
+    for (FurnitureInstance furnitureInstance : savedFurnitureInstances) {
+      logger.info(
+          "Creating zone instances for furniture instance ID: {}", furnitureInstance.getId());
+      List<ZoneInstance> zoneInstances = new ArrayList<>();
+      for (Zone zone : furnitureInstance.getFurniture().getZones()) {
+        ZoneInstance zoneInstance = new ZoneInstance(zone, furnitureInstance);
+        ZoneInstance savedZoneInstance = zoneInstanceRepository.save(zoneInstance);
+        logger.info("Created zone instance: {}", savedZoneInstance);
+        zoneInstances.add(savedZoneInstance);
+      }
+      furnitureInstance.setZoneInstances(zoneInstances);
+    }
+    logger.info("Saved furniture instances: {}", savedFurnitureInstances);
+    return savedFurnitureInstances;
   }
 }
