@@ -132,10 +132,6 @@ function preprocessShapesForSaving(shapes) {
       children.forEach((child) => {
         let childShapeId = getShapeId(child);
 
-        const childWorldCenterCoordinates = child.getCenter(undefined, true);
-        console.log(
-          `Child World Center Coordinates: ${childWorldCenterCoordinates.x}, ${childWorldCenterCoordinates.y}`,
-        );
         const childWidth = Phaser.Math.Distance.BetweenPoints(
           child.getLeftCenter(undefined, true),
           child.getRightCenter(undefined, true),
@@ -146,16 +142,20 @@ function preprocessShapesForSaving(shapes) {
         );
 
         const parentWorldMatrix = parent.getWorldTransformMatrix();
+        const childWorldMatrix = child.getWorldTransformMatrix();
 
-        const localCoordinates = parentWorldMatrix.applyInverse(
-          childWorldCenterCoordinates.x,
-          childWorldCenterCoordinates.y,
-        );
+        const dx = childWorldMatrix.tx - parentWorldMatrix.tx;
+        const dy = childWorldMatrix.ty - parentWorldMatrix.ty;
+
+        const rotation = parentWorldMatrix.rotationNormalized;
+
+        const rotatedX = dx * Math.cos(-rotation) - dy * Math.sin(-rotation);
+        const rotatedY = dx * Math.sin(-rotation) + dy * Math.cos(-rotation);
 
         let childComponent = {
           shapeId: childShapeId,
-          positionX: localCoordinates.x,
-          positionY: localCoordinates.y,
+          positionX: rotatedX,
+          positionY: rotatedY,
           width: childWidth,
           height: childHeight,
           rotation: child.rotation,
