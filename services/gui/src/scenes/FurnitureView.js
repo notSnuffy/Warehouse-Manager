@@ -168,7 +168,6 @@ class FurnitureView extends Phaser.Scene {
     this.#hoverTimer = this.time.delayedCall(2000, () => {
       console.log("Dragged element hovered over box long enough!");
       console.log([...hits]);
-      //get canvas events
       console.log(gameCanvas);
 
       const zoneItemsModalElement = document.getElementById("zoneItemsModal");
