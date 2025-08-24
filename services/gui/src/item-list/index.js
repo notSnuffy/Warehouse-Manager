@@ -68,6 +68,7 @@ function fillItemsWithTestData() {
 }
 
 async function init() {
+  await fetchItems();
   renderItems();
   populateItemSuggestions();
   initializeSortableColumns();
@@ -155,13 +156,20 @@ addItemConfirmButtonElement.addEventListener("click", async () => {
   newItemModal.hide();
 });
 
-async function _fetchItems() {
+async function fetchItems() {
   try {
     const response = await fetch(API_URL + "/item-management/items");
     if (!response.ok) {
       throw new Error("Network response was not ok");
     }
     const data = await response.json();
+    if (!response.ok) {
+      if (data.errors && data.errors.length > 0) {
+        alert(data.errors.join("\n"));
+      }
+      console.error("Failed to items", data);
+      return;
+    }
     data.forEach((item) => {
       items[item.id] = item;
     });

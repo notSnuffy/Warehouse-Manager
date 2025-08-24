@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en" data-bs-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="./styles.scss" />
+    <title>Floor View</title>
+  </head>
+  <body>
+    <div class="container-fluid">
+      <div class="row">
+        <div class="col-md-2" id="itemsMenu">
+          <div class="d-grid">
+            <h3 class="text-white text-center">Items</h3>
+            <ul class="list-group" id="itemsMenuItems"></ul>
+          </div>
+        </div>
+        <div class="col-md-10 ps-0" id="viewContainer"></div>
+      </div>
+    </div>
+    <div
+      class="modal fade"
+      id="zoneItemsModal"
+      tabindex="-1"
+      aria-labelledby="zoneItemsModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="zoneItemsModalLabel">Zone Items</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <input type="hidden" id="zoneId" />
+            <ul class="list-group" id="zoneItemsList"></ul>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              Close
+            </button>
+            <button
+              type="button"
+              class="btn btn-primary"
+              id="zoneItemsConfirmButton"
+            >
+              Confirm
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="./index.js"></script>
+  </body>
+</html>

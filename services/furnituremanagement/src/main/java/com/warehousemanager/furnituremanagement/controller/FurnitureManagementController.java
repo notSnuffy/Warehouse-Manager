@@ -221,6 +221,52 @@ public class FurnitureManagementController {
     return savedFurniture;
   }
 
+  @GetMapping("/furniture/instances/{id}")
+  public FurnitureInstanceResponseDataTransferObject getFurnitureInstanceById(
+      @PathVariable Long id) {
+    logger.info("Received request to get furniture instance with ID: {}", id);
+    FurnitureInstance furnitureInstance =
+        furnitureInstanceRepository
+            .findById(id)
+            .orElseThrow(() -> new RuntimeException("Furniture instance not found with ID: " + id));
+    logger.info("Found furniture instance: {}", furnitureInstance);
+    ServiceInstance serviceInstance = discoveryClient.getInstances("shape-management").get(0);
+    String url = serviceInstance.getUri() + "/shapes/";
+    FurnitureResponseDataTransferObject furnitureResponseDataTransferObject =
+        getFurnitureById(furnitureInstance.getFurniture().getId());
+    List<ZoneInstanceResponseDataTransferObject> zoneInstances = new ArrayList<>();
+    for (ZoneInstance zoneInstance : furnitureInstance.getZoneInstances()) {
+      Zone zone = zoneInstance.getZone();
+      Long shapeId = zone.getShapeId();
+      ShapeType zoneShape =
+          restClient
+              .get()
+              .uri(url + shapeId)
+              .retrieve()
+              .body(new ParameterizedTypeReference<ShapeType>() {});
+      ZoneResponseDataTransferObject zoneResponse =
+          new ZoneResponseDataTransferObject(
+              zone.getId(), zone.getName(), zoneShape, zone.getInstructions());
+      ZoneInstanceResponseDataTransferObject zoneInstanceResponse =
+          new ZoneInstanceResponseDataTransferObject(zoneInstance.getId(), zoneResponse, List.of());
+      zoneInstances.add(zoneInstanceResponse);
+    }
+    ShapeInstance topDownViewShapeInstance =
+        restClient
+            .get()
+            .uri(url + furnitureInstance.getTopDownViewInstanceId() + "/instance")
+            .retrieve()
+            .body(new ParameterizedTypeReference<ShapeInstance>() {});
+    FurnitureInstanceResponseDataTransferObject response =
+        new FurnitureInstanceResponseDataTransferObject(
+            furnitureInstance.getId(),
+            topDownViewShapeInstance,
+            zoneInstances,
+            furnitureResponseDataTransferObject);
+    logger.info("Returning furniture instance response: {}", response);
+    return response;
+  }
+
   @GetMapping("/furniture/instances/batch")
   public List<FurnitureInstanceResponseDataTransferObject> getFurnitureInstances(
       @RequestParam List<Long> furnitureInstanceIds) {

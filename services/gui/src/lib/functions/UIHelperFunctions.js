@@ -1,4 +1,5 @@
 import { Modal } from "bootstrap";
+import Sortable from "sortablejs";
 import { API_URL } from "../../config";
 import { DEFAULT_SHAPES } from "../../scenes/ShapeEditor";
 
@@ -487,11 +488,68 @@ async function populateFurnitureList() {
   }
 }
 
+/**
+ * Adds an item into the floor view item list.
+ * @param {string} name - The name of the item.
+ * @param {string} id - The ID of the item.
+ * @returns {void}
+ */
+function addItemIntoFloorViewItemList(name, id) {
+  const itemsMenuItemsElement = document.getElementById("itemsMenuItems");
+  const itemElement = document.createElement("li");
+  itemElement.textContent = name;
+  itemElement.dataset.id = id;
+  itemElement.classList.add("list-group-item");
+
+  itemsMenuItemsElement.appendChild(itemElement);
+}
+
+/**
+ * Populates the floor view item list.
+ * @param {Function} setDragged - Function to set if an item is being dragged.
+ * @returns {Promise<void>}
+ */
+async function populateFloorViewItemList(setDragged) {
+  try {
+    const response = await fetch(API_URL + "/item-management/items");
+    const data = await response.json();
+    if (!response.ok) {
+      if (data.errors && data.errors.length > 0) {
+        alert(data.errors.join("\n"));
+      }
+      console.error("Failed to load items:", data);
+      return;
+    }
+    data.forEach((item) => {
+      addItemIntoFloorViewItemList(item.name, item.id);
+    });
+    const itemsMenuItemsElement = document.getElementById("itemsMenuItems");
+    Sortable.create(itemsMenuItemsElement, {
+      group: {
+        name: "items",
+        pull: "clone",
+        put: false,
+      },
+      animation: 150,
+      sort: false,
+      onStart: function () {
+        setDragged(true);
+      },
+      onEnd: function () {
+        setDragged(false);
+      },
+    });
+  } catch (error) {
+    console.error(error);
+  }
+}
+
 export {
   addButtonHandler,
   initializeAddShapeModal,
   populateShapeList,
   populateFurnitureList,
+  populateFloorViewItemList,
   initializeAddFurnitureModal,
   addItemButtonIntoList,
 };
