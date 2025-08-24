@@ -3,7 +3,6 @@ package com.warehousemanager.itemmanagement.controller;
 import com.warehousemanager.itemmanagement.entities.Item;
 import com.warehousemanager.itemmanagement.repositories.ItemRepository;
 import jakarta.validation.Valid;
-import java.util.ArrayList;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,13 +59,9 @@ public class ItemManagementController {
   }
 
   @PostMapping("/items")
-  public List<Item> createItem(@Valid @RequestBody Item item) {
+  public Item createItem(@Valid @RequestBody Item item) {
     Item savedItem = itemRepository.save(item);
-    List<Item> allSavedItems = new ArrayList<>();
-    getAllSavedItems(savedItem, allSavedItems);
-    logger.info(
-        "All items saved under the parent item with ID {}: {}", savedItem.getId(), allSavedItems);
-    return allSavedItems;
+    return savedItem;
   }
 
   @PutMapping("/items/{id}")

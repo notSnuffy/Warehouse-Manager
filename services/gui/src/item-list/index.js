@@ -1,17 +1,18 @@
 import "./styles.scss";
+import { Modal } from "bootstrap";
 import * as _bootstrap from "bootstrap";
 import { API_URL } from "../config";
 import {
   paginateList,
   renderPaginationControls,
 } from "../lib/functions/pagination";
+import { initializeAddNewItem } from "./addNewItem";
 
 const itemTableBodyElement = document.getElementById("itemTableBody");
 const itemTemplateElement = document.getElementById("itemTemplate");
 const searchInputElement = document.getElementById("searchInput");
 const itemsPerPageElement = document.getElementById("itemsPerPage");
 const sortOrderElement = document.getElementById("sortOrder");
-const addItemButtonElement = document.getElementById("addItemButton");
 const paginationControlsElement = document.getElementById("paginationControls");
 const itemSuggestionsElement = document.getElementById("itemSuggestions");
 
@@ -70,6 +71,7 @@ async function init() {
   renderItems();
   populateItemSuggestions();
   initializeSortableColumns();
+  initializeAddNewItem(() => items);
 }
 
 searchInputElement.addEventListener("input", () => {
@@ -97,8 +99,60 @@ itemsPerPageElement.addEventListener("change", () => {
   renderItems();
 });
 
-addItemButtonElement.addEventListener("click", () => {
-  window.location.href = "/";
+const addItemConfirmButtonElement = document.getElementById(
+  "addItemConfirmButton",
+);
+addItemConfirmButtonElement.addEventListener("click", async () => {
+  const itemName = document.getElementById("itemName").value.trim();
+  const itemCategory = document.getElementById("itemCategory").value.trim();
+  const itemQuantity = document.getElementById("itemQuantity").value.trim();
+  const itemDescription = document
+    .getElementById("itemDescription")
+    .value.trim();
+
+  if (!itemName || !itemCategory || !itemQuantity) {
+    alert("Please fill in all required fields.");
+    return;
+  }
+
+  try {
+    const response = await fetch(API_URL + "/item-management/items", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        name: itemName,
+        category: itemCategory,
+        quantity: itemQuantity,
+        description: itemDescription,
+      }),
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      if (data.errors && data.errors.length > 0) {
+        alert(data.errors.join("\n"));
+      }
+      console.error("Failed to save item:", data);
+      return;
+    }
+    console.log("Item saved successfully:", data);
+    items[data.id] = data;
+
+    alert("Item saved successfully!");
+  } catch (error) {
+    console.error(error);
+  }
+
+  // Reset the form
+  document.getElementById("itemForm").reset();
+
+  renderItems();
+  populateItemSuggestions();
+
+  const newItemModalElement = document.getElementById("newItemModal");
+  const newItemModal = Modal.getInstance(newItemModalElement);
+  newItemModal.hide();
 });
 
 async function _fetchItems() {

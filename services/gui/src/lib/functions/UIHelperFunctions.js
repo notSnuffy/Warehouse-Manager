@@ -48,6 +48,7 @@ function showAddShapeModal(button) {
         required
         value="${pointX}"
         ${readOnly ? "readonly" : ""}
+        min="0"
       />
       <span class="input-group-text">Point${i} Y</span>
       <input
@@ -57,6 +58,7 @@ function showAddShapeModal(button) {
         required
         value="${pointY}"
         ${readOnly ? "readonly" : ""}
+        min="0"
       />
       `;
     polygonPoints.appendChild(point);
