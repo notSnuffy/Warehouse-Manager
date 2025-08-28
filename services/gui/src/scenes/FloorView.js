@@ -83,10 +83,9 @@ class FloorView extends Phaser.Scene {
     );
     this.#furnitureInstances.forEach((furnitureInstance) => {
       furnitureInstance.zoneInstances.forEach((zoneInstance) => {
-        let item = null;
+        let item = this.#itemMap.get(itemId).item;
         if (zoneInstance.id === previousZoneId) {
-          item = zoneInstance.items[itemId];
-          if (!item) {
+          if (!zoneInstance.items[itemId]) {
             console.warn(`Item ${itemId} not found in zone ${previousZoneId}`);
             return;
           }
@@ -336,7 +335,7 @@ class FloorView extends Phaser.Scene {
     console.log("Canvas:", this.game.canvas);
 
     const saveButtonElement = document.getElementById("saveButton");
-    saveButtonElement.addEventListener("click", () => {
+    saveButtonElement.addEventListener("click", async () => {
       const changedItems = [];
       this.#itemMap.forEach((item, itemId) => {
         if (!item.changed) {
@@ -345,12 +344,40 @@ class FloorView extends Phaser.Scene {
 
         changedItems.push({
           itemId: itemId,
-          newParentId: item.parentId,
-          newZoneId: item.zoneId,
-          newFloorId: item.floorId,
+          newParentId: item.item.parentId,
+          newZoneId: item.item.zoneId,
+          newFloorId: item.item.floorId,
         });
       });
       console.log("Changed items to save:", changedItems);
+      try {
+        const response = await fetch(
+          `${API_URL}/item-management/items/move/batch`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(changedItems),
+          },
+        );
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          if (errorData.errors && errorData.errors.length > 0) {
+            alert(errorData.errors.join("\n"));
+          } else {
+            alert("Failed to save item changes.");
+          }
+          console.error("Failed to save item changes:", errorData);
+          return;
+        }
+      } catch (error) {
+        alert(
+          "Error saving item changes. Please check the console for details.",
+        );
+        console.error("Error loading furniture:", error);
+      }
     });
 
     this.events.on(

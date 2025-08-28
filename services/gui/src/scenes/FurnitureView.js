@@ -169,7 +169,8 @@ class FurnitureView extends Phaser.Scene {
       const zoneItemsListElement = document.getElementById("zoneItemsList");
       zoneItemsListElement.innerHTML = "";
       zoneItemsListElement.dataset.zoneId = topHit.id;
-      topHit.items.forEach((item) => {
+      console.log("Top hit items:", topHit.items);
+      Object.values(topHit.items).forEach((item) => {
         const itemElement = document.createElement("li");
         itemElement.textContent = `${item.name}`;
         itemElement.classList.add("list-group-item");
@@ -252,26 +253,12 @@ class FurnitureView extends Phaser.Scene {
         const floorId = parseInt(urlParams.get("floorId"), 10);
         const newZoneId = parseInt(zoneItemsListElement.dataset.zoneId, 10);
         itemData.changed = true;
-        if (itemData.floorId !== floorId) {
-          itemData.previousZoneId = itemData.zoneId;
-          itemData.zoneId = newZoneId;
-          itemData.floorId = floorId;
-          this.#furnitureInstance.zoneInstances.forEach((zoneInstance) => {
-            if (zoneInstance.id === newZoneId) {
-              zoneInstance.itemIds.push(parseInt(id, 10));
-            }
-          });
-          return;
-        }
-        itemData.previousZoneId = itemData.zoneId;
-        itemData.zoneId = newZoneId;
+        const previousZoneId = itemData.item.zoneId;
+        itemData.item.zoneId = newZoneId;
+        itemData.item.floorId = floorId;
         this.scene
           .get("FloorView")
-          .moveItemBetweenZones(
-            itemData.previousZoneId,
-            newZoneId,
-            parseInt(id, 10),
-          );
+          .moveItemBetweenZones(previousZoneId, newZoneId, parseInt(id, 10));
         console.log(this.#furnitureInstance);
       },
     });

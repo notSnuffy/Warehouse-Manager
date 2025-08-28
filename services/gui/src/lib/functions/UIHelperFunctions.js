@@ -524,9 +524,7 @@ async function populateFloorViewItemList(setDragged) {
     data.forEach((item) => {
       addItemIntoFloorViewItemList(item.name, item.id);
       itemMap.set(item.id, {
-        parentId: item.parentId,
-        zoneId: item.zoneId,
-        floorId: item.floorId,
+        item: item,
         changed: false,
       });
     });
