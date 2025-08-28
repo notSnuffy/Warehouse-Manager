@@ -107,6 +107,68 @@ class FurnitureView extends Phaser.Scene {
     this.#lastHover = null;
   }
 
+  /**
+   * Makes a list sortable using Sortable.js
+   * @param {HTMLElement} unorderedListElement - The unordered list element to make sortable
+   * @private
+   * @return {void}
+   */
+  #makeSortable(unorderedListElement) {
+    Sortable.create(unorderedListElement, {
+      group: "items",
+      animation: 150,
+      fallbackOnBody: true,
+      invertSwap: true,
+      onAdd: (evt) => {
+        const item = evt.item;
+        const id = item.dataset.id;
+        const itemMap = this.scene.get("FloorView").itemMap;
+        const itemData = itemMap.get(parseInt(id, 10));
+        const previousList = evt.from;
+        console.log("Event onAdd:", evt);
+        if (previousList.id === "itemsMenuItems") {
+          console.log("Item added from items menu:", itemData);
+          const childList = document.createElement("ul");
+          childList.classList.add("list-group");
+          childList.dataset.parentId = itemData.item.id;
+          item.appendChild(childList);
+
+          this.#makeSortable(childList);
+
+          if (itemData.item.children && itemData.item.children.length > 0) {
+            this.#populateZoneItems(itemData.item.children, childList);
+          }
+        }
+      },
+    });
+  }
+
+  /**
+   * Populates zone items into a given unordered list element
+   * @param {Object[]} items - The items to populate the list with
+   * @param {HTMLElement} unorderedListElement - The unordered list element to populate
+   * @private
+   * @return {void}
+   */
+  #populateZoneItems(items, unorderedListElement) {
+    Object.values(items).forEach((item) => {
+      const itemElement = document.createElement("li");
+      itemElement.textContent = `${item.name}`;
+      itemElement.classList.add("list-group-item");
+      const childList = document.createElement("ul");
+      childList.classList.add("list-group");
+      childList.dataset.parentId = item.id;
+      itemElement.appendChild(childList);
+
+      this.#makeSortable(childList);
+
+      unorderedListElement.appendChild(itemElement);
+      if (item.children && item.children.length > 0) {
+        this.#populateZoneItems(item.children, childList);
+      }
+    });
+  }
+
   #handleCanvasHover(e) {
     e.preventDefault();
     console.log("FurnitureView dragover event triggered");
@@ -170,13 +232,8 @@ class FurnitureView extends Phaser.Scene {
       zoneItemsListElement.innerHTML = "";
       zoneItemsListElement.dataset.zoneId = topHit.id;
       console.log("Top hit items:", topHit.items);
-      Object.values(topHit.items).forEach((item) => {
-        const itemElement = document.createElement("li");
-        itemElement.textContent = `${item.name}`;
-        itemElement.classList.add("list-group-item");
 
-        zoneItemsListElement.appendChild(itemElement);
-      });
+      this.#populateZoneItems(topHit.items, zoneItemsListElement);
 
       zoneItemsModal.show();
 
@@ -248,6 +305,21 @@ class FurnitureView extends Phaser.Scene {
         const id = item.dataset.id;
         const itemMap = this.scene.get("FloorView").itemMap;
         const itemData = itemMap.get(parseInt(id, 10));
+        const previousList = evt.from;
+        console.log("Event onAdd:", evt);
+        if (previousList.id === "itemsMenuItems") {
+          console.log("Item added from items menu:", itemData);
+          const childList = document.createElement("ul");
+          childList.classList.add("list-group");
+          childList.dataset.parentId = itemData.item.id;
+          item.appendChild(childList);
+
+          this.#makeSortable(childList);
+
+          if (itemData.item.children && itemData.item.children.length > 0) {
+            this.#populateZoneItems(itemData.item.children, childList);
+          }
+        }
 
         const urlParams = new URLSearchParams(window.location.search);
         const floorId = parseInt(urlParams.get("floorId"), 10);
