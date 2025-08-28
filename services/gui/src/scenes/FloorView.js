@@ -5,19 +5,12 @@ import { buildShapeFromInstructions } from "../lib/functions/shapes";
 
 class FloorView extends Phaser.Scene {
   /**
-   * Graph representing the floor layout
-   * @type {Map<Phaser.GameObjects.Circle, Map<Phaser.GameObjects.Circle, Phaser.GameObjects.Line>>}
+   * Map of furniture instances by their IDs
+   * @type {Map<string, Object>}
    * @private
    * @default new Map()
    */
-  #graph = new Map();
-
-  /**
-   * Array of furniture in the scene
-   * @type {Phaser.GameObjects.Shape[]}
-   * @private
-   */
-  #furniture = [];
+  #furnitureInstances = new Map();
 
   /**
    * If item is being dragged
@@ -60,6 +53,53 @@ class FloorView extends Phaser.Scene {
   #hoverCanvasHandler = null;
 
   /**
+   * Map of items in the item list
+   * @type {Map<string, Object>|null}
+   * @private
+   * @default null
+   */
+  #itemMap = null;
+
+  /**
+   * Getter for the item map
+   * @returns {Map<string, Object>|null} - The item map
+   * @public
+   */
+  get itemMap() {
+    return this.#itemMap;
+  }
+
+  /**
+   * Moves an item between zones
+   * @param {string} previousZoneId - The ID of the previous zone
+   * @param {string} newZoneId - The ID of the new zone
+   * @param {string} itemId - The ID of the item to move
+   * @return {void}
+   * @public
+   */
+  moveItemBetweenZones(previousZoneId, newZoneId, itemId) {
+    console.log(
+      `Moving item ${itemId} from zone ${previousZoneId} to zone ${newZoneId}`,
+    );
+    this.#furnitureInstances.forEach((furnitureInstance) => {
+      furnitureInstance.zoneInstances.forEach((zoneInstance) => {
+        let item = null;
+        if (zoneInstance.id === previousZoneId) {
+          item = zoneInstance.items[itemId];
+          if (!item) {
+            console.warn(`Item ${itemId} not found in zone ${previousZoneId}`);
+            return;
+          }
+          delete zoneInstance.items[itemId];
+        }
+        if (zoneInstance.id === newZoneId) {
+          zoneInstance.items[itemId] = item;
+        }
+      });
+    });
+  }
+
+  /**
    * Constructor for the FloorView scene
    * @constructor
    */
@@ -81,23 +121,10 @@ class FloorView extends Phaser.Scene {
    * @return {void}
    */
   #createWall(corner1, corner2) {
-    if (corner1 === corner2) {
-      console.warn("Cannot create a wall between the same corner.");
-      return;
-    }
-
-    if (this.#graph.get(corner1).has(corner2)) {
-      console.warn("A wall already exists between these corners.");
-      return;
-    }
-
-    const wall = this.add
+    this.add
       .line(0, 0, corner1.x, corner1.y, corner2.x, corner2.y, 0xffffff)
       .setOrigin(0, 0)
       .setLineWidth(10);
-
-    this.#graph.get(corner1).set(corner2, wall);
-    this.#graph.get(corner2).set(corner1, wall);
   }
 
   /**
@@ -109,8 +136,6 @@ class FloorView extends Phaser.Scene {
    */
   #addCorner(positionX = 100, positionY = 100) {
     const corner = this.add.circle(positionX, positionY, 20, 0xffffff);
-
-    this.#graph.set(corner, new Map());
 
     return corner;
   }
@@ -151,6 +176,9 @@ class FloorView extends Phaser.Scene {
 
     const cornerMap = new Map();
 
+    const viewElementNameElement = document.getElementById("viewElementName");
+    viewElementNameElement.textContent = `${floorData.name}`;
+
     floorData.corners.forEach((cornerData) => {
       const corner = this.#addCorner(
         cornerData.positionX,
@@ -163,10 +191,6 @@ class FloorView extends Phaser.Scene {
       const startCorner = cornerMap.get(wallData.startCornerId);
       const endCorner = cornerMap.get(wallData.endCornerId);
       if (startCorner && endCorner) {
-        // Check if the wall already exists
-        if (this.#graph.get(startCorner).has(endCorner)) {
-          return;
-        }
         this.#createWall(startCorner, endCorner);
       } else {
         console.warn("Invalid corners for wall:", wallData);
@@ -200,9 +224,8 @@ class FloorView extends Phaser.Scene {
 
       furniture.setInteractive();
 
-      this.#furniture.push(furniture);
+      this.#furnitureInstances.set(furnitureInstanceId, furnitureData);
     });
-    console.log(this.#furniture);
   }
 
   /**
@@ -237,6 +260,7 @@ class FloorView extends Phaser.Scene {
     pointer.y = canvasPointerY;
 
     const hits = this.input.hitTestPointer(pointer);
+    console.log("Hit test results:", [...hits]);
 
     if (hits.length === 0) {
       if (!this.#hoverTimer) {
@@ -249,6 +273,7 @@ class FloorView extends Phaser.Scene {
       return;
     }
 
+    console.log("Last hover:", this.#lastHover);
     if (this.#hoverTimer) {
       return;
     }
@@ -263,7 +288,9 @@ class FloorView extends Phaser.Scene {
       console.log([...hits]);
       this.scene.sleep();
       this.scene.launch("FurnitureView", {
-        furnitureInstanceId: topHit.furnitureInstanceId,
+        furnitureInstance: this.#furnitureInstances.get(
+          topHit.furnitureInstanceId,
+        ),
       });
       this.scene.bringToTop("FurnitureView");
       if (this.#hoverTimer) {
@@ -292,18 +319,39 @@ class FloorView extends Phaser.Scene {
    * @public
    */
   async create() {
+    const backButtonElement = document.getElementById("backButton");
+    backButtonElement;
+
     const urlParams = new URLSearchParams(window.location.search);
     const floorId = urlParams.get("floorId");
     if (floorId) {
       await this.#loadFloor(floorId);
     }
 
-    populateFloorViewItemList((value) => {
+    this.#itemMap = await populateFloorViewItemList((value) => {
       this.#isDragging = value;
     });
 
     this.#addCanvasHoverHandler();
     console.log("Canvas:", this.game.canvas);
+
+    const saveButtonElement = document.getElementById("saveButton");
+    saveButtonElement.addEventListener("click", () => {
+      const changedItems = [];
+      this.#itemMap.forEach((item, itemId) => {
+        if (!item.changed) {
+          return;
+        }
+
+        changedItems.push({
+          itemId: itemId,
+          newParentId: item.parentId,
+          newZoneId: item.zoneId,
+          newFloorId: item.floorId,
+        });
+      });
+      console.log("Changed items to save:", changedItems);
+    });
 
     this.events.on(
       "sleep",
@@ -319,12 +367,15 @@ class FloorView extends Phaser.Scene {
         if (this.#hoverTimer) {
           this.#hoverTimer.remove();
           this.#hoverTimer = null;
-          this.#lastHover = null;
         }
+        this.#lastHover = null;
       },
       this,
     );
     this.events.on("wake", () => {
+      console.log("FloorView scene is waking up.");
+      console.log(this.#itemMap);
+      console.log(this.#furnitureInstances);
       this.#addCanvasHoverHandler();
     });
   }

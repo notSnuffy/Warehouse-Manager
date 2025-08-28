@@ -7,7 +7,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -36,12 +36,27 @@ public class Item {
   /** Quantity of the item in stock. */
   private String quantity;
 
+  /** Identifier for the floor where the item is stored. */
+  private Long floorId;
+
+  /** Identifier for the zone where the item is stored. */
+  private Long zoneId;
+
+  // /** List of child items, representing a hierarchical structure. */
+  // @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+  // @JoinTable(
+  //     name = "item_children",
+  //     joinColumns = @JoinColumn(name = "parent_id"),
+  //     inverseJoinColumns = @JoinColumn(name = "child_id"))
+  // private List<Item> children = new ArrayList<>();
+
+  /** Parent item in the hierarchical structure. */
+  @ManyToOne
+  @JoinColumn(name = "parent_id")
+  private Item parent;
+
   /** List of child items, representing a hierarchical structure. */
-  @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
-  @JoinTable(
-      name = "item_children",
-      joinColumns = @JoinColumn(name = "parent_id"),
-      inverseJoinColumns = @JoinColumn(name = "child_id"))
+  @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL)
   private List<Item> children = new ArrayList<>();
 
   /** Default constructor for JPA. */
@@ -129,6 +144,80 @@ public class Item {
   }
 
   /**
+   * Gets the floor ID where the item is stored.
+   *
+   * @return the floor ID where the item is stored
+   */
+  public Long getFloorId() {
+    return floorId;
+  }
+
+  /**
+   * Sets the floor ID where the item is stored.
+   *
+   * @param floorId the new floor ID where the item is stored
+   */
+  public void setFloorId(Long floorId) {
+    this.floorId = floorId;
+  }
+
+  /**
+   * Gets the zone ID where the item is stored.
+   *
+   * @return the zone ID where the item is stored
+   */
+  public Long getZoneId() {
+    return zoneId;
+  }
+
+  /**
+   * Sets the zone ID where the item is stored.
+   *
+   * @param zoneId the new zone ID where the item is stored
+   */
+  public void setZoneId(Long zoneId) {
+    this.zoneId = zoneId;
+  }
+
+  /**
+   * Gets the parent item in the hierarchical structure.
+   *
+   * @return the parent item
+   */
+  public Item getParent() {
+    return parent;
+  }
+
+  /**
+   * Sets the parent item in the hierarchical structure.
+   *
+   * @param parent the new parent item
+   */
+  public void setParent(Item parent) {
+    this.parent = parent;
+  }
+
+  /**
+   * Adds a child item to the list of children and sets this item as the parent of the child.
+   *
+   * @param child the child item to be added
+   */
+  public void addChild(Item child) {
+    children.add(child);
+    child.setParent(this);
+  }
+
+  /**
+   * Removes a child item from the list of children and clears its parent reference.
+   *
+   * @param child the child item to be removed
+   */
+  public void removeChild(Item child) {
+    children.remove(child);
+    child.setParent(null);
+  }
+
+  /**
    * Gets the list of child items.
    *
    * @return the list of child items
@@ -144,5 +233,6 @@ public class Item {
    */
   public void setChildren(List<Item> children) {
     this.children = children;
+    children.forEach(child -> child.setParent(this));
   }
 }

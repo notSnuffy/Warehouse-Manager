@@ -7,6 +7,16 @@
     <title>Floor View</title>
   </head>
   <body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark" id="menuBar">
+      <div class="container-fluid">
+        <div
+          class="navbar-nav d-flex align-items-center gap-1"
+          id="navbarButtons"
+        ></div>
+        <h3 class="text-white text-center mx-auto" id="viewElementName"></h3>
+        <button id="saveButton" class="btn btn-primary">Save</button>
+      </div>
+    </nav>
     <div class="container-fluid">
       <div class="row">
         <div class="col-md-2" id="itemsMenu">
@@ -37,7 +47,6 @@
             ></button>
           </div>
           <div class="modal-body">
-            <input type="hidden" id="zoneId" />
             <ul class="list-group" id="zoneItemsList"></ul>
           </div>
           <div class="modal-footer">

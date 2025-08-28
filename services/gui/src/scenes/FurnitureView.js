@@ -1,5 +1,4 @@
 import Phaser from "phaser";
-import { API_URL } from "../config";
 import { Modal } from "bootstrap";
 import Sortable from "sortablejs";
 import { buildShapeFromInstructions } from "../lib/functions/shapes";
@@ -11,26 +10,12 @@ import { buildShapeFromInstructions } from "../lib/functions/shapes";
  */
 class FurnitureView extends Phaser.Scene {
   /**
-   * Array of shapes in the scene
-   * @type {Phaser.GameObjects.Shape[]}
-   * @private
-   */
-  #shapes = [];
-
-  /**
-   * Array of placement zones in the furniture
-   * @type {Phaser.GameObjects.Shape[]}
-   * @private
-   */
-  #zones = [];
-
-  /**
-   * Furniture instance ID of the furniture being viewed
-   * @type {number|null}
+   * Furniture instance of the furniture being viewed
+   * @type {Object|null}
    * @private
    * @default null
    */
-  #furnitureInstanceId = null;
+  #furnitureInstance = null;
 
   /**
    * Last hovered item
@@ -57,6 +42,14 @@ class FurnitureView extends Phaser.Scene {
   #hoverCanvasHandler = null;
 
   /**
+   * Handler for modal hidden events
+   * @type {Function|null}
+   * @private
+   * @default null
+   */
+  #modalHiddenHandler = null;
+
+  /**
    * Constructor for the FurnitureView scene
    * @constructor
    */
@@ -66,52 +59,52 @@ class FurnitureView extends Phaser.Scene {
 
   /**
    * Loads the furniture instance by its ID
-   * @param {string} furnitureId - The ID of the furniture instance to load
+   * @param {Object} furnitureInstance - The furniture instance to load
    * @private
    * @async
    */
-  async #loadFurniture(furnitureId) {
-    try {
-      const response = await fetch(
-        `${API_URL}/furniture-management/furniture/instances/${furnitureId}`,
-      );
-      const furnitureData = await response.json();
-      if (!response.ok) {
-        if (furnitureData.errors && furnitureData.errors.length > 0) {
-          alert(furnitureData.errors.join("\n"));
-        }
-        console.error("Failed to load furniture:", furnitureData);
-        return;
-      }
+  #loadFurniture(furnitureInstance) {
+    const viewElementNameElement = document.getElementById("viewElementName");
+    viewElementNameElement.textContent = furnitureInstance.furniture.name;
 
-      if (furnitureData.furniture.shapes) {
-        furnitureData.furniture.shapes.forEach((shapeData) => {
-          const shape = buildShapeFromInstructions(
-            shapeData.instructions,
-            this,
-          )[0];
-          shape.id = shapeData.shape.id;
-          this.#shapes.push(shape);
-        });
-      }
-
-      if (furnitureData.zoneInstances) {
-        furnitureData.zoneInstances.forEach((zoneData) => {
-          console.log("Zone data:", zoneData);
-          const zone = buildShapeFromInstructions(
-            zoneData.zone.instructions,
-            this,
-            0xeb7734,
-          )[0];
-          zone.id = zoneData.id;
-          zone.items = zoneData.itemIds || [];
-          zone.setInteractive();
-          this.#zones.push(zone);
-        });
-      }
-    } catch (error) {
-      console.error("Error loading furniture:", error);
+    if (furnitureInstance.furniture.shapes) {
+      furnitureInstance.furniture.shapes.forEach((shapeData) => {
+        const shape = buildShapeFromInstructions(
+          shapeData.instructions,
+          this,
+        )[0];
+        shape.id = shapeData.shape.id;
+      });
     }
+
+    if (furnitureInstance.zoneInstances) {
+      furnitureInstance.zoneInstances.forEach((zoneData) => {
+        console.log("Zone data:", zoneData);
+        const zone = buildShapeFromInstructions(
+          zoneData.zone.instructions,
+          this,
+          0xeb7734,
+        )[0];
+        zone.id = zoneData.id;
+        zone.items = zoneData.items || [];
+        zone.setInteractive();
+      });
+    }
+  }
+
+  /**
+   * Handler for modal hidden events
+   * @private
+   * @return {void}
+   */
+  #handleModalHidden() {
+    console.log("Zone items modal hidden");
+    console.log(this.#hoverTimer);
+    if (this.#hoverTimer) {
+      this.#hoverTimer.remove();
+      this.#hoverTimer = null;
+    }
+    this.#lastHover = null;
   }
 
   #handleCanvasHover(e) {
@@ -165,7 +158,7 @@ class FurnitureView extends Phaser.Scene {
       return;
     }
 
-    this.#hoverTimer = this.time.delayedCall(2000, () => {
+    this.#hoverTimer = this.time.delayedCall(500, () => {
       console.log("Dragged element hovered over box long enough!");
       console.log([...hits]);
       console.log(gameCanvas);
@@ -175,9 +168,10 @@ class FurnitureView extends Phaser.Scene {
 
       const zoneItemsListElement = document.getElementById("zoneItemsList");
       zoneItemsListElement.innerHTML = "";
-      topHit.items.forEach((itemId) => {
+      zoneItemsListElement.dataset.zoneId = topHit.id;
+      topHit.items.forEach((item) => {
         const itemElement = document.createElement("li");
-        itemElement.textContent = `Item ID: ${itemId}`;
+        itemElement.textContent = `${item.name}`;
         itemElement.classList.add("list-group-item");
 
         zoneItemsListElement.appendChild(itemElement);
@@ -213,8 +207,8 @@ class FurnitureView extends Phaser.Scene {
    * @public
    */
   init(data) {
-    this.#furnitureInstanceId = data.furnitureInstanceId || null;
-    console.log("Furniture instance ID:", this.#furnitureInstanceId);
+    this.#furnitureInstance = data.furnitureInstance || null;
+    console.log("Furniture instance ID:", this.#furnitureInstance);
   }
 
   /**
@@ -222,29 +216,74 @@ class FurnitureView extends Phaser.Scene {
    * @public
    */
   async create() {
-    const furnitureId = this.#furnitureInstanceId;
-    if (furnitureId) {
-      await this.#loadFurniture(furnitureId);
+    const backButton = document.createElement("button");
+    backButton.id = "backButton";
+    backButton.classList.add("btn", "btn-primary", "mr-2");
+    backButton.textContent = "Back";
+
+    document.getElementById("navbarButtons").appendChild(backButton);
+
+    backButton.addEventListener("click", () => {
+      this.scene.stop();
+      this.scene.wake("FloorView");
+      const backButtonElement = document.getElementById("backButton");
+      if (backButtonElement) {
+        backButtonElement.remove();
+      }
+    });
+
+    const furnitureInstance = this.#furnitureInstance;
+    if (furnitureInstance) {
+      this.#loadFurniture(furnitureInstance);
     }
 
     const zoneItemsListElement = document.getElementById("zoneItemsList");
     Sortable.create(zoneItemsListElement, {
       group: "items",
       animation: 150,
+      onAdd: (evt) => {
+        console.log("Item added to zone:", evt);
+        const item = evt.item;
+        const id = item.dataset.id;
+        const itemMap = this.scene.get("FloorView").itemMap;
+        const itemData = itemMap.get(parseInt(id, 10));
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const floorId = parseInt(urlParams.get("floorId"), 10);
+        const newZoneId = parseInt(zoneItemsListElement.dataset.zoneId, 10);
+        itemData.changed = true;
+        if (itemData.floorId !== floorId) {
+          itemData.previousZoneId = itemData.zoneId;
+          itemData.zoneId = newZoneId;
+          itemData.floorId = floorId;
+          this.#furnitureInstance.zoneInstances.forEach((zoneInstance) => {
+            if (zoneInstance.id === newZoneId) {
+              zoneInstance.itemIds.push(parseInt(id, 10));
+            }
+          });
+          return;
+        }
+        itemData.previousZoneId = itemData.zoneId;
+        itemData.zoneId = newZoneId;
+        this.scene
+          .get("FloorView")
+          .moveItemBetweenZones(
+            itemData.previousZoneId,
+            newZoneId,
+            parseInt(id, 10),
+          );
+        console.log(this.#furnitureInstance);
+      },
     });
 
     this.#addCanvasHoverHandler();
 
     const zoneItemsModalElement = document.getElementById("zoneItemsModal");
-    zoneItemsModalElement.addEventListener("hidden.bs.modal", () => {
-      console.log("Zone items modal hidden");
-      console.log(this.#hoverTimer);
-      if (this.#hoverTimer) {
-        this.#hoverTimer.remove();
-        this.#hoverTimer = null;
-      }
-      this.#lastHover = null;
-    });
+    this.#modalHiddenHandler = this.#handleModalHidden.bind(this);
+    zoneItemsModalElement.addEventListener(
+      "hidden.bs.modal",
+      this.#modalHiddenHandler,
+    );
 
     this.events.on("shutdown", () => {
       console.log("FurnitureView scene shutdown");
@@ -254,6 +293,11 @@ class FurnitureView extends Phaser.Scene {
       );
       this.#hoverCanvasHandler = null;
       console.log("Canvas:", this.game.canvas);
+      zoneItemsModalElement.removeEventListener(
+        "hidden.bs.modal",
+        this.#modalHiddenHandler,
+      );
+      this.#modalHiddenHandler = null;
       if (this.#hoverTimer) {
         this.#hoverTimer.remove();
         this.#hoverTimer = null;

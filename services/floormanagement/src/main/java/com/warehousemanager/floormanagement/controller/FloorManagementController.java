@@ -43,6 +43,8 @@ public class FloorManagementController {
   /**
    * Constructor for FloorManagementController.
    *
+   * @param discoveryClient Client for service discovery.
+   * @param restClientBuilder Builder for creating RestClient instances.
    * @param floorRepository Repository for managing Floor entities.
    * @param wallRepository Repository for managing Wall entities.
    * @param cornerRepository Repository for managing Corner entities.

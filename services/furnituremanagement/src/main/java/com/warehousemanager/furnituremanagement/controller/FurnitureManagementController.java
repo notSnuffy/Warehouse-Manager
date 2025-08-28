@@ -2,12 +2,14 @@ package com.warehousemanager.furnituremanagement.controller;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.warehousemanager.furnituremanagement.FurnitureDataTransferObject;
 import com.warehousemanager.furnituremanagement.FurnitureInstanceCreateDataTransferObject;
 import com.warehousemanager.furnituremanagement.FurnitureInstanceResponseDataTransferObject;
 import com.warehousemanager.furnituremanagement.FurnitureResponseDataTransferObject;
 import com.warehousemanager.furnituremanagement.FurnitureTopDownView;
 import com.warehousemanager.furnituremanagement.Instruction;
+import com.warehousemanager.furnituremanagement.MoveItemRequest;
 import com.warehousemanager.furnituremanagement.Shape;
 import com.warehousemanager.furnituremanagement.ShapeInstance;
 import com.warehousemanager.furnituremanagement.ShapeInstanceCreateObject;
@@ -27,6 +29,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cloud.client.ServiceInstance;
@@ -230,31 +234,46 @@ public class FurnitureManagementController {
             .findById(id)
             .orElseThrow(() -> new RuntimeException("Furniture instance not found with ID: " + id));
     logger.info("Found furniture instance: {}", furnitureInstance);
-    ServiceInstance serviceInstance = discoveryClient.getInstances("shape-management").get(0);
-    String url = serviceInstance.getUri() + "/shapes/";
+    ServiceInstance shapeServiceInstance = discoveryClient.getInstances("shape-management").get(0);
+    String shapesUrl = shapeServiceInstance.getUri() + "/shapes/";
     FurnitureResponseDataTransferObject furnitureResponseDataTransferObject =
         getFurnitureById(furnitureInstance.getFurniture().getId());
     List<ZoneInstanceResponseDataTransferObject> zoneInstances = new ArrayList<>();
+
+    ServiceInstance itemServiceInstance = discoveryClient.getInstances("item-management").get(0);
+    String itemsUrl = itemServiceInstance.getUri() + "/items/batch";
+
     for (ZoneInstance zoneInstance : furnitureInstance.getZoneInstances()) {
       Zone zone = zoneInstance.getZone();
       Long shapeId = zone.getShapeId();
       ShapeType zoneShape =
           restClient
               .get()
-              .uri(url + shapeId)
+              .uri(shapesUrl + shapeId)
               .retrieve()
               .body(new ParameterizedTypeReference<ShapeType>() {});
       ZoneResponseDataTransferObject zoneResponse =
           new ZoneResponseDataTransferObject(
               zone.getId(), zone.getName(), zoneShape, zone.getInstructions());
+
+      Set<Long> itemIds = zoneInstance.getItemIds();
+      String itemIdsParameter =
+          itemIds.stream().map(String::valueOf).collect(Collectors.joining(","));
+      JsonNode items =
+          restClient
+              .get()
+              .uri(itemsUrl + "?itemIds=" + itemIdsParameter)
+              .retrieve()
+              .body(JsonNode.class);
+
       ZoneInstanceResponseDataTransferObject zoneInstanceResponse =
-          new ZoneInstanceResponseDataTransferObject(zoneInstance.getId(), zoneResponse, List.of());
+          new ZoneInstanceResponseDataTransferObject(zoneInstance.getId(), zoneResponse, items);
       zoneInstances.add(zoneInstanceResponse);
     }
     ShapeInstance topDownViewShapeInstance =
         restClient
             .get()
-            .uri(url + furnitureInstance.getTopDownViewInstanceId() + "/instance")
+            .uri(shapesUrl + furnitureInstance.getTopDownViewInstanceId() + "/instance")
             .retrieve()
             .body(new ParameterizedTypeReference<ShapeInstance>() {});
     FurnitureInstanceResponseDataTransferObject response =
@@ -271,8 +290,12 @@ public class FurnitureManagementController {
   public List<FurnitureInstanceResponseDataTransferObject> getFurnitureInstances(
       @RequestParam List<Long> furnitureInstanceIds) {
     logger.info("Received request to get furniture instances for IDs: {}", furnitureInstanceIds);
-    ServiceInstance serviceInstance = discoveryClient.getInstances("shape-management").get(0);
-    String url = serviceInstance.getUri() + "/shapes/";
+    ServiceInstance shapeServiceInstance = discoveryClient.getInstances("shape-management").get(0);
+    String shapesUrl = shapeServiceInstance.getUri() + "/shapes/";
+
+    ServiceInstance itemServiceInstance = discoveryClient.getInstances("item-management").get(0);
+    String itemsUrl = itemServiceInstance.getUri() + "/items/batch";
+
     Map<Long, FurnitureResponseDataTransferObject> furnitureMap = new HashMap<>();
     Map<Long, ShapeType> zoneShapeMap = new HashMap<>();
     List<FurnitureInstanceResponseDataTransferObject> furnitureInstances = new ArrayList<>();
@@ -305,25 +328,36 @@ public class FurnitureManagementController {
           zoneShape =
               restClient
                   .get()
-                  .uri(url + shapeId)
+                  .uri(shapesUrl + shapeId)
                   .retrieve()
                   .body(new ParameterizedTypeReference<ShapeType>() {});
         } else {
           zoneShape = zoneShapeMap.get(shapeId);
         }
+
+        Set<Long> itemIds = zoneInstance.getItemIds();
+        String itemIdsParameter =
+            itemIds.stream().map(String::valueOf).collect(Collectors.joining(","));
+        JsonNode items =
+            restClient
+                .get()
+                .uri(itemsUrl + "?itemIds=" + itemIdsParameter)
+                .retrieve()
+                .body(JsonNode.class);
+
         ZoneInstanceResponseDataTransferObject zoneInstanceResponse =
             new ZoneInstanceResponseDataTransferObject(
                 zoneInstance.getId(),
                 new ZoneResponseDataTransferObject(
                     zone.getId(), zone.getName(), zoneShape, zone.getInstructions()),
-                List.of());
+                items);
         zoneInstances.add(zoneInstanceResponse);
 
         // Fetch the top-down view shape instance for the zone
         ShapeInstance topDownViewShapeInstance =
             restClient
                 .get()
-                .uri(url + furnitureInstance.getTopDownViewInstanceId() + "/instance")
+                .uri(shapesUrl + furnitureInstance.getTopDownViewInstanceId() + "/instance")
                 .retrieve()
                 .body(new ParameterizedTypeReference<ShapeInstance>() {});
 
@@ -395,5 +429,37 @@ public class FurnitureManagementController {
     }
     logger.info("Saved furniture instances: {}", savedFurnitureInstances);
     return savedFurnitureInstances;
+  }
+
+  @PostMapping("/furniture/zones/instances/moveItem/batch")
+  public void moveItems(@RequestBody List<MoveItemRequest> requests) {
+    for (MoveItemRequest request : requests) {
+      Long itemId = request.itemId();
+      Long oldZoneId = request.oldZoneId();
+      ZoneInstance oldZoneInstance =
+          oldZoneId != null ? zoneInstanceRepository.findById(oldZoneId).orElse(null) : null;
+
+      if (oldZoneInstance != null) {
+        if (!oldZoneInstance.containsItemId(itemId)) {
+          throw new IllegalArgumentException(
+              "Item ID " + itemId + " not found in old zone instance " + oldZoneId);
+        }
+        oldZoneInstance.removeItemId(itemId);
+        zoneInstanceRepository.save(oldZoneInstance);
+      }
+
+      Long newZoneId = request.newZoneId();
+      ZoneInstance newZoneInstance =
+          newZoneId != null ? zoneInstanceRepository.findById(newZoneId).orElse(null) : null;
+      if (newZoneInstance != null) {
+        newZoneInstance.addItemId(itemId);
+        zoneInstanceRepository.save(newZoneInstance);
+      }
+      logger.info(
+          "Moved item ID {} from zone instance {} to zone instance {}",
+          itemId,
+          oldZoneId,
+          newZoneId);
+    }
   }
 }

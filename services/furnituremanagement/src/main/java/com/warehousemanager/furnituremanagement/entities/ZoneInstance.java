@@ -1,13 +1,17 @@
 package com.warehousemanager.furnituremanagement.entities;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import jakarta.persistence.CollectionTable;
+import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 public class ZoneInstance {
@@ -27,8 +31,13 @@ public class ZoneInstance {
   @JsonBackReference
   private FurnitureInstance furnitureInstance;
 
-  /** A list of item IDs that are placed in this zone instance. */
-  private List<Long> itemIds;
+  /** A set of item IDs that are placed in this zone instance. */
+  @ElementCollection
+  @CollectionTable(
+      name = "zone_instance_items",
+      joinColumns = @JoinColumn(name = "zone_instance_id"))
+  @Column(name = "item_id")
+  private Set<Long> itemIds = new HashSet<>();
 
   /** Default constructor for JPA. */
   protected ZoneInstance() {}
@@ -89,11 +98,11 @@ public class ZoneInstance {
   }
 
   /**
-   * Gets the list of item IDs that are placed in this zone instance.
+   * Gets the set of item IDs that are placed in this zone instance.
    *
-   * @return the list of item IDs
+   * @return the set of item IDs
    */
-  public List<Long> getItemIds() {
+  public Set<Long> getItemIds() {
     return itemIds;
   }
 
@@ -102,7 +111,35 @@ public class ZoneInstance {
    *
    * @param itemIds the new list of item IDs
    */
-  public void setItemIds(List<Long> itemIds) {
+  public void setItemIds(Set<Long> itemIds) {
     this.itemIds = itemIds;
+  }
+
+  /**
+   * Adds an item ID to the set of item IDs in this zone instance.
+   *
+   * @param itemId the item ID to add
+   */
+  public void addItemId(Long itemId) {
+    this.itemIds.add(itemId);
+  }
+
+  /**
+   * Removes an item ID from the set of item IDs in this zone instance.
+   *
+   * @param itemId the item ID to remove
+   */
+  public void removeItemId(Long itemId) {
+    this.itemIds.remove(itemId);
+  }
+
+  /**
+   * Checks if the specified item ID is present in the set of item IDs in this zone instance.
+   *
+   * @param itemId the item ID to check
+   * @return true if the item ID is present, false otherwise
+   */
+  public boolean containsItemId(Long itemId) {
+    return this.itemIds.contains(itemId);
   }
 }

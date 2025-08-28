@@ -147,6 +147,8 @@ addItemConfirmButtonElement.addEventListener("click", async () => {
 
   // Reset the form
   document.getElementById("itemForm").reset();
+  const itemCategoryElement = document.getElementById("itemCategory");
+  itemCategoryElement.value = ""; // Reset to default option
 
   renderItems();
   populateItemSuggestions();

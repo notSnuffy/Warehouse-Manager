@@ -88,7 +88,7 @@ function populateCategorySelector(categories) {
   categories.forEach((category) => {
     addNewCategory(category);
   });
-  itemCategoryElement.value = "";
+  defaultOption.selected = true;
 }
 
 /**

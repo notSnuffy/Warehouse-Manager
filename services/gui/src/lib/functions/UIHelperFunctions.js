@@ -520,8 +520,15 @@ async function populateFloorViewItemList(setDragged) {
       console.error("Failed to load items:", data);
       return;
     }
+    const itemMap = new Map();
     data.forEach((item) => {
       addItemIntoFloorViewItemList(item.name, item.id);
+      itemMap.set(item.id, {
+        parentId: item.parentId,
+        zoneId: item.zoneId,
+        floorId: item.floorId,
+        changed: false,
+      });
     });
     const itemsMenuItemsElement = document.getElementById("itemsMenuItems");
     Sortable.create(itemsMenuItemsElement, {
@@ -539,6 +546,7 @@ async function populateFloorViewItemList(setDragged) {
         setDragged(false);
       },
     });
+    return itemMap;
   } catch (error) {
     console.error(error);
   }
