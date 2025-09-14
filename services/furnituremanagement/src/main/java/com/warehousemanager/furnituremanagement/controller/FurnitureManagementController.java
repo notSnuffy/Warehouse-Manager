@@ -352,25 +352,25 @@ public class FurnitureManagementController {
                     zone.getId(), zone.getName(), zoneShape, zone.getInstructions()),
                 items);
         zoneInstances.add(zoneInstanceResponse);
-
-        // Fetch the top-down view shape instance for the zone
-        ShapeInstance topDownViewShapeInstance =
-            restClient
-                .get()
-                .uri(shapesUrl + furnitureInstance.getTopDownViewInstanceId() + "/instance")
-                .retrieve()
-                .body(new ParameterizedTypeReference<ShapeInstance>() {});
-
-        // Prepare the furniture instance response data transfer object
-        FurnitureInstanceResponseDataTransferObject furnitureInstanceResponse =
-            new FurnitureInstanceResponseDataTransferObject(
-                furnitureInstance.getId(),
-                topDownViewShapeInstance,
-                zoneInstances,
-                furnitureResponseDataTransferObject);
-        furnitureInstances.add(furnitureInstanceResponse);
-        logger.info("Furniture instance created: {}", furnitureInstanceResponse);
       }
+
+      // Fetch the top-down view shape instance for the zone
+      ShapeInstance topDownViewShapeInstance =
+          restClient
+              .get()
+              .uri(shapesUrl + furnitureInstance.getTopDownViewInstanceId() + "/instance")
+              .retrieve()
+              .body(new ParameterizedTypeReference<ShapeInstance>() {});
+
+      // Prepare the furniture instance response data transfer object
+      FurnitureInstanceResponseDataTransferObject furnitureInstanceResponse =
+          new FurnitureInstanceResponseDataTransferObject(
+              furnitureInstance.getId(),
+              topDownViewShapeInstance,
+              zoneInstances,
+              furnitureResponseDataTransferObject);
+      furnitureInstances.add(furnitureInstanceResponse);
+      logger.info("Furniture instance created: {}", furnitureInstanceResponse);
     }
     logger.info("Found {} furniture instances for the provided IDs", furnitureInstances.size());
     return furnitureInstances;

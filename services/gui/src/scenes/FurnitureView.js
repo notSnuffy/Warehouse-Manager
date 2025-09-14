@@ -86,8 +86,22 @@ class FurnitureView extends Phaser.Scene {
           0xeb7734,
         )[0];
         zone.id = zoneData.id;
-        zone.items = zoneData.items || [];
+        zone.items = zoneData.items || new Set();
         zone.setInteractive();
+        zone.on("pointerdown", () => {
+          const zoneItemsModalElement =
+            document.getElementById("zoneItemsModal");
+          const zoneItemsModal = new Modal(zoneItemsModalElement);
+
+          const zoneItemsListElement = document.getElementById("zoneItemsList");
+          zoneItemsListElement.innerHTML = "";
+          zoneItemsListElement.dataset.zoneId = zone.id;
+
+          this.#populateZoneItems(zone.items, zoneItemsListElement);
+
+          this.input.enabled = false;
+          zoneItemsModal.show();
+        });
       });
     }
   }
@@ -105,6 +119,7 @@ class FurnitureView extends Phaser.Scene {
       this.#hoverTimer = null;
     }
     this.#lastHover = null;
+    this.input.enabled = true;
   }
 
   /**
@@ -126,17 +141,58 @@ class FurnitureView extends Phaser.Scene {
         const itemData = itemMap.get(parseInt(id, 10));
         const previousList = evt.from;
         console.log("Event onAdd:", evt);
+        const thisList = evt.to;
+        const newParentId = parseInt(thisList.dataset.parentId, 10);
+        const newParentItemData = itemMap.get(newParentId);
+        const oldParentId = itemData.parentId;
+        let parentId = newParentId;
+        while (parentId) {
+          if (parentId === parseInt(id, 10)) {
+            alert("Cannot move an item into itself.");
+            evt.to.removeChild(item);
+            return;
+          }
+          const parentItemData = itemMap.get(parentId);
+          parentId = parentItemData.parentId;
+        }
+        if (oldParentId) {
+          const oldParentItemData = itemMap.get(oldParentId);
+
+          oldParentItemData.children.delete(parseInt(id, 10));
+        }
+        newParentItemData.children.add(parseInt(id, 10));
+
+        itemData.parentId = newParentId;
+        itemData.changed = true;
+        this.scene
+          .get("FloorView")
+          .moveItemBetweenZones(itemData.zoneId, null, parseInt(id, 10));
+        itemData.zoneId = null;
+        itemData.floorId = newParentItemData.floorId;
+        console.log("Item data after move:", itemData);
+        const updateChildrenFloor = (itemData, floorId) => {
+          if (itemData.children && itemData.children.size > 0) {
+            itemData.children.forEach((childId) => {
+              const childItemData = itemMap.get(childId);
+              childItemData.floorId = floorId;
+              childItemData.changed = true;
+              updateChildrenFloor(childItemData, floorId);
+            });
+          }
+        };
+        updateChildrenFloor(itemData, itemData.floorId);
+
         if (previousList.id === "itemsMenuItems") {
           console.log("Item added from items menu:", itemData);
           const childList = document.createElement("ul");
           childList.classList.add("list-group");
-          childList.dataset.parentId = itemData.item.id;
+          childList.dataset.parentId = parseInt(id, 10);
           item.appendChild(childList);
 
           this.#makeSortable(childList);
 
-          if (itemData.item.children && itemData.item.children.length > 0) {
-            this.#populateZoneItems(itemData.item.children, childList);
+          if (itemData.children && itemData.children.size > 0) {
+            this.#populateZoneItems(itemData.children, childList);
           }
         }
       },
@@ -145,26 +201,29 @@ class FurnitureView extends Phaser.Scene {
 
   /**
    * Populates zone items into a given unordered list element
-   * @param {Object[]} items - The items to populate the list with
+   * @param {Set} items - Set of item ids with which to populate the list
    * @param {HTMLElement} unorderedListElement - The unordered list element to populate
    * @private
    * @return {void}
    */
   #populateZoneItems(items, unorderedListElement) {
-    Object.values(items).forEach((item) => {
+    items.forEach((itemId) => {
+      const itemMap = this.scene.get("FloorView").itemMap;
+      const itemData = itemMap.get(itemId);
       const itemElement = document.createElement("li");
-      itemElement.textContent = `${item.name}`;
+      itemElement.textContent = `${itemData.name}`;
       itemElement.classList.add("list-group-item");
+      itemElement.dataset.id = itemId;
       const childList = document.createElement("ul");
       childList.classList.add("list-group");
-      childList.dataset.parentId = item.id;
+      childList.dataset.parentId = itemId;
       itemElement.appendChild(childList);
 
       this.#makeSortable(childList);
 
       unorderedListElement.appendChild(itemElement);
-      if (item.children && item.children.length > 0) {
-        this.#populateZoneItems(item.children, childList);
+      if (itemData.children && itemData.children.size > 0) {
+        this.#populateZoneItems(itemData.children, childList);
       }
     });
   }
@@ -235,6 +294,7 @@ class FurnitureView extends Phaser.Scene {
 
       this.#populateZoneItems(topHit.items, zoneItemsListElement);
 
+      this.input.enabled = false;
       zoneItemsModal.show();
 
       if (this.#hoverTimer) {
@@ -274,6 +334,7 @@ class FurnitureView extends Phaser.Scene {
    * @public
    */
   async create() {
+    console.log("Scene", this);
     const backButton = document.createElement("button");
     backButton.id = "backButton";
     backButton.classList.add("btn", "btn-primary", "mr-2");
@@ -311,13 +372,13 @@ class FurnitureView extends Phaser.Scene {
           console.log("Item added from items menu:", itemData);
           const childList = document.createElement("ul");
           childList.classList.add("list-group");
-          childList.dataset.parentId = itemData.item.id;
+          childList.dataset.parentId = parseInt(id, 10);
           item.appendChild(childList);
 
           this.#makeSortable(childList);
 
-          if (itemData.item.children && itemData.item.children.length > 0) {
-            this.#populateZoneItems(itemData.item.children, childList);
+          if (itemData.children && itemData.children.size > 0) {
+            this.#populateZoneItems(itemData.children, childList);
           }
         }
 
@@ -325,13 +386,32 @@ class FurnitureView extends Phaser.Scene {
         const floorId = parseInt(urlParams.get("floorId"), 10);
         const newZoneId = parseInt(zoneItemsListElement.dataset.zoneId, 10);
         itemData.changed = true;
-        const previousZoneId = itemData.item.zoneId;
-        itemData.item.zoneId = newZoneId;
-        itemData.item.floorId = floorId;
+        const previousZoneId = itemData.zoneId;
+        itemData.zoneId = newZoneId;
+        itemData.floorId = floorId;
         this.scene
           .get("FloorView")
           .moveItemBetweenZones(previousZoneId, newZoneId, parseInt(id, 10));
         console.log(this.#furnitureInstance);
+
+        const oldParentId = itemData.parentId;
+        if (oldParentId) {
+          const oldParentItemData = itemMap.get(oldParentId);
+
+          oldParentItemData.children.delete(parseInt(id, 10));
+        }
+        itemData.parentId = null;
+        const updateChildrenZoneAndFloor = (itemData, floorId) => {
+          if (itemData.children && itemData.children.size > 0) {
+            itemData.children.forEach((childId) => {
+              const childItemData = itemMap.get(childId);
+              childItemData.floorId = floorId;
+              childItemData.changed = true;
+              updateChildrenZoneAndFloor(childItemData, floorId);
+            });
+          }
+        };
+        updateChildrenZoneAndFloor(itemData, itemData.floorId);
       },
     });
 

@@ -83,16 +83,15 @@ class FloorView extends Phaser.Scene {
     );
     this.#furnitureInstances.forEach((furnitureInstance) => {
       furnitureInstance.zoneInstances.forEach((zoneInstance) => {
-        let item = this.#itemMap.get(itemId).item;
         if (zoneInstance.id === previousZoneId) {
-          if (!zoneInstance.items[itemId]) {
+          if (!zoneInstance.items.has(itemId)) {
             console.warn(`Item ${itemId} not found in zone ${previousZoneId}`);
             return;
           }
-          delete zoneInstance.items[itemId];
+          zoneInstance.items.delete(itemId);
         }
         if (zoneInstance.id === newZoneId) {
-          zoneInstance.items[itemId] = item;
+          zoneInstance.items.add(itemId);
         }
       });
     });
@@ -222,6 +221,21 @@ class FloorView extends Phaser.Scene {
       furniture.label = label;
 
       furniture.setInteractive();
+      furniture.on("pointerdown", () => {
+        this.scene.sleep();
+        this.scene.launch("FurnitureView", {
+          furnitureInstance: this.#furnitureInstances.get(furnitureInstanceId),
+        });
+        this.scene.bringToTop("FurnitureView");
+      });
+
+      furnitureData.zoneInstances.forEach((zoneInstance) => {
+        const itemSet = new Set();
+        Object.values(zoneInstance.items).forEach((item) => {
+          itemSet.add(item.id);
+        });
+        zoneInstance.items = itemSet;
+      });
 
       this.#furnitureInstances.set(furnitureInstanceId, furnitureData);
     });
@@ -344,9 +358,9 @@ class FloorView extends Phaser.Scene {
 
         changedItems.push({
           itemId: itemId,
-          newParentId: item.item.parentId,
-          newZoneId: item.item.zoneId,
-          newFloorId: item.item.floorId,
+          newParentId: item.parentId,
+          newZoneId: item.zoneId,
+          newFloorId: item.floorId,
         });
       });
       console.log("Changed items to save:", changedItems);

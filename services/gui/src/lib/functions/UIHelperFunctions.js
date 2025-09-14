@@ -507,7 +507,7 @@ function addItemIntoFloorViewItemList(name, id) {
 /**
  * Populates the floor view item list.
  * @param {Function} setDragged - Function to set if an item is being dragged.
- * @returns {Promise<void>}
+ * @return {Promise<Map>} - A map of items and their changed status.
  */
 async function populateFloorViewItemList(setDragged) {
   try {
@@ -523,9 +523,17 @@ async function populateFloorViewItemList(setDragged) {
     const itemMap = new Map();
     data.forEach((item) => {
       addItemIntoFloorViewItemList(item.name, item.id);
+      let children = new Set();
+      item.children.forEach((child) => {
+        children.add(child.id);
+      });
       itemMap.set(item.id, {
-        item: item,
+        name: item.name,
+        floorId: item.floorId,
+        zoneId: item.zoneId,
+        parentId: item.parentId,
         changed: false,
+        children: children,
       });
     });
     const itemsMenuItemsElement = document.getElementById("itemsMenuItems");
