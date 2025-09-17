@@ -3,6 +3,8 @@ package com.warehousemanager.furnituremanagement.controller;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.warehousemanager.furnituremanagement.FurnitureDataTransferObject;
 import com.warehousemanager.furnituremanagement.FurnitureInstanceCreateDataTransferObject;
 import com.warehousemanager.furnituremanagement.FurnitureInstanceResponseDataTransferObject;
@@ -27,6 +29,7 @@ import com.warehousemanager.furnituremanagement.repositories.ZoneInstanceReposit
 import com.warehousemanager.furnituremanagement.repositories.ZoneRepository;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -225,6 +228,35 @@ public class FurnitureManagementController {
     return savedFurniture;
   }
 
+  /**
+   * Filters out deleted items from the provided JSON node and updates the zone instance
+   * accordingly.
+   *
+   * @param items the JSON node containing items to be filtered
+   * @param zoneInstance the zone instance to remove deleted item IDs from
+   * @return a JSON node containing only non-deleted items
+   */
+  public JsonNode filterDeletedItems(JsonNode items, ZoneInstance zoneInstance) {
+    ObjectMapper mapper = new ObjectMapper();
+    ObjectNode filteredItems = mapper.createObjectNode();
+
+    Iterator<Map.Entry<String, JsonNode>> fields = items.fields();
+    while (fields.hasNext()) {
+      Map.Entry<String, JsonNode> entry = fields.next();
+      JsonNode itemNode = entry.getValue();
+      Long itemId = itemNode.get("id").asLong();
+
+      boolean isDeleted = itemNode.get("deleted").asBoolean();
+      if (!isDeleted) {
+        filteredItems.set(entry.getKey(), itemNode);
+      } else {
+        zoneInstance.removeItemId(itemId);
+        zoneInstanceRepository.save(zoneInstance);
+      }
+    }
+    return filteredItems;
+  }
+
   @GetMapping("/furniture/instances/{id}")
   public FurnitureInstanceResponseDataTransferObject getFurnitureInstanceById(
       @PathVariable Long id) {
@@ -266,8 +298,11 @@ public class FurnitureManagementController {
               .retrieve()
               .body(JsonNode.class);
 
+      JsonNode filteredItems = filterDeletedItems(items, zoneInstance);
+
       ZoneInstanceResponseDataTransferObject zoneInstanceResponse =
-          new ZoneInstanceResponseDataTransferObject(zoneInstance.getId(), zoneResponse, items);
+          new ZoneInstanceResponseDataTransferObject(
+              zoneInstance.getId(), zoneResponse, filteredItems);
       zoneInstances.add(zoneInstanceResponse);
     }
     ShapeInstance topDownViewShapeInstance =
@@ -345,12 +380,14 @@ public class FurnitureManagementController {
                 .retrieve()
                 .body(JsonNode.class);
 
+        JsonNode filteredItems = filterDeletedItems(items, zoneInstance);
+
         ZoneInstanceResponseDataTransferObject zoneInstanceResponse =
             new ZoneInstanceResponseDataTransferObject(
                 zoneInstance.getId(),
                 new ZoneResponseDataTransferObject(
                     zone.getId(), zone.getName(), zoneShape, zone.getInstructions()),
-                items);
+                filteredItems);
         zoneInstances.add(zoneInstanceResponse);
       }
 

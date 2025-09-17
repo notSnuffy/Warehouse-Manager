@@ -401,17 +401,17 @@ class FurnitureView extends Phaser.Scene {
           oldParentItemData.children.delete(parseInt(id, 10));
         }
         itemData.parentId = null;
-        const updateChildrenZoneAndFloor = (itemData, floorId) => {
+        const updateChildrenFloor = (itemData, floorId) => {
           if (itemData.children && itemData.children.size > 0) {
             itemData.children.forEach((childId) => {
               const childItemData = itemMap.get(childId);
               childItemData.floorId = floorId;
               childItemData.changed = true;
-              updateChildrenZoneAndFloor(childItemData, floorId);
+              updateChildrenFloor(childItemData, floorId);
             });
           }
         };
-        updateChildrenZoneAndFloor(itemData, itemData.floorId);
+        updateChildrenFloor(itemData, itemData.floorId);
       },
     });
 

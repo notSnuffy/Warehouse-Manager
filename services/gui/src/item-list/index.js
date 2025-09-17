@@ -6,7 +6,11 @@ import {
   paginateList,
   renderPaginationControls,
 } from "../lib/functions/pagination";
-import { initializeAddNewItem } from "./addNewItem";
+import {
+  initializeAddNewItem,
+  initializeEditItem,
+  initializeItemModalCategories,
+} from "./itemModal";
 
 const itemTableBodyElement = document.getElementById("itemTableBody");
 const itemTemplateElement = document.getElementById("itemTemplate");
@@ -72,7 +76,8 @@ async function init() {
   renderItems();
   populateItemSuggestions();
   initializeSortableColumns();
-  initializeAddNewItem(() => items);
+  initializeAddNewItem();
+  initializeItemModalCategories(() => items);
 }
 
 searchInputElement.addEventListener("input", () => {
@@ -100,10 +105,13 @@ itemsPerPageElement.addEventListener("change", () => {
   renderItems();
 });
 
-const addItemConfirmButtonElement = document.getElementById(
-  "addItemConfirmButton",
+const itemModalConfirmButtonElement = document.getElementById(
+  "itemModalConfirmButton",
 );
-addItemConfirmButtonElement.addEventListener("click", async () => {
+itemModalConfirmButtonElement.addEventListener("click", async () => {
+  const itemModalMode = document.getElementById("itemModalMode").value;
+  const itemId = document.getElementById("itemId").value;
+
   const itemName = document.getElementById("itemName").value.trim();
   const itemCategory = document.getElementById("itemCategory").value.trim();
   const itemQuantity = document.getElementById("itemQuantity").value.trim();
@@ -116,19 +124,26 @@ addItemConfirmButtonElement.addEventListener("click", async () => {
     return;
   }
 
+  const isEditMode = itemModalMode === "edit";
+
   try {
-    const response = await fetch(API_URL + "/item-management/items", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
+    const response = await fetch(
+      isEditMode
+        ? API_URL + `/item-management/items/${itemId}`
+        : API_URL + "/item-management/items",
+      {
+        method: isEditMode ? "PUT" : "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: itemName,
+          category: itemCategory,
+          quantity: itemQuantity,
+          description: itemDescription,
+        }),
       },
-      body: JSON.stringify({
-        name: itemName,
-        category: itemCategory,
-        quantity: itemQuantity,
-        description: itemDescription,
-      }),
-    });
+    );
     const data = await response.json();
     if (!response.ok) {
       if (data.errors && data.errors.length > 0) {
@@ -149,13 +164,14 @@ addItemConfirmButtonElement.addEventListener("click", async () => {
   document.getElementById("itemForm").reset();
   const itemCategoryElement = document.getElementById("itemCategory");
   itemCategoryElement.value = ""; // Reset to default option
+  document.getElementById("itemId").value = "";
 
   renderItems();
   populateItemSuggestions();
 
-  const newItemModalElement = document.getElementById("newItemModal");
-  const newItemModal = Modal.getInstance(newItemModalElement);
-  newItemModal.hide();
+  const itemModalElement = document.getElementById("itemModal");
+  const itemModal = Modal.getInstance(itemModalElement);
+  itemModal.hide();
 });
 
 async function fetchItems() {
@@ -221,7 +237,7 @@ function addItemToTable(item, paginatedItemsLength) {
   itemDescriptionElement.title = item.description;
 
   itemRow.querySelector(".edit-button").addEventListener("click", () => {
-    editItem(item.id);
+    initializeEditItem(item);
   });
   itemRow.querySelector(".remove-button").addEventListener("click", () => {
     removeItem(item.id);
@@ -277,23 +293,17 @@ function renderItems() {
   });
 }
 
-function editItem(id) {
-  window.location.href = `/?id=${id}`;
-}
-
 async function removeItem(id) {
   if (!confirm("Are you sure you want to remove this item?")) {
     return; // User canceled the deletion
   }
   try {
-    //const response = await fetch(API_URL + `/item-management/items/${id}`, {
-    //  method: "DELETE",
-    //});
-    //if (!response.ok) {
-    //  throw new Error("Network response was not ok");
-    //}
-    // Remove the item from the list
-    //}
+    const response = await fetch(API_URL + `/item-management/items/${id}`, {
+      method: "DELETE",
+    });
+    if (!response.ok) {
+      throw new Error("Network response was not ok");
+    }
     delete items[id]; // Remove the item from the items object
 
     const totalPages = Math.ceil(Object.keys(items).length / itemsPerPage);
@@ -305,6 +315,7 @@ async function removeItem(id) {
     populateItemSuggestions();
   } catch (error) {
     console.error("Error removing item:", error);
+    alert("Failed to remove item. Please try again.");
   }
 }
 

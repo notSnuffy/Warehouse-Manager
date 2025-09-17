@@ -92,17 +92,82 @@ function populateCategorySelector(categories) {
 }
 
 /**
+ * Sets up the item modal for adding or editing an item.
+ * @param {Object|null} item - The item to edit, or null for adding a new item.
+ * @returns {Modal} - The initialized Bootstrap Modal instance.
+ */
+function setupItemModal(item = null) {
+  const itemModalElement = document.getElementById("itemModal");
+  const modalTitleElement = document.getElementById("itemModalTitle");
+  const confirmButtonElement = document.getElementById(
+    "itemModalConfirmButton",
+  );
+
+  const itemFormElement = document.getElementById("itemForm");
+  itemFormElement.reset();
+  document.getElementById("itemCategory").value = "";
+
+  const itemModalModeElement = document.getElementById("itemModalMode");
+  const itemIdElement = document.getElementById("itemId");
+
+  if (item) {
+    modalTitleElement.textContent = "Edit Item";
+    confirmButtonElement.textContent = "Save Changes";
+
+    itemModalModeElement.value = "edit";
+    itemIdElement.value = item.id;
+
+    document.getElementById("itemName").value = item.name;
+    document.getElementById("itemCategory").value = item.category;
+    document.getElementById("itemQuantity").value = item.quantity;
+    document.getElementById("itemDescription").value = item.description;
+  } else {
+    modalTitleElement.textContent = "Add New Item";
+    confirmButtonElement.textContent = "Confirm";
+
+    itemModalModeElement.value = "add";
+    itemIdElement.value = "";
+  }
+
+  return new Modal(itemModalElement);
+}
+
+/**
  * Initializes the "Add New Item" functionality.
- * @param {Function} getItems - Function to retrieve the current items.
  * @returns {void}
  */
-function initializeAddNewItem(getItems) {
-  const newItemModalElement = document.getElementById("newItemModal");
+function initializeAddNewItem() {
   const addItemButtonElement = document.getElementById("addItemButton");
 
   addItemButtonElement.addEventListener("click", () => {
-    const modal = new Modal(newItemModalElement);
+    const modal = setupItemModal();
     modal.show();
+  });
+}
+
+/**
+ * Initializes the "Edit Item" functionality.
+ * @param {Object} item - The item to edit.
+ * @returns {void}
+ */
+function initializeEditItem(item) {
+  const modal = setupItemModal(item);
+  modal.show();
+}
+
+/**
+ * Initializes item modal categories, including event listeners and populating existing categories.
+ * @param {Function} getItems - Function to retrieve the current items.
+ * @returns {void}
+ */
+function initializeItemModalCategories(getItems) {
+  const itemCategoryElement = document.getElementById("itemCategory");
+  itemCategoryElement.addEventListener("change", (event) => {
+    const selectedCategory = event.target.value;
+    const newCategoryGroupElement = document.getElementById("newCategoryGroup");
+    if (selectedCategory) {
+      newCategoryGroupElement.classList.add("d-none");
+    }
   });
 
   initializeShowCategoryInput();
@@ -115,4 +180,8 @@ function initializeAddNewItem(getItems) {
   initializeCancelCategoryButton();
 }
 
-export { initializeAddNewItem };
+export {
+  initializeAddNewItem,
+  initializeEditItem,
+  initializeItemModalCategories,
+};

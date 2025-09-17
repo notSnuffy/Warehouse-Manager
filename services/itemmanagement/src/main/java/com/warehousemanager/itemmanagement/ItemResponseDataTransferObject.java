@@ -6,6 +6,7 @@ import java.util.List;
  * Data Transfer Object (DTO) for transferring item response data.
  *
  * @param id the unique identifier of the item
+ * @param deleted the deleted status of the item
  * @param name the name of the item
  * @param description the description of the item
  * @param category the category of the item
@@ -17,6 +18,7 @@ import java.util.List;
  */
 public record ItemResponseDataTransferObject(
     Long id,
+    Boolean deleted,
     String name,
     String description,
     String category,

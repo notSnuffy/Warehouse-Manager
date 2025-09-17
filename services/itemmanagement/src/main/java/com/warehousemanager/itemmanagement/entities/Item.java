@@ -21,6 +21,9 @@ public class Item {
   @GeneratedValue(strategy = GenerationType.SEQUENCE)
   private Long id;
 
+  /** Flag indicating whether the item is deleted (soft delete). */
+  private Boolean deleted = false;
+
   /** Name of the item. */
   @Column(nullable = false)
   @NotBlank(message = "Item name cannot be blank")
@@ -81,12 +84,39 @@ public class Item {
   }
 
   /**
+   * Gets the deleted status of the item.
+   *
+   * @return the deleted status of the item
+   */
+  public Boolean getDeleted() {
+    return deleted;
+  }
+
+  /**
+   * Sets the deleted status of the item.
+   *
+   * @param deleted the new deleted status of the item
+   */
+  public void setDeleted(Boolean deleted) {
+    this.deleted = deleted;
+  }
+
+  /**
    * Gets the name of the item.
    *
    * @return the name of the item
    */
   public String getName() {
     return name;
+  }
+
+  /**
+   * Sets the name of the item.
+   *
+   * @param name the new name of the item
+   */
+  public void setName(String name) {
+    this.name = name;
   }
 
   /**

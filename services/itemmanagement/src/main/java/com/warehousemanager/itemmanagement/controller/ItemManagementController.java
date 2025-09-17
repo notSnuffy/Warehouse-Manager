@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -45,6 +46,9 @@ public class ItemManagementController {
     Iterable<Item> items = itemRepository.findAll();
     List<ItemResponseDataTransferObject> itemResponseDataTransferObjects = new ArrayList<>();
     for (Item item : items) {
+      if (item.getDeleted()) {
+        continue;
+      }
       ItemResponseDataTransferObject dto = convertToDto(item);
       itemResponseDataTransferObjects.add(dto);
     }
@@ -85,14 +89,6 @@ public class ItemManagementController {
         .orElseThrow(() -> new IllegalArgumentException("Parent item not found"));
   }
 
-  private void getAllSavedItems(Item item, List<Item> allSavedItems) {
-    allSavedItems.add(item);
-    logger.info("Children of item with ID {}: {}", item.getId(), item.getChildren());
-    for (Item child : item.getChildren()) {
-      getAllSavedItems(child, allSavedItems);
-    }
-  }
-
   /**
    * Converts an Item entity to an ItemResponseDataTransferObject.
    *
@@ -103,6 +99,7 @@ public class ItemManagementController {
     Long parentId = (item.getParent() != null) ? item.getParent().getId() : null;
     return new ItemResponseDataTransferObject(
         item.getId(),
+        item.getDeleted(),
         item.getName(),
         item.getDescription(),
         item.getCategory(),
@@ -176,9 +173,24 @@ public class ItemManagementController {
 
   @PutMapping("/items/{id}")
   public Item updateItem(@PathVariable Long id, @Valid @RequestBody Item item) {
-    if (!itemRepository.existsById(id)) {
+    Item existingItem = itemRepository.findById(id).orElse(null);
+    if (existingItem == null) {
       throw new IllegalArgumentException("Item not found");
     }
-    return itemRepository.save(item);
+    existingItem.setName(item.getName());
+    existingItem.setDescription(item.getDescription());
+    existingItem.setCategory(item.getCategory());
+    existingItem.setQuantity(item.getQuantity());
+    return itemRepository.save(existingItem);
+  }
+
+  @DeleteMapping("/items/{id}")
+  public void deleteItem(@PathVariable Long id) {
+    Item item = itemRepository.findById(id).orElse(null);
+    if (item == null) {
+      throw new IllegalArgumentException("Item not found");
+    }
+    item.setDeleted(true);
+    itemRepository.save(item);
   }
 }
