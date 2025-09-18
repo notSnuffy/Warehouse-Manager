@@ -184,12 +184,35 @@ public class ItemManagementController {
     return itemRepository.save(existingItem);
   }
 
+  public void resetChildrenLocation(Item item) {
+    for (Item child : item.getChildren()) {
+      child.setFloorId(null);
+      child.setZoneId(null);
+      itemRepository.save(child);
+      resetChildrenLocation(child);
+    }
+  }
+
   @DeleteMapping("/items/{id}")
   public void deleteItem(@PathVariable Long id) {
     Item item = itemRepository.findById(id).orElse(null);
     if (item == null) {
       throw new IllegalArgumentException("Item not found");
     }
+
+    Item parentItem = item.getParent();
+    if (parentItem != null) {
+      parentItem.removeChild(item);
+    }
+
+    for (Item child : item.getChildren()) {
+      child.setParent(null);
+      child.setFloorId(null);
+      child.setZoneId(null);
+      resetChildrenLocation(child);
+      itemRepository.save(child);
+    }
+
     item.setDeleted(true);
     itemRepository.save(item);
   }
