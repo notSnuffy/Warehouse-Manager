@@ -61,11 +61,14 @@ public class ShapeManagementController {
     Shape shape = ShapeDtoMapper.mapToEntity(shapeDataTransferObject);
 
     Shape savedShape = shapeRepository.save(shape);
+    savedShape.setShapeId(savedShape.getId());
+    savedShape = shapeRepository.save(savedShape);
 
     logger.info("Shape created with ID: {}", savedShape.getId());
     ShapeInstance shapeInstance =
         new ShapeInstance(
-            savedShape,
+            savedShape.getShapeId(),
+            savedShape.getVersion(),
             shapeDataTransferObject.getInstructions() != null
                 ? shapeDataTransferObject.getInstructions()
                 : new ArrayList<>());
@@ -133,15 +136,21 @@ public class ShapeManagementController {
   public ShapeInstance createShapeInstance(
       @Valid @RequestBody ShapeInstanceDataTransferObject shapeInstanceDataTransferObject) {
     logger.info("Creating shape instance with data: {}", shapeInstanceDataTransferObject);
+    Long shapeId = shapeInstanceDataTransferObject.shapeId();
+    Long shapeVersion = shapeInstanceDataTransferObject.shapeVersion();
     Shape shape =
         shapeRepository
-            .findById(shapeInstanceDataTransferObject.shapeId())
+            .findByShapeIdAndVersion(shapeId, shapeVersion)
             .orElseThrow(
                 () ->
                     new RuntimeException(
-                        "Shape not found with ID: " + shapeInstanceDataTransferObject.shapeId()));
+                        "Shape not found with ID: "
+                            + shapeInstanceDataTransferObject.shapeId()
+                            + " and version: "
+                            + shapeInstanceDataTransferObject.shapeVersion()));
     ShapeInstance shapeInstance =
-        new ShapeInstance(shape, shapeInstanceDataTransferObject.instructions());
+        new ShapeInstance(
+            shape.getId(), shape.getVersion(), shapeInstanceDataTransferObject.instructions());
     logger.info("ShapeInstance created with instructions: {}", shapeInstance.getInstructions());
     ShapeInstance savedShapeInstance = shapeInstanceRepository.save(shapeInstance);
     logger.info("ShapeInstance created with ID: {}", savedShapeInstance.getId());
@@ -173,7 +182,8 @@ public class ShapeManagementController {
                       new RuntimeException(
                           "Shape not found with ID: " + shapeInstanceDataTransferObject.shapeId()));
       ShapeInstance shapeInstance =
-          new ShapeInstance(shape, shapeInstanceDataTransferObject.instructions());
+          new ShapeInstance(
+              shape.getId(), shape.getVersion(), shapeInstanceDataTransferObject.instructions());
       shapeInstances.add(shapeInstance);
       logger.info("Creating ShapeInstance for shape ID: {}", shape.getId());
     }
@@ -182,9 +192,7 @@ public class ShapeManagementController {
         "Shape instances created: {}", savedShapeInstances.spliterator().getExactSizeIfKnown());
     for (ShapeInstance shapeInstance : savedShapeInstances) {
       logger.info(
-          "ShapeInstance ID: {}, Shape ID: {}",
-          shapeInstance.getId(),
-          shapeInstance.getShape().getId());
+          "ShapeInstance ID: {}, Shape ID: {}", shapeInstance.getId(), shapeInstance.getShapeId());
     }
     return savedShapeInstances;
   }

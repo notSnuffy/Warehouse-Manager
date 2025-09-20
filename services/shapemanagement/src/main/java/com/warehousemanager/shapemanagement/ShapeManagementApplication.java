@@ -26,9 +26,12 @@ public class ShapeManagementApplication {
     return args -> {
       logger.info("Shape Management Application started successfully.");
 
-      Shape rectangle = new Shape("Rectangle", ShapeType.RECTANGLE);
+      Shape rectangle = new Shape(1L, 1L, "Rectangle", ShapeType.RECTANGLE);
       rectangle.setPublic(false);
       shapeRepository.save(rectangle);
+
+      logger.info("Shape saved with ID: {}", rectangle.getId());
+      logger.info("Shape saved with Version: {}", rectangle.getVersion());
 
       ShapeParameters rectangleParameters = new ShapeParameters();
       rectangleParameters.positionX = 0;
@@ -39,11 +42,12 @@ public class ShapeManagementApplication {
       Instruction rectangleInstruction = new Instruction("createRectangle", rectangleParameters);
 
       ShapeInstance rectangleInstance =
-          new ShapeInstance(rectangle, Arrays.asList(rectangleInstruction));
+          new ShapeInstance(
+              rectangle.getShapeId(), rectangle.getVersion(), Arrays.asList(rectangleInstruction));
       rectangleInstance.setTemplate(true);
       shapeInstanceRepository.save(rectangleInstance);
 
-      Shape ellipse = new Shape("Ellipse", ShapeType.ELLIPSE);
+      Shape ellipse = new Shape(2L, 1L, "Ellipse", ShapeType.ELLIPSE);
       ellipse.setPublic(false);
       shapeRepository.save(ellipse);
 
@@ -55,11 +59,13 @@ public class ShapeManagementApplication {
 
       Instruction ellipseInstruction = new Instruction("createEllipse", ellipseParameters);
 
-      ShapeInstance ellipseInstance = new ShapeInstance(ellipse, Arrays.asList(ellipseInstruction));
+      ShapeInstance ellipseInstance =
+          new ShapeInstance(
+              ellipse.getShapeId(), ellipse.getVersion(), Arrays.asList(ellipseInstruction));
       ellipseInstance.setTemplate(true);
       shapeInstanceRepository.save(ellipseInstance);
 
-      Shape arc = new Shape("Arc", ShapeType.ARC);
+      Shape arc = new Shape(3L, 1L, "Arc", ShapeType.ARC);
       arc.setPublic(false);
       shapeRepository.save(arc);
 
@@ -74,11 +80,12 @@ public class ShapeManagementApplication {
 
       Instruction arcInstruction = new Instruction("createArc", arcParameters);
 
-      ShapeInstance arcInstance = new ShapeInstance(arc, Arrays.asList(arcInstruction));
+      ShapeInstance arcInstance =
+          new ShapeInstance(arc.getShapeId(), arc.getVersion(), Arrays.asList(arcInstruction));
       arcInstance.setTemplate(true);
       shapeInstanceRepository.save(arcInstance);
 
-      Shape polygon = new Shape("Polygon", ShapeType.POLYGON);
+      Shape polygon = new Shape(4L, 1L, "Polygon", ShapeType.POLYGON);
       polygon.setPublic(false);
       shapeRepository.save(polygon);
 
@@ -91,7 +98,9 @@ public class ShapeManagementApplication {
 
       Instruction polygonInstruction = new Instruction("createPolygon", polygonParameters);
 
-      ShapeInstance polygonInstance = new ShapeInstance(polygon, Arrays.asList(polygonInstruction));
+      ShapeInstance polygonInstance =
+          new ShapeInstance(
+              polygon.getShapeId(), polygon.getVersion(), Arrays.asList(polygonInstruction));
       polygonInstance.setTemplate(true);
       shapeInstanceRepository.save(polygonInstance);
     };
