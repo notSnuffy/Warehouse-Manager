@@ -14,6 +14,7 @@
           <button id="selectButton" class="btn btn-primary mr-2">Select</button>
         </div>
         <form class="d-flex mx-auto" style="width: 50%">
+          <input type="hidden" id="currentShapeId" />
           <input
             type="text"
             class="form-control me-2"
@@ -32,33 +33,33 @@
           <div class="d-grid" id="itemsMenuButtons">
             <button
               class="btn btn-secondary mb-2"
-              data-shape="rectangle"
+              data-shape_name="rectangle"
               data-id="1"
-              id="add-rectangle"
+              id="add-1"
             >
               Rectangle
             </button>
             <button
               class="btn btn-secondary mb-2"
-              data-shape="ellipse"
+              data-shape_name="ellipse"
               data-id="2"
-              id="add-ellipse"
+              id="add-2"
             >
               Ellipse
             </button>
             <button
               class="btn btn-secondary mb-2"
-              data-shape="arc"
+              data-shape_name="arc"
               data-id="3"
-              id="add-arc"
+              id="add-3"
             >
               Arc
             </button>
             <button
               class="btn btn-secondary mb-2"
-              data-shape="polygon"
+              data-shape_name="polygon"
               data-id="4"
-              id="add-polygon"
+              id="add-4"
             >
               Polygon
             </button>
@@ -89,13 +90,7 @@
           <div class="modal-body">
             <form id="shapeForm">
               <div class="form-group">
-                <label for="shapeType">Shape</label>
-                <input
-                  type="text"
-                  class="form-control"
-                  id="shapeType"
-                  readonly
-                />
+                <input type="hidden" id="shapeId" />
               </div>
               <div class="form-group">
                 <label for="shapeX">X Position</label>

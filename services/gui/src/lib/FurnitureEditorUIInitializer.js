@@ -65,7 +65,7 @@ class FurnitureEditorUIInitializer {
     const buttons = itemsMenuButtonsElement.querySelectorAll("button");
 
     buttons.forEach((button) => {
-      let shapeName = button.dataset.shape;
+      let shapeName = button.dataset.shape_name;
       if (DEFAULT_SHAPES.includes(shapeName)) {
         shapeName = shapeName.charAt(0).toUpperCase() + shapeName.slice(1);
       }

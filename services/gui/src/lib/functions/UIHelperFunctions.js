@@ -2,6 +2,7 @@ import { Modal } from "bootstrap";
 import Sortable from "sortablejs";
 import { API_URL } from "../../config";
 import { DEFAULT_SHAPES } from "../../scenes/ShapeEditor";
+import { ShapeTypes } from "../functions/shapes";
 
 /**
  * Displays a modal for adding a new shape.
@@ -9,14 +10,15 @@ import { DEFAULT_SHAPES } from "../../scenes/ShapeEditor";
  * @returns {void}
  */
 function showAddShapeModal(button) {
-  const shape = button.dataset.shape;
+  const shapeId = parseInt(button.dataset.id, 10);
+  const shapeName = button.dataset.shape_name;
   const modalElement = document.getElementById("newShapeModal");
-  const shapeTypeInput = document.getElementById("shapeType");
+  const shapeIdElement = document.getElementById("shapeId");
   const modalTitle = document.getElementById("newShapeModalLabel");
 
   modalTitle.textContent =
-    "Add New " + shape.charAt(0).toUpperCase() + shape.slice(1);
-  shapeTypeInput.value = shape;
+    "Add New " + shapeName.charAt(0).toUpperCase() + shapeName.slice(1);
+  shapeIdElement.value = shapeId;
 
   const radiusGroup = document.getElementById("radiusGroup");
   const angleGroup = document.getElementById("angleGroup");
@@ -77,19 +79,22 @@ function showAddShapeModal(button) {
     });
   }
 
-  if (shape === "arc") {
+  if (shapeId === ShapeTypes.ARC) {
     radiusGroup.hidden = false;
     angleGroup.hidden = false;
     widthGroup.hidden = true;
     heightGroup.hidden = true;
     polygonGroup.hidden = true;
-  } else if (shape === "polygon") {
+  } else if (shapeId === ShapeTypes.POLYGON) {
     radiusGroup.hidden = true;
     angleGroup.hidden = true;
     widthGroup.hidden = true;
     heightGroup.hidden = true;
     polygonGroup.hidden = false;
-  } else if (shape === "rectangle" || shape === "ellipse") {
+  } else if (
+    shapeId === ShapeTypes.RECTANGLE ||
+    shapeId === ShapeTypes.ELLIPSE
+  ) {
     radiusGroup.hidden = true;
     angleGroup.hidden = true;
     widthGroup.hidden = false;
@@ -120,50 +125,56 @@ function addButtonHandler(id, eventType, eventHandler) {
 
 function addValidationHandlersToAddShapeModal() {
   const validateShapeWidth = function () {
-    const shapeWidth = document.getElementById("shapeWidth");
+    const shapeWidthInput = document.getElementById("shapeWidth");
+    const shapeWidth = parseInt(shapeWidthInput.value, 10);
+    console.log("Validating shape width:", shapeWidth);
 
-    if (shapeWidth.value < 10) {
-      shapeWidth.value = 10;
+    if (shapeWidth < 10 || isNaN(shapeWidth)) {
+      shapeWidthInput.value = 10;
     }
   };
   document
     .getElementById("shapeWidth")
-    .addEventListener("input", validateShapeWidth);
+    .addEventListener("change", validateShapeWidth);
 
   const validateShapeHeight = function () {
-    const shapeHeight = document.getElementById("shapeHeight");
+    const shapeHeightInput = document.getElementById("shapeHeight");
+    const shapeHeight = parseInt(shapeHeightInput.value, 10);
 
-    if (shapeHeight.value < 10) {
-      shapeHeight.value = 10;
+    if (shapeHeight < 10 || isNaN(shapeHeight)) {
+      shapeHeightInput.value = 10;
     }
   };
   document
     .getElementById("shapeHeight")
-    .addEventListener("input", validateShapeHeight);
+    .addEventListener("change", validateShapeHeight);
 
   const validateShapeRadius = function () {
-    const shapeRadius = document.getElementById("shapeRadius");
+    const shapeRadiusInput = document.getElementById("shapeRadius");
+    const shapeRadius = parseInt(shapeRadiusInput.value, 10);
 
-    if (shapeRadius.value < 5) {
-      shapeRadius.value = 5;
+    if (shapeRadius < 5 || isNaN(shapeRadius)) {
+      shapeRadiusInput.value = 5;
     }
   };
   document
     .getElementById("shapeRadius")
-    .addEventListener("input", validateShapeRadius);
+    .addEventListener("change", validateShapeRadius);
 
   const validateShapeAngle = function () {
-    const shapeAngle = document.getElementById("shapeAngle");
+    const shapeAngleInput = document.getElementById("shapeAngle");
+    const shapeAngle = parseInt(shapeAngleInput.value, 10);
 
-    if (shapeAngle.value < 0) {
-      shapeAngle.value = 0;
-    } else if (shapeAngle.value > 360) {
-      shapeAngle.value = 360;
+    if (shapeAngle < 0 || isNaN(shapeAngle)) {
+      shapeAngleInput.value = 0;
+    }
+    if (shapeAngle > 360 || isNaN(shapeAngle)) {
+      shapeAngleInput.value = 360;
     }
   };
   document
     .getElementById("shapeAngle")
-    .addEventListener("input", validateShapeAngle);
+    .addEventListener("change", validateShapeAngle);
 }
 
 /**
@@ -175,67 +186,71 @@ function addShapeConfirmationButtonHandler(addShape) {
   document
     .getElementById("addShapeConfirmButton")
     .addEventListener("click", function () {
-      const shapeType = document.getElementById("shapeType").value;
+      const shapeId = parseInt(document.getElementById("shapeId").value, 10);
 
-      let x = parseInt(document.getElementById("shapeX").value);
-      let y = parseInt(document.getElementById("shapeY").value);
+      let x = parseInt(document.getElementById("shapeX").value, 10);
+      let y = parseInt(document.getElementById("shapeY").value, 10);
 
-      if (shapeType === "arc") {
-        const radius = parseInt(document.getElementById("shapeRadius").value);
+      if (shapeId === ShapeTypes.ARC) {
+        const radius = parseInt(
+          document.getElementById("shapeRadius").value,
+          10,
+        );
         const angle = document.getElementById("shapeAngle").value;
         x += radius;
         y += radius;
         const color = document.getElementById("shapeColor").value;
 
-        addShape(shapeType, {
+        addShape(shapeId, {
           x: x,
           y: y,
           radius: radius,
-          angle: parseInt(angle),
+          angle: parseInt(angle, 10),
           color: parseInt(color.slice(1), 16),
         });
-      } else if (shapeType === "polygon") {
+      } else if (shapeId === ShapeTypes.POLYGON) {
         const points = [];
         const polygonPoints = document.getElementById("polygonPoints");
 
         for (let i = 0; i < polygonPoints.children.length; ++i) {
           const pointX = document.getElementById(`shapePoint${i}X`).value;
           const pointY = document.getElementById(`shapePoint${i}Y`).value;
-          points.push(parseInt(pointX));
-          points.push(parseInt(pointY));
+          points.push(parseInt(pointX, 10));
+          points.push(parseInt(pointY, 10));
         }
 
         const color = document.getElementById("shapeColor").value;
 
-        addShape(shapeType, {
+        addShape(shapeId, {
           x: x,
           y: y,
           points: points,
           color: parseInt(color.slice(1), 16),
         });
-      } else if (shapeType === "rectangle" || shapeType === "ellipse") {
+      } else if (
+        shapeId === ShapeTypes.RECTANGLE ||
+        shapeId === ShapeTypes.ELLIPSE
+      ) {
         const width = document.getElementById("shapeWidth").value;
         const height = document.getElementById("shapeHeight").value;
         x += width / 2;
         y += height / 2;
         const color = document.getElementById("shapeColor").value;
 
-        addShape(shapeType, {
+        addShape(shapeId, {
           x: x,
           y: y,
-          width: parseInt(width),
-          height: parseInt(height),
+          width: parseInt(width, 10),
+          height: parseInt(height, 10),
           color: parseInt(color.slice(1), 16),
         });
       } else {
         const color = document.getElementById("shapeColor").value;
-        const id = document.getElementById("add-" + shapeType).dataset.id;
 
-        addShape(shapeType, {
+        addShape(shapeId, {
           x: x,
           y: y,
           color: parseInt(color.slice(1), 16),
-          id: id,
         });
       }
 
@@ -345,10 +360,10 @@ function initializeAddShapeModal(addShape) {
 function addItemButtonIntoList(shapeName, shapeId) {
   const newShapeButton = document.createElement("button");
   newShapeButton.classList.add("btn", "btn-secondary", "mb-2");
-  newShapeButton.dataset.shape = shapeName;
+  newShapeButton.dataset.shape_name = shapeName;
   newShapeButton.dataset.id = shapeId;
   newShapeButton.textContent = shapeName;
-  newShapeButton.id = "add-" + shapeName;
+  newShapeButton.id = "add-" + shapeId;
   newShapeButton.addEventListener("click", function () {
     showAddShapeModal(newShapeButton);
   });
@@ -361,8 +376,24 @@ function addItemButtonIntoList(shapeName, shapeId) {
  * @returns {Promise<void>}
  */
 async function populateShapeList() {
+  const getDefaultShapeId = (shape) => {
+    switch (shape) {
+      case "rectangle":
+        return ShapeTypes.RECTANGLE;
+      case "ellipse":
+        return ShapeTypes.ELLIPSE;
+      case "arc":
+        return ShapeTypes.ARC;
+      case "polygon":
+        return ShapeTypes.POLYGON;
+      default:
+        return null;
+    }
+  };
+
   for (const shape of DEFAULT_SHAPES) {
-    const button = document.getElementById("add-" + shape);
+    const shapeId = getDefaultShapeId(shape);
+    const button = document.getElementById("add-" + shapeId);
     button.addEventListener("click", function () {
       showAddShapeModal(button);
     });
@@ -396,8 +427,8 @@ function addFurnitureConfirmationButtonHandler(addFurniture) {
       const furnitureId = document.getElementById("furnitureId").value;
       const name = document.getElementById("furnitureName").value;
 
-      let x = parseInt(document.getElementById("furnitureX").value);
-      let y = parseInt(document.getElementById("furnitureY").value);
+      let x = parseInt(document.getElementById("furnitureX").value, 10);
+      let y = parseInt(document.getElementById("furnitureY").value, 10);
 
       const width = document.getElementById("furnitureWidth").value;
       const height = document.getElementById("furnitureHeight").value;
@@ -409,8 +440,8 @@ function addFurnitureConfirmationButtonHandler(addFurniture) {
       addFurniture({
         x: x,
         y: y,
-        width: parseInt(width),
-        height: parseInt(height),
+        width: parseInt(width, 10),
+        height: parseInt(height, 10),
         color: parseInt(color.slice(1), 16),
         textColor: textColor,
         id: furnitureId,

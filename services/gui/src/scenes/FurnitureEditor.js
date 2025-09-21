@@ -4,7 +4,10 @@ import MoveManager from "../lib/move/MoveManager";
 import SelectShapeManager from "../lib/select/SelectShapeManager";
 import FurnitureEditorUIInitializer from "../lib/FurnitureEditorUIInitializer";
 import * as Shapes from "../shapes";
-import { buildShapeFromInstructions } from "../lib/functions/shapes";
+import {
+  buildShapeFromInstructions,
+  ShapeTypes,
+} from "../lib/functions/shapes";
 
 /**
  * Represents the editor scene
@@ -151,12 +154,12 @@ class FurnitureEditor extends Phaser.Scene {
       this.#currentTool = "select";
     }.bind(this);
 
-    const addShape = async function (shapeType, parameters) {
-      console.log(shapeType, parameters);
+    const addShape = async function (shapeId, parameters) {
+      console.log(shapeId, parameters);
       const isAddZone = document.getElementById("addZoneSwitch").checked;
       const shapeColor = isAddZone ? 0xeb7734 : parameters.color;
       let shape = null;
-      if (shapeType === "rectangle") {
+      if (shapeId === ShapeTypes.RECTANGLE) {
         shape = new Shapes.Rectangle(
           this,
           parameters.x,
@@ -165,7 +168,7 @@ class FurnitureEditor extends Phaser.Scene {
           parameters.height,
           shapeColor,
         );
-      } else if (shapeType === "ellipse") {
+      } else if (shapeId === ShapeTypes.ELLIPSE) {
         shape = new Shapes.Ellipse(
           this,
           parameters.x,
@@ -174,7 +177,7 @@ class FurnitureEditor extends Phaser.Scene {
           parameters.height,
           shapeColor,
         );
-      } else if (shapeType === "arc") {
+      } else if (shapeId === ShapeTypes.ARC) {
         shape = new Shapes.Arc(
           this,
           parameters.x,
@@ -185,7 +188,7 @@ class FurnitureEditor extends Phaser.Scene {
           false,
           shapeColor,
         );
-      } else if (shapeType === "polygon") {
+      } else if (shapeId === ShapeTypes.POLYGON) {
         shape = new Shapes.Polygon(
           this,
           parameters.x,
@@ -194,11 +197,12 @@ class FurnitureEditor extends Phaser.Scene {
           shapeColor,
         );
       } else {
-        const id = parameters.id;
-
         try {
           const shapeInstance = await fetch(
-            API_URL + "/shape-management/shapes/" + id + "/template",
+            API_URL +
+              "/shape-management/shapes/" +
+              shapeId +
+              "/template/latest",
           );
           const shapeData = await shapeInstance.json();
           const instructions = shapeData.instructions;
@@ -214,7 +218,7 @@ class FurnitureEditor extends Phaser.Scene {
           rebuiltShape.setPosition(parameters.x, parameters.y);
 
           shape = rebuiltShape;
-          shape.id = parseInt(id, 10);
+          shape.id = shapeId;
         } catch (error) {
           console.error("Error fetching shape template:", error);
         }

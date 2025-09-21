@@ -4,7 +4,10 @@ import MoveManager from "../lib/move/MoveManager";
 import SelectShapeManager from "../lib/select/SelectShapeManager";
 import ShapeEditorUIInitializer from "../lib/ShapeEditorUIInitializer";
 import * as Shapes from "../shapes";
-import { buildShapeFromInstructions } from "../lib/functions/shapes";
+import {
+  buildShapeFromInstructions,
+  ShapeTypes,
+} from "../lib/functions/shapes";
 
 /**
  * Default shapes
@@ -67,7 +70,7 @@ class ShapeEditor extends Phaser.Scene {
   async #loadShape(shapeId) {
     try {
       const shapeInstance = await fetch(
-        API_URL + "/shape-management/shapes/" + shapeId + "/template",
+        API_URL + "/shape-management/shapes/" + shapeId + "/template/latest",
       );
       const shapeData = await shapeInstance.json();
       if (!shapeInstance.ok) {
@@ -80,6 +83,8 @@ class ShapeEditor extends Phaser.Scene {
 
       const shapeNameElement = document.getElementById("shapeName");
       shapeNameElement.value = shapeData.shape.name;
+      const currentShapeIdElement = document.getElementById("currentShapeId");
+      currentShapeIdElement.value = shapeId;
 
       const instructions = shapeData.instructions;
       console.log("Shape data loaded:", shapeData);
@@ -155,9 +160,9 @@ class ShapeEditor extends Phaser.Scene {
       this.#currentTool = "select";
     }.bind(this);
 
-    const addShape = async function (shapeType, parameters) {
-      console.log(shapeType, parameters);
-      if (shapeType === "rectangle") {
+    const addShape = async function (shapeId, parameters) {
+      console.log(shapeId, parameters);
+      if (shapeId === ShapeTypes.RECTANGLE) {
         this.#shapes.push(
           new Shapes.Rectangle(
             this,
@@ -168,7 +173,7 @@ class ShapeEditor extends Phaser.Scene {
             parameters.color,
           ),
         );
-      } else if (shapeType === "ellipse") {
+      } else if (shapeId === ShapeTypes.ELLIPSE) {
         this.#shapes.push(
           new Shapes.Ellipse(
             this,
@@ -179,7 +184,7 @@ class ShapeEditor extends Phaser.Scene {
             parameters.color,
           ),
         );
-      } else if (shapeType === "arc") {
+      } else if (shapeId === ShapeTypes.ARC) {
         this.#shapes.push(
           new Shapes.Arc(
             this,
@@ -192,7 +197,7 @@ class ShapeEditor extends Phaser.Scene {
             parameters.color,
           ),
         );
-      } else if (shapeType === "polygon") {
+      } else if (shapeId === ShapeTypes.POLYGON) {
         this.#shapes.push(
           new Shapes.Polygon(
             this,
@@ -203,11 +208,12 @@ class ShapeEditor extends Phaser.Scene {
           ),
         );
       } else {
-        const id = parameters.id;
-
         try {
           const shapeInstance = await fetch(
-            API_URL + "/shape-management/shapes/" + id + "/template",
+            API_URL +
+              "/shape-management/shapes/" +
+              shapeId +
+              "/template/latest",
           );
           const shapeData = await shapeInstance.json();
           const instructions = shapeData.instructions;
@@ -219,7 +225,7 @@ class ShapeEditor extends Phaser.Scene {
             parameters.color,
           )[0];
 
-          rebuiltShape.id = id;
+          rebuiltShape.id = shapeId;
           rebuiltShape.setPosition(parameters.x, parameters.y);
 
           this.#shapes.push(rebuiltShape);

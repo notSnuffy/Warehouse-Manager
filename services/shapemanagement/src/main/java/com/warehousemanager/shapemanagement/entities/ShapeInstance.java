@@ -8,6 +8,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import java.util.List;
 import org.hibernate.annotations.ColumnTransformer;
 
@@ -19,9 +21,10 @@ public class ShapeInstance {
   @GeneratedValue(strategy = GenerationType.SEQUENCE)
   private Long id;
 
-  /** The identifier for the shape that this instance represents. */
-  @Column(nullable = false)
-  private Long shapeId;
+  /** The shape that this instance represents. */
+  @ManyToOne
+  @JoinColumn(name = "shape_id", nullable = false)
+  private Shape shape;
 
   /** Version of the shape at the time this instance was created. */
   @Column(nullable = false)
@@ -42,12 +45,12 @@ public class ShapeInstance {
   /**
    * Constructs ShapeInstance with the specified parameters.
    *
-   * @param shapeId the identifier for the shape that this instance represents
+   * @param shape the shape that this instance represents
    * @param shapeVersion the version of the shape at the time this instance was created
    * @param instructions the instructions for how to create this shape instance
    */
-  public ShapeInstance(Long shapeId, Long shapeVersion, List<Instruction> instructions) {
-    this.shapeId = shapeId;
+  public ShapeInstance(Shape shape, Long shapeVersion, List<Instruction> instructions) {
+    this.shape = shape;
     this.shapeVersion = shapeVersion;
     this.instructions = instructions;
   }
@@ -62,21 +65,21 @@ public class ShapeInstance {
   }
 
   /**
-   * Gets the identifier for the shape that this instance represents.
+   * Gets the shape that this instance represents.
    *
-   * @return the shape identifier
+   * @return the shape that this instance represents
    */
-  public Long getShapeId() {
-    return shapeId;
+  public Shape getShape() {
+    return shape;
   }
 
   /**
-   * Sets the identifier for the shape that this instance represents.
+   * Sets the shape that this instance represents.
    *
-   * @param shapeId the new shape identifier
+   * @param shape the new shape that this instance represents
    */
-  public void setShapeId(Long shapeId) {
-    this.shapeId = shapeId;
+  public void setShape(Shape shape) {
+    this.shape = shape;
   }
 
   /**

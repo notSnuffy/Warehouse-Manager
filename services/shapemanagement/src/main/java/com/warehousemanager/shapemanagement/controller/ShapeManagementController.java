@@ -1,8 +1,10 @@
 package com.warehousemanager.shapemanagement.controller;
 
+import com.warehousemanager.shapemanagement.Instruction;
 import com.warehousemanager.shapemanagement.ShapeDataTransferObject;
 import com.warehousemanager.shapemanagement.ShapeDtoMapper;
 import com.warehousemanager.shapemanagement.ShapeInstanceDataTransferObject;
+import com.warehousemanager.shapemanagement.ShapeType;
 import com.warehousemanager.shapemanagement.entities.Shape;
 import com.warehousemanager.shapemanagement.entities.ShapeInstance;
 import com.warehousemanager.shapemanagement.exceptions.ShapeTemplateDoesNotExistException;
@@ -11,8 +13,10 @@ import com.warehousemanager.shapemanagement.repositories.ShapeRepository;
 import jakarta.validation.Valid;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.StreamSupport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -45,8 +49,15 @@ public class ShapeManagementController {
    * @return an iterable collection of all shapes
    */
   @GetMapping("/shapes")
-  public Iterable<Shape> getAllShapes() {
-    return shapeRepository.findAll();
+  public List<Shape> getAllShapes() {
+    Iterable<Shape> shapes = shapeRepository.findAll();
+    logger.info("Fetched shapes: {}", shapes);
+    List<Shape> nonDeletedShapes =
+        StreamSupport.stream(shapes.spliterator(), false)
+            .filter(shape -> !shape.isDeleted())
+            .toList();
+    logger.info("Non-deleted shapes: {}", nonDeletedShapes);
+    return nonDeletedShapes;
   }
 
   /**
@@ -61,13 +72,11 @@ public class ShapeManagementController {
     Shape shape = ShapeDtoMapper.mapToEntity(shapeDataTransferObject);
 
     Shape savedShape = shapeRepository.save(shape);
-    savedShape.setShapeId(savedShape.getId());
-    savedShape = shapeRepository.save(savedShape);
 
     logger.info("Shape created with ID: {}", savedShape.getId());
     ShapeInstance shapeInstance =
         new ShapeInstance(
-            savedShape.getShapeId(),
+            savedShape,
             savedShape.getVersion(),
             shapeDataTransferObject.getInstructions() != null
                 ? shapeDataTransferObject.getInstructions()
@@ -98,19 +107,62 @@ public class ShapeManagementController {
     return shape;
   }
 
+  @PutMapping("/shapes/{id}")
+  public Shape updateShape(
+      @PathVariable Long id, @Valid @RequestBody ShapeDataTransferObject shapeDataTransferObject) {
+    logger.info("Updating shape with ID: {}", id);
+    Shape existingShape =
+        shapeRepository.findById(id).orElseThrow(() -> new RuntimeException("Shape not found"));
+    String newName = shapeDataTransferObject.getName();
+    ShapeType newType = shapeDataTransferObject.getType();
+    boolean isPublic = shapeDataTransferObject.isPublic();
+
+    existingShape.setName(newName);
+    existingShape.setType(newType);
+    existingShape.setPublic(isPublic);
+    existingShape.setVersion(existingShape.getVersion() + 1);
+    Shape updatedShape = shapeRepository.save(existingShape);
+    logger.info("Shape updated: {}", updatedShape);
+
+    List<Instruction> newInstructions = shapeDataTransferObject.getInstructions();
+    ShapeInstance shapeInstance =
+        new ShapeInstance(
+            updatedShape,
+            updatedShape.getVersion(),
+            newInstructions != null ? newInstructions : new ArrayList<>());
+    shapeInstance.setTemplate(true);
+    logger.info("Creating new ShapeInstance for updated shape ID: {}", updatedShape.getId());
+
+    shapeInstanceRepository.save(shapeInstance);
+
+    return updatedShape;
+  }
+
+  @DeleteMapping("/shapes/{id}")
+  public void deleteShape(@PathVariable Long id) {
+    logger.info("Deleting shape with ID: {}", id);
+    Shape existingShape = shapeRepository.findById(id).orElse(null);
+    if (existingShape == null) {
+      throw new RuntimeException("Shape not found");
+    }
+    existingShape.setDeleted(true);
+    shapeRepository.save(existingShape);
+    logger.info("Shape with ID: {} has been deleted", id);
+  }
+
   /**
-   * Retrieves a shape template by its ID.
+   * Retrieves a shape template by its ID and newest version.
    *
    * @param id the unique identifier of the shape
    * @return the shape instance representing the template
    * @throws ShapeTemplateDoesNotExistException if no template exists for the given shape ID
    */
-  @GetMapping("/shapes/{id}/template")
+  @GetMapping("/shapes/{id}/template/latest")
   public ShapeInstance getShapeTemplate(@PathVariable Long id) {
     logger.info("Fetching shape template with ID: {}", id);
     ShapeInstance shapeInstance =
         shapeInstanceRepository
-            .findShapeTemplateByIsTemplateTrueAndShapeId(id)
+            .findLatestTemplateByShapeId(id)
             .orElseThrow(() -> new ShapeTemplateDoesNotExistException(id));
     return shapeInstance;
   }
@@ -140,7 +192,7 @@ public class ShapeManagementController {
     Long shapeVersion = shapeInstanceDataTransferObject.shapeVersion();
     Shape shape =
         shapeRepository
-            .findByShapeIdAndVersion(shapeId, shapeVersion)
+            .findByIdAndVersion(shapeId, shapeVersion)
             .orElseThrow(
                 () ->
                     new RuntimeException(
@@ -150,7 +202,7 @@ public class ShapeManagementController {
                             + shapeInstanceDataTransferObject.shapeVersion()));
     ShapeInstance shapeInstance =
         new ShapeInstance(
-            shape.getId(), shape.getVersion(), shapeInstanceDataTransferObject.instructions());
+            shape, shape.getVersion(), shapeInstanceDataTransferObject.instructions());
     logger.info("ShapeInstance created with instructions: {}", shapeInstance.getInstructions());
     ShapeInstance savedShapeInstance = shapeInstanceRepository.save(shapeInstance);
     logger.info("ShapeInstance created with ID: {}", savedShapeInstance.getId());
@@ -183,28 +235,13 @@ public class ShapeManagementController {
                           "Shape not found with ID: " + shapeInstanceDataTransferObject.shapeId()));
       ShapeInstance shapeInstance =
           new ShapeInstance(
-              shape.getId(), shape.getVersion(), shapeInstanceDataTransferObject.instructions());
+              shape, shape.getVersion(), shapeInstanceDataTransferObject.instructions());
       shapeInstances.add(shapeInstance);
       logger.info("Creating ShapeInstance for shape ID: {}", shape.getId());
     }
     Iterable<ShapeInstance> savedShapeInstances = shapeInstanceRepository.saveAll(shapeInstances);
     logger.info(
         "Shape instances created: {}", savedShapeInstances.spliterator().getExactSizeIfKnown());
-    for (ShapeInstance shapeInstance : savedShapeInstances) {
-      logger.info(
-          "ShapeInstance ID: {}, Shape ID: {}", shapeInstance.getId(), shapeInstance.getShapeId());
-    }
     return savedShapeInstances;
-  }
-
-  @PutMapping("/shapes/{id}")
-  public Shape updateShape(
-      @PathVariable Long id, @Valid @RequestBody ShapeDataTransferObject shapeDataTransferObject) {
-    Shape existingShape =
-        shapeRepository.findById(id).orElseThrow(() -> new RuntimeException("Shape not found"));
-    Logger logger = LoggerFactory.getLogger(ShapeManagementController.class);
-    logger.info("Updating shape with ID: {}", id);
-    shapeInstanceRepository.deleteById(1L);
-    return new Shape(shapeDataTransferObject.getName(), shapeDataTransferObject.getType());
   }
 }

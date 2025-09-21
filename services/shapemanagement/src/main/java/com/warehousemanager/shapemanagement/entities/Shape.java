@@ -8,16 +8,11 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 /** Represents a shape in the warehouse management system. */
 @Entity
-@Table(
-    name = "shapes",
-    uniqueConstraints = {@UniqueConstraint(columnNames = {"shape_id", "version"})})
 public class Shape {
 
   /** Primary key for the shape entity. */
@@ -25,15 +20,12 @@ public class Shape {
   @GeneratedValue(strategy = GenerationType.SEQUENCE)
   private Long id;
 
-  /** Identifier for the shape, shared among different versions of the same shape. */
-  private Long shapeId;
-
   /** Version of the shape. */
   @Column(nullable = false)
   private Long version = 1L;
 
   /** Name of the shape. */
-  @Column(nullable = false, unique = true)
+  @Column(nullable = false)
   @NotBlank(message = "Shape name cannot be blank")
   @Size(max = 255, message = "Shape name cannot exceed 255 characters")
   private String name;
@@ -66,45 +58,12 @@ public class Shape {
   }
 
   /**
-   * Constructs a Shape with the specified parameters.
+   * Gets the unique identifier of the shape.
    *
-   * @param id the unique identifier of the shape
-   * @param version the version of the shape
-   * @param name the name of the shape
-   * @param type the type of the shape
-   */
-  public Shape(Long id, Long version, String name, ShapeType type) {
-    this.shapeId = id;
-    this.version = version;
-    this.name = name;
-    this.type = type;
-  }
-
-  /**
-   * Gets the primary key.
-   *
-   * @return the primary key
+   * @return the unique identifier of the shape
    */
   public Long getId() {
     return id;
-  }
-
-  /**
-   * Gets the identifier for the shape.
-   *
-   * @return the shape identifier
-   */
-  public Long getShapeId() {
-    return shapeId;
-  }
-
-  /**
-   * Sets the identifier for the shape.
-   *
-   * @param shapeId the new shape identifier
-   */
-  public void setShapeId(Long shapeId) {
-    this.shapeId = shapeId;
   }
 
   /**

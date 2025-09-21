@@ -417,4 +417,5 @@ export {
   saveShapeAsInstructions,
   buildShapeFromInstructions,
   preprocessShapesForSaving,
+  ShapeTypes,
 };

@@ -116,14 +116,13 @@ async function removeShape(id) {
     return; // User canceled the deletion
   }
   try {
-    //const response = await fetch(API_URL + `/shape-management/shapes/${id}`, {
-    //  method: "DELETE",
-    //});
-    //if (!response.ok) {
-    //  throw new Error("Network response was not ok");
-    //}
-    // Remove the shape from the list
-    //}
+    const response = await fetch(API_URL + `/shape-management/shapes/${id}`, {
+      method: "DELETE",
+    });
+
+    if (!response.ok) {
+      throw new Error("Network response was not ok");
+    }
 
     // Technically, we could remove just the specific shape from the DOM,
     // but for simplicity, we re-render the entire list.
@@ -135,6 +134,7 @@ async function removeShape(id) {
     }
     renderShapes();
     populateShapeSuggestions();
+    alert("Shape removed successfully.");
   } catch (error) {
     console.error("Error removing shape:", error);
   }

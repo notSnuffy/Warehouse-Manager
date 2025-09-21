@@ -99,9 +99,22 @@ class ShapeEditorUIInitializer {
       };
 
       console.log("Shape to save:", shape);
+
+      let currentShapeId = document.getElementById("currentShapeId").value;
+      let isUpdate = currentShapeId !== "";
+      currentShapeId = parseInt(currentShapeId, 10);
+      if (currentShapeId <= 0 || Number.isNaN(currentShapeId)) {
+        isUpdate = false;
+      }
+
+      const method = isUpdate ? "PUT" : "POST";
+      const endpoint = isUpdate
+        ? `/shape-management/shapes/${currentShapeId}`
+        : "/shape-management/shapes";
+
       try {
-        const response = await fetch(API_URL + "/shape-management/shapes", {
-          method: "POST",
+        const response = await fetch(API_URL + endpoint, {
+          method: method,
           headers: {
             "Content-Type": "application/json",
           },
@@ -116,7 +129,20 @@ class ShapeEditorUIInitializer {
           console.error("Failed to save shape:", data);
           return;
         }
+        if (isUpdate) {
+          const existingShapeButton = document.getElementById(`add-${data.id}`);
+          if (existingShapeButton) {
+            existingShapeButton.textContent = data.name;
+            existingShapeButton.dataset.shape_name = data.name;
+          }
+
+          alert("Shape updated successfully!");
+          return;
+        }
+
         addItemButtonIntoList(data.name, data.id);
+        document.getElementById("currentShapeId").value = data.id;
+        alert("Shape saved successfully!");
       } catch (error) {
         console.error(error);
       }
