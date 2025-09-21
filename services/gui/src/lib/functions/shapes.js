@@ -110,11 +110,13 @@ function preprocessShapesForSaving(shapes) {
   };
   const preprocessedShapes = shapes.map((shape) => {
     let shapeId = getShapeId(shape);
+    const shapeVersion = shape.version || null;
 
     console.log(shapes);
     console.log(shape.x);
     let shapeComponent = {
       shapeId: shapeId,
+      shapeVersion: shapeVersion,
       positionX: shape.x,
       positionY: shape.y,
       width: shape.displayWidth,
@@ -154,6 +156,7 @@ function preprocessShapesForSaving(shapes) {
 
         let childComponent = {
           shapeId: childShapeId,
+          shapeVersion: child.version || null,
           positionX: rotatedX,
           positionY: rotatedY,
           width: childWidth,

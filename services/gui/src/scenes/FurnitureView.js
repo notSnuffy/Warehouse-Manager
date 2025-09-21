@@ -81,7 +81,7 @@ class FurnitureView extends Phaser.Scene {
       furnitureInstance.zoneInstances.forEach((zoneData) => {
         console.log("Zone data:", zoneData);
         const zone = buildShapeFromInstructions(
-          zoneData.zone.instructions,
+          zoneData.zone.shape.instructions,
           this,
           0xeb7734,
         )[0];

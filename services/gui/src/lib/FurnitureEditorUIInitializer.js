@@ -153,6 +153,7 @@ class FurnitureEditorUIInitializer {
       preprocessedShapes.forEach((shape) => {
         furnitureShapes.push({
           shapeId: shape.shapeId,
+          shapeVersion: shape.shapeVersion,
           instructions: saveShapeAsInstructions(shape),
         });
       });
@@ -163,8 +164,11 @@ class FurnitureEditorUIInitializer {
       preprocessedZones.forEach((zone) => {
         furnitureZones.push({
           name: "Zone " + ++index,
-          shapeId: zone.shapeId,
-          instructions: saveShapeAsInstructions(zone),
+          shape: {
+            shapeId: zone.shapeId,
+            shapeVersion: zone.shapeVersion,
+            instructions: saveShapeAsInstructions(zone),
+          },
         });
       });
 

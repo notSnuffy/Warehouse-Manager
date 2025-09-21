@@ -189,20 +189,19 @@ public class ShapeManagementController {
       @Valid @RequestBody ShapeInstanceDataTransferObject shapeInstanceDataTransferObject) {
     logger.info("Creating shape instance with data: {}", shapeInstanceDataTransferObject);
     Long shapeId = shapeInstanceDataTransferObject.shapeId();
-    Long shapeVersion = shapeInstanceDataTransferObject.shapeVersion();
     Shape shape =
         shapeRepository
-            .findByIdAndVersion(shapeId, shapeVersion)
+            .findById(shapeId)
             .orElseThrow(
                 () ->
                     new RuntimeException(
-                        "Shape not found with ID: "
-                            + shapeInstanceDataTransferObject.shapeId()
-                            + " and version: "
-                            + shapeInstanceDataTransferObject.shapeVersion()));
+                        "Shape not found with ID: " + shapeInstanceDataTransferObject.shapeId()));
+    Long shapeVersion =
+        shapeInstanceDataTransferObject.shapeVersion() != null
+            ? shapeInstanceDataTransferObject.shapeVersion()
+            : shape.getVersion();
     ShapeInstance shapeInstance =
-        new ShapeInstance(
-            shape, shape.getVersion(), shapeInstanceDataTransferObject.instructions());
+        new ShapeInstance(shape, shapeVersion, shapeInstanceDataTransferObject.instructions());
     logger.info("ShapeInstance created with instructions: {}", shapeInstance.getInstructions());
     ShapeInstance savedShapeInstance = shapeInstanceRepository.save(shapeInstance);
     logger.info("ShapeInstance created with ID: {}", savedShapeInstance.getId());
@@ -233,9 +232,12 @@ public class ShapeManagementController {
                   () ->
                       new RuntimeException(
                           "Shape not found with ID: " + shapeInstanceDataTransferObject.shapeId()));
+      Long shapeVersion =
+          shapeInstanceDataTransferObject.shapeVersion() != null
+              ? shapeInstanceDataTransferObject.shapeVersion()
+              : shape.getVersion();
       ShapeInstance shapeInstance =
-          new ShapeInstance(
-              shape, shape.getVersion(), shapeInstanceDataTransferObject.instructions());
+          new ShapeInstance(shape, shapeVersion, shapeInstanceDataTransferObject.instructions());
       shapeInstances.add(shapeInstance);
       logger.info("Creating ShapeInstance for shape ID: {}", shape.getId());
     }

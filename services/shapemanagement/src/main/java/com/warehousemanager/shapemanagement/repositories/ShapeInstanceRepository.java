@@ -16,7 +16,6 @@ public interface ShapeInstanceRepository extends CrudRepository<ShapeInstance, L
       """
       SELECT si FROM ShapeInstance si
       WHERE si.shape.id = :shapeId AND si.isTemplate = true
-      AND si.shape.deleted = false
       AND si.shapeVersion = si.shape.version
       """)
   Optional<ShapeInstance> findLatestTemplateByShapeId(@Param("shapeId") Long shapeId);

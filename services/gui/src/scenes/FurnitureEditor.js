@@ -102,6 +102,7 @@ class FurnitureEditor extends Phaser.Scene {
             this,
           )[0];
           shape.id = shapeData.shape.id;
+          shape.version = shapeData.shapeVersion;
           this.#shapes.push(shape);
         });
       }
@@ -109,11 +110,12 @@ class FurnitureEditor extends Phaser.Scene {
       if (furnitureData.zones) {
         furnitureData.zones.forEach((zoneData) => {
           const zone = buildShapeFromInstructions(
-            zoneData.instructions,
+            zoneData.shape.instructions,
             this,
             0xeb7734,
           )[0];
-          zone.id = zoneData.shape.id;
+          zone.id = zoneData.shape.shape.id;
+          zone.version = zoneData.shape.shapeVersion;
           this.#zones.push(zone);
         });
       }
