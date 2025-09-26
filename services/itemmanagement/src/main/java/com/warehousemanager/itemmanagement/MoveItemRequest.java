@@ -1,5 +1,7 @@
 package com.warehousemanager.itemmanagement;
 
+import java.util.UUID;
+
 /**
  * Data Transfer Object (DTO) for moving an item within the warehouse hierarchy.
  *
@@ -8,4 +10,4 @@ package com.warehousemanager.itemmanagement;
  * @param newZoneId the identifier for the new zone where the item will be stored
  * @param newFloorId the identifier for the new floor where the item will be stored
  */
-public record MoveItemRequest(Long itemId, Long newParentId, Long newZoneId, Long newFloorId) {}
+public record MoveItemRequest(UUID itemId, UUID newParentId, Long newZoneId, Long newFloorId) {}

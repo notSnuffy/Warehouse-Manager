@@ -362,6 +362,7 @@ class FloorView extends Phaser.Scene {
           newZoneId: item.zoneId,
           newFloorId: item.floorId,
         });
+        item.changed = false;
       });
       console.log("Changed items to save:", changedItems);
       try {

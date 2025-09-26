@@ -31,6 +31,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -248,7 +249,7 @@ public class FurnitureManagementController {
     Set<Map.Entry<String, JsonNode>> properties = items.properties();
     for (Map.Entry<String, JsonNode> entry : properties) {
       JsonNode itemNode = entry.getValue();
-      Long itemId = itemNode.get("id").asLong();
+      UUID itemId = UUID.fromString(itemNode.get("id").asText());
 
       boolean isDeleted = itemNode.get("deleted").asBoolean();
       if (!isDeleted) {
@@ -291,7 +292,7 @@ public class FurnitureManagementController {
       ZoneResponseDataTransferObject zoneResponse =
           new ZoneResponseDataTransferObject(zone.getId(), zone.getName(), zoneShape);
 
-      Set<Long> itemIds = zoneInstance.getItemIds();
+      Set<UUID> itemIds = zoneInstance.getItemIds();
       String itemIdsParameter =
           itemIds.stream().map(String::valueOf).collect(Collectors.joining(","));
       JsonNode items =
@@ -373,7 +374,7 @@ public class FurnitureManagementController {
           zoneShape = zoneShapeMap.get(shapeId);
         }
 
-        Set<Long> itemIds = zoneInstance.getItemIds();
+        Set<UUID> itemIds = zoneInstance.getItemIds();
         String itemIdsParameter =
             itemIds.stream().map(String::valueOf).collect(Collectors.joining(","));
         JsonNode items =
@@ -473,7 +474,7 @@ public class FurnitureManagementController {
   @PostMapping("/furniture/zones/instances/moveItem/batch")
   public void moveItems(@RequestBody List<MoveItemRequest> requests) {
     for (MoveItemRequest request : requests) {
-      Long itemId = request.itemId();
+      UUID itemId = request.itemId();
       Long oldZoneId = request.oldZoneId();
       ZoneInstance oldZoneInstance =
           oldZoneId != null ? zoneInstanceRepository.findById(oldZoneId).orElse(null) : null;

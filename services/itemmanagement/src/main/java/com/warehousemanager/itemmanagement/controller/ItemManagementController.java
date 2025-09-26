@@ -6,10 +6,12 @@ import com.warehousemanager.itemmanagement.ZoneMoveItemRequest;
 import com.warehousemanager.itemmanagement.entities.Item;
 import com.warehousemanager.itemmanagement.repositories.ItemRepository;
 import jakarta.validation.Valid;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cloud.client.ServiceInstance;
@@ -43,12 +45,9 @@ public class ItemManagementController {
 
   @GetMapping("/items")
   public List<ItemResponseDataTransferObject> getAllItems() {
-    Iterable<Item> items = itemRepository.findAll();
+    List<Item> items = itemRepository.findByDeletedFalseAndCurrentTrue();
     List<ItemResponseDataTransferObject> itemResponseDataTransferObjects = new ArrayList<>();
     for (Item item : items) {
-      if (item.getDeleted()) {
-        continue;
-      }
       ItemResponseDataTransferObject dto = convertToDto(item);
       itemResponseDataTransferObjects.add(dto);
     }
@@ -56,9 +55,9 @@ public class ItemManagementController {
   }
 
   @GetMapping("/items/batch")
-  public Map<Long, ItemResponseDataTransferObject> getItemsByIds(@RequestParam List<Long> itemIds) {
-    Iterable<Item> items = itemRepository.findAllById(itemIds);
-    Map<Long, ItemResponseDataTransferObject> itemMap = new HashMap<>();
+  public Map<UUID, ItemResponseDataTransferObject> getItemsByIds(@RequestParam List<UUID> itemIds) {
+    List<Item> items = itemRepository.findByIdInAndDeletedFalseAndCurrentTrue(itemIds);
+    Map<UUID, ItemResponseDataTransferObject> itemMap = new HashMap<>();
     for (Item item : items) {
       ItemResponseDataTransferObject dto = convertToDto(item);
       itemMap.put(item.getId(), dto);
@@ -67,26 +66,40 @@ public class ItemManagementController {
   }
 
   @GetMapping("/items/{id}")
-  public Item getItemById(@PathVariable Long id) {
-    return itemRepository.findById(id).orElse(null);
+  public ItemResponseDataTransferObject getItemById(@PathVariable UUID id) {
+    Item item = itemRepository.findByIdEqualsAndDeletedFalseAndCurrentTrue(id).orElse(null);
+    if (item == null) {
+      throw new IllegalArgumentException("Item not found");
+    }
+    return convertToDto(item);
   }
 
   @GetMapping("/items/parent/{childId}")
-  public Item getParentItemByChildId(@PathVariable Long childId) {
-    Item parentItem = itemRepository.findParentByChildrenId(childId);
+  public ItemResponseDataTransferObject getParentItemByChildId(@PathVariable UUID childId) {
+    Item childItem =
+        itemRepository
+            .findByIdEqualsAndDeletedFalseAndCurrentTrue(childId)
+            .orElseThrow(() -> new IllegalArgumentException("Child item not found"));
+    Item parentItem = childItem.getParent();
     if (parentItem == null) {
       logger.warn("Parent item not found for child ID: {}", childId);
       throw new IllegalArgumentException("Parent item not found");
     }
-    return parentItem;
+    return convertToDto(parentItem);
   }
 
   @GetMapping("/items/children/{parentId}")
-  public Iterable<Item> getChildItemsByParentId(@PathVariable Long parentId) {
-    return itemRepository
-        .findById(parentId)
-        .map(Item::getChildren)
-        .orElseThrow(() -> new IllegalArgumentException("Parent item not found"));
+  public Iterable<ItemResponseDataTransferObject> getChildItemsByParentId(
+      @PathVariable UUID parentId) {
+    Item parentItem =
+        itemRepository
+            .findByIdEqualsAndDeletedFalseAndCurrentTrue(parentId)
+            .orElseThrow(() -> new IllegalArgumentException("Parent item not found"));
+    List<ItemResponseDataTransferObject> childDtos = new ArrayList<>();
+    for (Item child : parentItem.getChildren()) {
+      childDtos.add(convertToDto(child));
+    }
+    return childDtos;
   }
 
   /**
@@ -96,9 +109,11 @@ public class ItemManagementController {
    * @return the corresponding ItemResponseDataTransferObject
    */
   private ItemResponseDataTransferObject convertToDto(Item item) {
-    Long parentId = (item.getParent() != null) ? item.getParent().getId() : null;
+    UUID parentId = (item.getParent() != null) ? item.getParent().getId() : null;
+    Instant parentVersion = (item.getParent() != null) ? item.getParent().getVersion() : null;
     return new ItemResponseDataTransferObject(
         item.getId(),
+        item.getVersion(),
         item.getDeleted(),
         item.getName(),
         item.getDescription(),
@@ -107,6 +122,7 @@ public class ItemManagementController {
         item.getFloorId(),
         item.getZoneId(),
         parentId,
+        parentVersion,
         item.getChildren().stream().map(this::convertToDto).toList());
   }
 
@@ -133,31 +149,44 @@ public class ItemManagementController {
     String url = serviceInstance.getUri() + "/furniture/zones/instances/moveItem/batch";
     List<ZoneMoveItemRequest> zoneRequests = new ArrayList<>();
     for (MoveItemRequest request : requests) {
-      Long itemId = request.itemId();
+      UUID itemId = request.itemId();
       Item item =
           itemRepository
-              .findById(itemId)
-              .orElseThrow(() -> new IllegalArgumentException("Child item not found"));
+              .findByIdEqualsAndDeletedFalseAndCurrentTrue(itemId)
+              .orElseThrow(() -> new IllegalArgumentException("Item not found: " + itemId));
+
+      Item newItem = new Item(item);
+      newItem = itemRepository.save(newItem);
+      item.setCurrent(false);
+      Item oldParent = item.getParent();
+      if (oldParent != null) {
+        oldParent.removeChild(item);
+      }
+      for (Item child : item.getChildren()) {
+        child.setParent(newItem);
+      }
 
       Long oldZoneId = item.getZoneId();
       Long newZoneId = request.newZoneId();
       ZoneMoveItemRequest zoneRequest = new ZoneMoveItemRequest(itemId, oldZoneId, newZoneId);
       zoneRequests.add(zoneRequest);
 
-      item.setZoneId(newZoneId);
+      newItem.setZoneId(newZoneId);
       Long newFloorId = request.newFloorId();
-      item.setFloorId(newFloorId);
+      newItem.setFloorId(newFloorId);
 
-      Long newParentId = request.newParentId();
+      UUID newParentId = request.newParentId();
       Item newParentItem =
-          newParentId != null ? itemRepository.findById(newParentId).orElse(null) : null;
+          newParentId != null
+              ? itemRepository.findByIdEqualsAndDeletedFalseAndCurrentTrue(newParentId).orElse(null)
+              : null;
       if (newParentItem != null) {
-        moveChildToNewParent(item, newParentItem);
+        moveChildToNewParent(newItem, newParentItem);
       } else {
-        Item oldParentItem = item.getParent();
+        Item oldParentItem = newItem.getParent();
         if (oldParentItem != null) {
           oldParentItem.removeChild(item);
-          item.setParent(null);
+          newItem.setParent(null);
         }
       }
     }
@@ -172,20 +201,37 @@ public class ItemManagementController {
   }
 
   @PutMapping("/items/{id}")
-  public Item updateItem(@PathVariable Long id, @Valid @RequestBody Item item) {
-    Item existingItem = itemRepository.findById(id).orElse(null);
+  public ItemResponseDataTransferObject updateItem(
+      @PathVariable UUID id, @Valid @RequestBody Item item) {
+    Item existingItem = itemRepository.findByIdEqualsAndDeletedFalseAndCurrentTrue(id).orElse(null);
     if (existingItem == null) {
       throw new IllegalArgumentException("Item not found");
     }
-    existingItem.setName(item.getName());
-    existingItem.setDescription(item.getDescription());
-    existingItem.setCategory(item.getCategory());
-    existingItem.setQuantity(item.getQuantity());
-    return itemRepository.save(existingItem);
+    Item newItem = new Item(existingItem);
+    newItem.setName(item.getName());
+    newItem.setDescription(item.getDescription());
+    newItem.setCategory(item.getCategory());
+    newItem.setQuantity(item.getQuantity());
+
+    newItem = itemRepository.save(newItem);
+    existingItem.setCurrent(false);
+    Item oldParent = existingItem.getParent();
+    if (oldParent != null) {
+      oldParent.removeChild(existingItem);
+    }
+
+    for (Item child : existingItem.getChildren()) {
+      child.setParent(newItem);
+      itemRepository.save(child);
+    }
+    itemRepository.save(existingItem);
+
+    return convertToDto(newItem);
   }
 
   public void resetChildrenLocation(Item item) {
     for (Item child : item.getChildren()) {
+      child.setDeleted(true);
       child.setFloorId(null);
       child.setZoneId(null);
       itemRepository.save(child);
@@ -194,26 +240,30 @@ public class ItemManagementController {
   }
 
   @DeleteMapping("/items/{id}")
-  public void deleteItem(@PathVariable Long id) {
-    Item item = itemRepository.findById(id).orElse(null);
-    if (item == null) {
+  public void deleteItem(@PathVariable UUID id) {
+    List<Item> items = itemRepository.findByIdEqualsAndDeletedFalseOrderByVersionDesc(id);
+
+    if (items.size() == 0) {
       throw new IllegalArgumentException("Item not found");
     }
 
-    Item parentItem = item.getParent();
-    if (parentItem != null) {
-      parentItem.removeChild(item);
-    }
+    for (Item item : items) {
+      Item parentItem = item.getParent();
+      if (parentItem != null) {
+        parentItem.removeChild(item);
+      }
 
-    for (Item child : item.getChildren()) {
-      child.setParent(null);
-      child.setFloorId(null);
-      child.setZoneId(null);
-      resetChildrenLocation(child);
-      itemRepository.save(child);
-    }
+      for (Item child : item.getChildren()) {
+        child.setParent(null);
+        child.setFloorId(null);
+        child.setZoneId(null);
+        child.setDeleted(true);
+        resetChildrenLocation(child);
+        itemRepository.save(child);
+      }
 
-    item.setDeleted(true);
-    itemRepository.save(item);
+      item.setDeleted(true);
+      itemRepository.save(item);
+    }
   }
 }

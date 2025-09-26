@@ -1,27 +1,41 @@
 package com.warehousemanager.itemmanagement.entities;
 
+import com.warehousemanager.itemmanagement.ItemId;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.IdClass;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinColumns;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Entity
+@IdClass(ItemId.class)
 public class Item {
   /** Unique identifier for the item. */
+  @Column(nullable = false, updatable = false)
   @Id
-  @GeneratedValue(strategy = GenerationType.SEQUENCE)
-  private Long id;
+  private UUID id = UUID.randomUUID();
+
+  /** Version timestamp for versioning. */
+  @Id
+  @Column(nullable = false, updatable = false)
+  private Instant version = Instant.now();
+
+  /** Indicates if this is the current/latest record. */
+  @Column(nullable = false)
+  private Boolean current = true;
 
   /** Flag indicating whether the item is deleted (soft delete). */
+  @Column(nullable = false)
   private Boolean deleted = false;
 
   /** Name of the item. */
@@ -45,17 +59,12 @@ public class Item {
   /** Identifier for the zone where the item is stored. */
   private Long zoneId;
 
-  // /** List of child items, representing a hierarchical structure. */
-  // @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
-  // @JoinTable(
-  //     name = "item_children",
-  //     joinColumns = @JoinColumn(name = "parent_id"),
-  //     inverseJoinColumns = @JoinColumn(name = "child_id"))
-  // private List<Item> children = new ArrayList<>();
-
   /** Parent item in the hierarchical structure. */
   @ManyToOne
-  @JoinColumn(name = "parent_id")
+  @JoinColumns({
+    @JoinColumn(name = "parent_id", referencedColumnName = "id"),
+    @JoinColumn(name = "parent_version", referencedColumnName = "version")
+  })
   private Item parent;
 
   /** List of child items, representing a hierarchical structure. */
@@ -75,12 +84,69 @@ public class Item {
   }
 
   /**
+   * Constructs an Item with the specified id and name.
+   *
+   * @param id the unique identifier of the item
+   * @param name the name of the item
+   */
+  public Item(Long id, String name) {
+    this.name = name;
+  }
+
+  /**
+   * Copy constructor to create a new Item based on another Item. The new Item will have a new
+   * version timestamp.
+   *
+   * @param other the Item to copy from
+   */
+  public Item(Item other) {
+    this.id = other.id;
+    this.version = Instant.now();
+    this.deleted = other.deleted;
+    this.name = other.name;
+    this.description = other.description;
+    this.category = other.category;
+    this.quantity = other.quantity;
+    this.floorId = other.floorId;
+    this.zoneId = other.zoneId;
+    this.parent = other.parent;
+    this.children = new ArrayList<>(other.children);
+  }
+
+  /**
    * Gets the unique identifier of the item.
    *
    * @return the unique identifier of the item
    */
-  public Long getId() {
+  public UUID getId() {
     return id;
+  }
+
+  /**
+   * Gets the version timestamp of the item.
+   *
+   * @return the version timestamp of the item
+   */
+  public Instant getVersion() {
+    return version;
+  }
+
+  /**
+   * Gets the current status of the item.
+   *
+   * @return the current status of the item
+   */
+  public Boolean getCurrent() {
+    return current;
+  }
+
+  /**
+   * Sets the current status of the item.
+   *
+   * @param current the new current status of the item
+   */
+  public void setCurrent(Boolean current) {
+    this.current = current;
   }
 
   /**

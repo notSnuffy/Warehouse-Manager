@@ -138,16 +138,16 @@ class FurnitureView extends Phaser.Scene {
         const item = evt.item;
         const id = item.dataset.id;
         const itemMap = this.scene.get("FloorView").itemMap;
-        const itemData = itemMap.get(parseInt(id, 10));
+        const itemData = itemMap.get(id);
         const previousList = evt.from;
         console.log("Event onAdd:", evt);
         const thisList = evt.to;
-        const newParentId = parseInt(thisList.dataset.parentId, 10);
+        const newParentId = thisList.dataset.parentId;
         const newParentItemData = itemMap.get(newParentId);
         const oldParentId = itemData.parentId;
         let parentId = newParentId;
         while (parentId) {
-          if (parentId === parseInt(id, 10)) {
+          if (parentId === id) {
             alert("Cannot move an item into itself.");
             evt.to.removeChild(item);
             return;
@@ -158,16 +158,17 @@ class FurnitureView extends Phaser.Scene {
         if (oldParentId) {
           const oldParentItemData = itemMap.get(oldParentId);
 
-          oldParentItemData.children.delete(parseInt(id, 10));
+          oldParentItemData.children.delete(id);
         }
-        newParentItemData.children.add(parseInt(id, 10));
+        newParentItemData.children.add(id);
 
         itemData.parentId = newParentId;
         itemData.changed = true;
         this.scene
           .get("FloorView")
-          .moveItemBetweenZones(itemData.zoneId, null, parseInt(id, 10));
+          .moveItemBetweenZones(itemData.zoneId, null, id);
         itemData.zoneId = null;
+        const previousFloorId = itemData.floorId;
         itemData.floorId = newParentItemData.floorId;
         console.log("Item data after move:", itemData);
         const updateChildrenFloor = (itemData, floorId) => {
@@ -180,13 +181,15 @@ class FurnitureView extends Phaser.Scene {
             });
           }
         };
-        updateChildrenFloor(itemData, itemData.floorId);
+        if (previousFloorId !== itemData.floorId) {
+          updateChildrenFloor(itemData, itemData.floorId);
+        }
 
         if (previousList.id === "itemsMenuItems") {
           console.log("Item added from items menu:", itemData);
           const childList = document.createElement("ul");
           childList.classList.add("list-group");
-          childList.dataset.parentId = parseInt(id, 10);
+          childList.dataset.parentId = id;
           item.appendChild(childList);
 
           this.#makeSortable(childList);
@@ -365,14 +368,14 @@ class FurnitureView extends Phaser.Scene {
         const item = evt.item;
         const id = item.dataset.id;
         const itemMap = this.scene.get("FloorView").itemMap;
-        const itemData = itemMap.get(parseInt(id, 10));
+        const itemData = itemMap.get(id);
         const previousList = evt.from;
         console.log("Event onAdd:", evt);
         if (previousList.id === "itemsMenuItems") {
           console.log("Item added from items menu:", itemData);
           const childList = document.createElement("ul");
           childList.classList.add("list-group");
-          childList.dataset.parentId = parseInt(id, 10);
+          childList.dataset.parentId = id;
           item.appendChild(childList);
 
           this.#makeSortable(childList);
@@ -388,17 +391,18 @@ class FurnitureView extends Phaser.Scene {
         itemData.changed = true;
         const previousZoneId = itemData.zoneId;
         itemData.zoneId = newZoneId;
+        const previousFloorId = itemData.floorId;
         itemData.floorId = floorId;
         this.scene
           .get("FloorView")
-          .moveItemBetweenZones(previousZoneId, newZoneId, parseInt(id, 10));
+          .moveItemBetweenZones(previousZoneId, newZoneId, id);
         console.log(this.#furnitureInstance);
 
         const oldParentId = itemData.parentId;
         if (oldParentId) {
           const oldParentItemData = itemMap.get(oldParentId);
 
-          oldParentItemData.children.delete(parseInt(id, 10));
+          oldParentItemData.children.delete(id);
         }
         itemData.parentId = null;
         const updateChildrenFloor = (itemData, floorId) => {
@@ -411,7 +415,9 @@ class FurnitureView extends Phaser.Scene {
             });
           }
         };
-        updateChildrenFloor(itemData, itemData.floorId);
+        if (previousFloorId !== floorId) {
+          updateChildrenFloor(itemData, itemData.floorId);
+        }
       },
     });
 

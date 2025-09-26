@@ -1,20 +1,45 @@
 package com.warehousemanager.itemmanagement.repositories;
 
 import com.warehousemanager.itemmanagement.entities.Item;
-import org.springframework.data.jpa.repository.Query;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import org.springframework.data.repository.CrudRepository;
 
 /**
  * Repository interface for managing Item entities. This interface extends CrudRepository to provide
  * basic CRUD operations.
  */
-public interface ItemRepository extends CrudRepository<Item, Long> {
+public interface ItemRepository extends CrudRepository<Item, UUID> {
+
   /**
-   * Finds the parent Item by the ID of a child Item.
+   * Finds all items that are not deleted and are marked as current.
    *
-   * @param childId the ID of the child Item
-   * @return the parent Item if found, otherwise null
+   * @return an iterable collection of items that are not deleted and current
    */
-  @Query("SELECT item FROM Item item JOIN item.children child WHERE child.id = :childId")
-  Item findParentByChildrenId(Long childId);
+  List<Item> findByDeletedFalseAndCurrentTrue();
+
+  /**
+   * Finds all items with the specified IDs that are not deleted and are marked as current.
+   *
+   * @param ids the list of item IDs to search for
+   * @return a list of items that match the given IDs, are not deleted, and are current
+   */
+  List<Item> findByIdInAndDeletedFalseAndCurrentTrue(List<UUID> ids);
+
+  /**
+   * Finds all items by their ID that are not deleted, ordered by version in descending order.
+   *
+   * @param id the ID of the item to search for
+   * @return a list of items that match the given ID, are not deleted, ordered by version descending
+   */
+  List<Item> findByIdEqualsAndDeletedFalseOrderByVersionDesc(UUID id);
+
+  /**
+   * Finds an item by its ID that is not deleted and is marked as current.
+   *
+   * @param id the ID of the item to search for
+   * @return an optional containing the item if found, otherwise empty
+   */
+  Optional<Item> findByIdEqualsAndDeletedFalseAndCurrentTrue(UUID id);
 }
