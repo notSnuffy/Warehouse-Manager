@@ -8,9 +8,9 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
+import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 import org.hibernate.annotations.ColumnTransformer;
 
 /** Represents specific instances of shapes in the warehouse management system. */
@@ -21,14 +21,13 @@ public class ShapeInstance {
   @GeneratedValue(strategy = GenerationType.SEQUENCE)
   private Long id;
 
-  /** The shape that this instance represents. */
-  @ManyToOne
-  @JoinColumn(name = "shape_id", nullable = false)
-  private Shape shape;
+  /** ID of the shape that this instance represents. */
+  @Column(nullable = false)
+  private UUID shapeId;
 
   /** Version of the shape at the time this instance was created. */
   @Column(nullable = false)
-  private Long shapeVersion;
+  private Instant shapeVersion;
 
   /** This shape is the base for creating other instances of the given shape. */
   private boolean isTemplate = false;
@@ -45,12 +44,12 @@ public class ShapeInstance {
   /**
    * Constructs ShapeInstance with the specified parameters.
    *
-   * @param shape the shape that this instance represents
+   * @param shapeId the ID of the shape that this instance represents
    * @param shapeVersion the version of the shape at the time this instance was created
    * @param instructions the instructions for how to create this shape instance
    */
-  public ShapeInstance(Shape shape, Long shapeVersion, List<Instruction> instructions) {
-    this.shape = shape;
+  public ShapeInstance(UUID shapeId, Instant shapeVersion, List<Instruction> instructions) {
+    this.shapeId = shapeId;
     this.shapeVersion = shapeVersion;
     this.instructions = instructions;
   }
@@ -65,21 +64,21 @@ public class ShapeInstance {
   }
 
   /**
-   * Gets the shape that this instance represents.
+   * Gets the ID of the shape that this instance represents.
    *
-   * @return the shape that this instance represents
+   * @return the shape ID
    */
-  public Shape getShape() {
-    return shape;
+  public UUID getShapeId() {
+    return shapeId;
   }
 
   /**
-   * Sets the shape that this instance represents.
+   * Sets the ID of the shape that this instance represents.
    *
-   * @param shape the new shape that this instance represents
+   * @param shapeId the new shape ID
    */
-  public void setShape(Shape shape) {
-    this.shape = shape;
+  public void setShapeId(UUID shapeId) {
+    this.shapeId = shapeId;
   }
 
   /**
@@ -87,7 +86,7 @@ public class ShapeInstance {
    *
    * @return the shape version
    */
-  public Long getShapeVersion() {
+  public Instant getShapeVersion() {
     return shapeVersion;
   }
 
@@ -96,7 +95,7 @@ public class ShapeInstance {
    *
    * @param shapeVersion the new shape version
    */
-  public void setShapeVersion(Long shapeVersion) {
+  public void setShapeVersion(Instant shapeVersion) {
     this.shapeVersion = shapeVersion;
   }
 

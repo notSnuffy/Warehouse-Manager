@@ -21,8 +21,8 @@ import java.util.UUID;
 @IdClass(ItemId.class)
 public class Item {
   /** Unique identifier for the item. */
-  @Column(nullable = false, updatable = false)
   @Id
+  @Column(nullable = false, updatable = false)
   private UUID id = UUID.randomUUID();
 
   /** Version timestamp for versioning. */

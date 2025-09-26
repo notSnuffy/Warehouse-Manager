@@ -69,7 +69,7 @@ class FurnitureEditorUIInitializer {
       if (DEFAULT_SHAPES.includes(shapeName)) {
         shapeName = shapeName.charAt(0).toUpperCase() + shapeName.slice(1);
       }
-      const shapeId = parseInt(button.dataset.id, 10);
+      const shapeId = button.dataset.id;
       if (shapeName && shapeId) {
         FurnitureEditorUIInitializer.#addItemToTopDownViewDataList(
           shapeName,

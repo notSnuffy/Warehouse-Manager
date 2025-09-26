@@ -1,5 +1,6 @@
 package com.warehousemanager.furnituremanagement;
 
+import java.time.Instant;
 import java.util.List;
 
 /**
@@ -15,7 +16,7 @@ import java.util.List;
  */
 public record ShapeInstance(
     Long id,
-    Long shapeVersion,
+    Instant shapeVersion,
     ShapeType shape,
     List<Instruction> instructions,
     boolean template) {}

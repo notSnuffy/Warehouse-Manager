@@ -190,7 +190,7 @@ public class FurnitureManagementController {
     logger.info("Received request to create furniture: {}", furnitureDataTransferObject);
     String furnitureName = furnitureDataTransferObject.name();
     List<Shape> shapes = furnitureDataTransferObject.shapes();
-    Long topDownViewId = furnitureDataTransferObject.topDownViewId();
+    UUID topDownViewId = furnitureDataTransferObject.topDownViewId();
     logger.info("Creating furniture with name: {}", furnitureName);
 
     Furniture furniture = new Furniture(furnitureName, topDownViewId);

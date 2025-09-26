@@ -1,28 +1,36 @@
 package com.warehousemanager.shapemanagement.entities;
 
+import com.warehousemanager.shapemanagement.ShapeId;
 import com.warehousemanager.shapemanagement.ShapeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.IdClass;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import java.time.Instant;
+import java.util.UUID;
 
 /** Represents a shape in the warehouse management system. */
 @Entity
+@IdClass(ShapeId.class)
 public class Shape {
 
   /** Primary key for the shape entity. */
   @Id
-  @GeneratedValue(strategy = GenerationType.SEQUENCE)
-  private Long id;
+  @Column(nullable = false, updatable = false)
+  private UUID id = UUID.randomUUID();
 
   /** Version of the shape. */
+  @Id
+  @Column(nullable = false, updatable = false)
+  private Instant version = Instant.now();
+
+  /** Indicates if this is the current/latest record. */
   @Column(nullable = false)
-  private Long version = 1L;
+  private Boolean current = true;
 
   /** Name of the shape. */
   @Column(nullable = false)
@@ -58,11 +66,38 @@ public class Shape {
   }
 
   /**
+   * Constructs a Shape with the specified id, name, and type.
+   *
+   * @param id the unique identifier of the shape
+   * @param name the name of the shape
+   * @param type the type of the shape
+   */
+  public Shape(UUID id, String name, ShapeType type) {
+    this.id = id;
+    this.name = name;
+    this.type = type;
+  }
+
+  /**
+   * Copy constructor to create a new Shape based on an existing one with a new version timestamp.
+   *
+   * @param other the existing Shape to copy
+   */
+  public Shape(Shape other) {
+    this.id = other.id;
+    this.version = Instant.now();
+    this.name = other.name;
+    this.type = other.type;
+    this.isPublic = other.isPublic;
+    this.deleted = other.deleted;
+  }
+
+  /**
    * Gets the unique identifier of the shape.
    *
    * @return the unique identifier of the shape
    */
-  public Long getId() {
+  public UUID getId() {
     return id;
   }
 
@@ -71,17 +106,26 @@ public class Shape {
    *
    * @return the version of the shape
    */
-  public Long getVersion() {
+  public Instant getVersion() {
     return version;
   }
 
   /**
-   * Sets the version of the shape.
+   * Checks if this is the current/latest record.
    *
-   * @param version the new version of the shape
+   * @return true if this is the current record, false otherwise
    */
-  public void setVersion(Long version) {
-    this.version = version;
+  public Boolean isCurrent() {
+    return current;
+  }
+
+  /**
+   * Sets whether this is the current/latest record.
+   *
+   * @param current true if this is the current record, false otherwise
+   */
+  public void setCurrent(Boolean current) {
+    this.current = current;
   }
 
   /**

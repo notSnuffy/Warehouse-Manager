@@ -10,6 +10,7 @@ import jakarta.persistence.OneToMany;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import java.util.List;
+import java.util.UUID;
 
 /** Represents a piece of furniture. */
 @Entity
@@ -27,7 +28,7 @@ public class Furniture {
 
   /** Identifier for the shape that represents the furniture from a top-down view. */
   @Column(nullable = false)
-  private Long topDownViewId;
+  private UUID topDownViewId;
 
   /** List of shape instance IDs representing how the furniture should be created. */
   private List<Long> shapeIds;
@@ -47,7 +48,7 @@ public class Furniture {
    * @param topDownViewId the identifier for the shape that represents the furniture from a top-down
    *     view
    */
-  public Furniture(String name, Long topDownViewId) {
+  public Furniture(String name, UUID topDownViewId) {
     this.name = name;
     this.topDownViewId = topDownViewId;
   }
@@ -84,7 +85,7 @@ public class Furniture {
    *
    * @return the identifier for the top-down view shape
    */
-  public Long getTopDownViewId() {
+  public UUID getTopDownViewId() {
     return topDownViewId;
   }
 
@@ -93,7 +94,7 @@ public class Furniture {
    *
    * @param topDownViewId the new identifier for the top-down view shape
    */
-  public void setTopDownViewId(Long topDownViewId) {
+  public void setTopDownViewId(UUID topDownViewId) {
     this.topDownViewId = topDownViewId;
   }
 

@@ -20,6 +20,14 @@ public interface ItemRepository extends CrudRepository<Item, UUID> {
   List<Item> findByDeletedFalseAndCurrentTrue();
 
   /**
+   * Finds all items with the specified IDs that are marked as current.
+   *
+   * @param ids the list of item IDs to search for
+   * @return a list of items that match the given IDs, are not deleted, and are current
+   */
+  List<Item> findByIdInAndCurrentTrue(List<UUID> ids);
+
+  /**
    * Finds all items with the specified IDs that are not deleted and are marked as current.
    *
    * @param ids the list of item IDs to search for

@@ -56,7 +56,7 @@ public class ItemManagementController {
 
   @GetMapping("/items/batch")
   public Map<UUID, ItemResponseDataTransferObject> getItemsByIds(@RequestParam List<UUID> itemIds) {
-    List<Item> items = itemRepository.findByIdInAndDeletedFalseAndCurrentTrue(itemIds);
+    List<Item> items = itemRepository.findByIdInAndCurrentTrue(itemIds);
     Map<UUID, ItemResponseDataTransferObject> itemMap = new HashMap<>();
     for (Item item : items) {
       ItemResponseDataTransferObject dto = convertToDto(item);
@@ -229,13 +229,16 @@ public class ItemManagementController {
     return convertToDto(newItem);
   }
 
-  public void resetChildrenLocation(Item item) {
+  public void deleteChildren(Item item) {
     for (Item child : item.getChildren()) {
-      child.setDeleted(true);
-      child.setFloorId(null);
-      child.setZoneId(null);
-      itemRepository.save(child);
-      resetChildrenLocation(child);
+      List<Item> childItems =
+          itemRepository.findByIdEqualsAndDeletedFalseOrderByVersionDesc(child.getId());
+      for (Item childItem : childItems) {
+        childItem.setDeleted(true);
+        itemRepository.save(childItem);
+      }
+
+      deleteChildren(child);
     }
   }
 
@@ -253,14 +256,7 @@ public class ItemManagementController {
         parentItem.removeChild(item);
       }
 
-      for (Item child : item.getChildren()) {
-        child.setParent(null);
-        child.setFloorId(null);
-        child.setZoneId(null);
-        child.setDeleted(true);
-        resetChildrenLocation(child);
-        itemRepository.save(child);
-      }
+      deleteChildren(item);
 
       item.setDeleted(true);
       itemRepository.save(item);

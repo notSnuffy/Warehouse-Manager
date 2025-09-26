@@ -5,6 +5,7 @@ import com.warehousemanager.shapemanagement.entities.ShapeInstance;
 import com.warehousemanager.shapemanagement.repositories.ShapeInstanceRepository;
 import com.warehousemanager.shapemanagement.repositories.ShapeRepository;
 import java.util.Arrays;
+import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
@@ -15,6 +16,10 @@ import org.springframework.context.annotation.Bean;
 @SpringBootApplication
 public class ShapeManagementApplication {
   private static final Logger logger = LoggerFactory.getLogger(ShapeManagementApplication.class);
+  private static final UUID RECTANGLE_ID = UUID.fromString("11111111-1111-1111-1111-111111111111");
+  private static final UUID ELLIPSE_ID = UUID.fromString("22222222-2222-2222-2222-222222222222");
+  private static final UUID ARC_ID = UUID.fromString("33333333-3333-3333-3333-333333333333");
+  private static final UUID POLYGON_ID = UUID.fromString("44444444-4444-4444-4444-444444444444");
 
   public static void main(String[] args) {
     SpringApplication.run(ShapeManagementApplication.class, args);
@@ -26,7 +31,7 @@ public class ShapeManagementApplication {
     return args -> {
       logger.info("Shape Management Application started successfully.");
 
-      Shape rectangle = new Shape("Rectangle", ShapeType.RECTANGLE);
+      Shape rectangle = new Shape(RECTANGLE_ID, "Rectangle", ShapeType.RECTANGLE);
       rectangle.setPublic(false);
       shapeRepository.save(rectangle);
 
@@ -42,11 +47,12 @@ public class ShapeManagementApplication {
       Instruction rectangleInstruction = new Instruction("createRectangle", rectangleParameters);
 
       ShapeInstance rectangleInstance =
-          new ShapeInstance(rectangle, rectangle.getVersion(), Arrays.asList(rectangleInstruction));
+          new ShapeInstance(
+              rectangle.getId(), rectangle.getVersion(), Arrays.asList(rectangleInstruction));
       rectangleInstance.setTemplate(true);
       shapeInstanceRepository.save(rectangleInstance);
 
-      Shape ellipse = new Shape("Ellipse", ShapeType.ELLIPSE);
+      Shape ellipse = new Shape(ELLIPSE_ID, "Ellipse", ShapeType.ELLIPSE);
       ellipse.setPublic(false);
       shapeRepository.save(ellipse);
 
@@ -59,11 +65,12 @@ public class ShapeManagementApplication {
       Instruction ellipseInstruction = new Instruction("createEllipse", ellipseParameters);
 
       ShapeInstance ellipseInstance =
-          new ShapeInstance(ellipse, ellipse.getVersion(), Arrays.asList(ellipseInstruction));
+          new ShapeInstance(
+              ellipse.getId(), ellipse.getVersion(), Arrays.asList(ellipseInstruction));
       ellipseInstance.setTemplate(true);
       shapeInstanceRepository.save(ellipseInstance);
 
-      Shape arc = new Shape("Arc", ShapeType.ARC);
+      Shape arc = new Shape(ARC_ID, "Arc", ShapeType.ARC);
       arc.setPublic(false);
       shapeRepository.save(arc);
 
@@ -79,11 +86,11 @@ public class ShapeManagementApplication {
       Instruction arcInstruction = new Instruction("createArc", arcParameters);
 
       ShapeInstance arcInstance =
-          new ShapeInstance(arc, arc.getVersion(), Arrays.asList(arcInstruction));
+          new ShapeInstance(arc.getId(), arc.getVersion(), Arrays.asList(arcInstruction));
       arcInstance.setTemplate(true);
       shapeInstanceRepository.save(arcInstance);
 
-      Shape polygon = new Shape("Polygon", ShapeType.POLYGON);
+      Shape polygon = new Shape(POLYGON_ID, "Polygon", ShapeType.POLYGON);
       polygon.setPublic(false);
       shapeRepository.save(polygon);
 
@@ -97,7 +104,8 @@ public class ShapeManagementApplication {
       Instruction polygonInstruction = new Instruction("createPolygon", polygonParameters);
 
       ShapeInstance polygonInstance =
-          new ShapeInstance(polygon, polygon.getVersion(), Arrays.asList(polygonInstruction));
+          new ShapeInstance(
+              polygon.getId(), polygon.getVersion(), Arrays.asList(polygonInstruction));
       polygonInstance.setTemplate(true);
       shapeInstanceRepository.save(polygonInstance);
     };

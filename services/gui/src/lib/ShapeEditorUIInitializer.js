@@ -101,11 +101,8 @@ class ShapeEditorUIInitializer {
       console.log("Shape to save:", shape);
 
       let currentShapeId = document.getElementById("currentShapeId").value;
+      console.log("Current Shape ID:", currentShapeId);
       let isUpdate = currentShapeId !== "";
-      currentShapeId = parseInt(currentShapeId, 10);
-      if (currentShapeId <= 0 || Number.isNaN(currentShapeId)) {
-        isUpdate = false;
-      }
 
       const method = isUpdate ? "PUT" : "POST";
       const endpoint = isUpdate
