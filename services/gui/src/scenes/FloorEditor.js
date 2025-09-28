@@ -353,7 +353,6 @@ class FloorEditor extends Phaser.Scene {
     );
 
     window.addEventListener("pointermove", (event) => {
-      console.log(event);
       const canvas = this.game.canvas;
       const canvasBounds = canvas.getBoundingClientRect();
 
