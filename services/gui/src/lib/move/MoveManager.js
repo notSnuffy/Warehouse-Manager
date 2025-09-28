@@ -72,7 +72,6 @@ class MoveManager extends Manager {
           sceneHeight: this.scene.cameras.main.height,
           shapeX: shape.x,
           shapeY: shape.y,
-          pointExtremes: this.scene.pointExtremes,
         });
 
         this.pending = { shape, dragX, dragY };

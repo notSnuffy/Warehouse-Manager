@@ -30,6 +30,14 @@ class FloorEditor extends Phaser.Scene {
   #selectedCorners = [];
 
   /**
+   * Preview corner before placement
+   * @type {Phaser.GameObjects.Circle|null}
+   * @private
+   * @default null
+   */
+  #cornerPreview = null;
+
+  /**
    * Current tool selected
    * @type {string}
    * @default "move"
@@ -263,11 +271,6 @@ class FloorEditor extends Phaser.Scene {
       await this.#loadFloor(floorId);
     }
 
-    const addCornerButton = document.getElementById("addCornerButton");
-    addCornerButton.addEventListener("click", () => {
-      this.#addCorner();
-    });
-
     /**
      * Handles the move button click event
      */
@@ -349,7 +352,54 @@ class FloorEditor extends Phaser.Scene {
       () => this.#graph,
     );
 
-    this.input.on("pointerdown", () => {
+    window.addEventListener("pointermove", (event) => {
+      console.log(event);
+      const canvas = this.game.canvas;
+      const canvasBounds = canvas.getBoundingClientRect();
+
+      const scaleX = this.scale.displayScale.x;
+      const scaleY = this.scale.displayScale.y;
+
+      const canvasPointer = {
+        x: (event.clientX - canvasBounds.x) * scaleX,
+        y: (event.clientY - canvasBounds.y) * scaleY,
+      };
+
+      const addCornerButton = document.getElementById("addCornerButton");
+      if (!addCornerButton.classList.contains("active")) {
+        if (this.#cornerPreview) {
+          this.#cornerPreview.destroy();
+          this.#cornerPreview = null;
+        }
+        return;
+      }
+
+      let withinWidth = true;
+      if (canvasPointer.x < 0 || canvasPointer.x > this.cameras.main.width) {
+        withinWidth = false;
+      }
+      let withinHeight = true;
+      if (canvasPointer.y < 0 || canvasPointer.y > this.cameras.main.height) {
+        withinHeight = false;
+      }
+      if (!this.#cornerPreview) {
+        this.#cornerPreview = this.add.circle(
+          canvasPointer.x,
+          canvasPointer.y,
+          20,
+          0x888888,
+        );
+      } else {
+        if (withinWidth) {
+          this.#cornerPreview.x = canvasPointer.x;
+        }
+        if (withinHeight) {
+          this.#cornerPreview.y = canvasPointer.y;
+        }
+      }
+    });
+
+    this.input.on("pointerdown", (event) => {
       this.#selectManager.hide();
       if (this.#currentTool === "select") {
         this.#selectedCorners.forEach((corner) => {
@@ -357,6 +407,16 @@ class FloorEditor extends Phaser.Scene {
         });
         this.#selectedCorners = [];
       }
+
+      const addCornerButton = document.getElementById("addCornerButton");
+      if (addCornerButton.classList.contains("active")) {
+        if (this.#cornerPreview) {
+          this.#cornerPreview.destroy();
+          this.#cornerPreview = null;
+        }
+        this.#addCorner(event.x, event.y);
+      }
+      addCornerButton.classList.remove("active");
     });
 
     this.events.on("shapeMoved", (shape) => {
