@@ -317,6 +317,7 @@ class FloorEditor extends Phaser.Scene {
 
         rebuildTemplate.setPosition(parameters.x, parameters.y);
         rebuildTemplate.setDisplaySize(parameters.width, parameters.height);
+        rebuildTemplate.setRotation(parameters.rotation);
 
         const label = this.add.text(
           rebuildTemplate.x,

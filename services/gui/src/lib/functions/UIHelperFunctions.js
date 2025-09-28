@@ -3,6 +3,7 @@ import Sortable from "sortablejs";
 import { API_URL } from "../../config";
 import { DEFAULT_SHAPES } from "../../scenes/ShapeEditor";
 import { ShapeTypes } from "../functions/shapes";
+import { convertDegreesToRadiansSigned } from "../functions/math";
 
 /**
  * Displays a modal for adding a new shape.
@@ -25,6 +26,7 @@ function showAddShapeModal(button) {
   const widthGroup = document.getElementById("widthGroup");
   const heightGroup = document.getElementById("heightGroup");
   const polygonGroup = document.getElementById("polygonGroup");
+  const rotationGroup = document.getElementById("rotationGroup");
 
   const polygonPoints = document.getElementById("polygonPoints");
   polygonPoints.innerHTML = "";
@@ -66,17 +68,13 @@ function showAddShapeModal(button) {
       `;
     polygonPoints.appendChild(point);
 
-    document.getElementById(`shapePoint${i}X`).addEventListener("input", () => {
-      if (document.getElementById(`shapePoint${i}X`).value < 0) {
-        document.getElementById(`shapePoint${i}X`).value = 0;
-      }
-    });
+    document
+      .getElementById(`shapePoint${i}X`)
+      .addEventListener("change", validatePosition);
 
-    document.getElementById(`shapePoint${i}Y`).addEventListener("input", () => {
-      if (document.getElementById(`shapePoint${i}Y`).value < 0) {
-        document.getElementById(`shapePoint${i}Y`).value = 0;
-      }
-    });
+    document
+      .getElementById(`shapePoint${i}Y`)
+      .addEventListener("change", validatePosition);
   }
 
   if (shapeId === ShapeTypes.ARC) {
@@ -85,12 +83,14 @@ function showAddShapeModal(button) {
     widthGroup.hidden = true;
     heightGroup.hidden = true;
     polygonGroup.hidden = true;
+    rotationGroup.hidden = false;
   } else if (shapeId === ShapeTypes.POLYGON) {
     radiusGroup.hidden = true;
     angleGroup.hidden = true;
     widthGroup.hidden = true;
     heightGroup.hidden = true;
     polygonGroup.hidden = false;
+    rotationGroup.hidden = false;
   } else if (
     shapeId === ShapeTypes.RECTANGLE ||
     shapeId === ShapeTypes.ELLIPSE
@@ -100,12 +100,14 @@ function showAddShapeModal(button) {
     widthGroup.hidden = false;
     heightGroup.hidden = false;
     polygonGroup.hidden = true;
+    rotationGroup.hidden = false;
   } else {
     radiusGroup.hidden = true;
     angleGroup.hidden = true;
-    widthGroup.hidden = true;
-    heightGroup.hidden = true;
+    widthGroup.hidden = false;
+    heightGroup.hidden = false;
     polygonGroup.hidden = true;
+    rotationGroup.hidden = false;
   }
 
   const modal = new Modal(modalElement);
@@ -123,58 +125,92 @@ function addButtonHandler(id, eventType, eventHandler) {
   button.addEventListener(eventType, eventHandler);
 }
 
-function addValidationHandlersToAddShapeModal() {
-  const validateShapeWidth = function () {
-    const shapeWidthInput = document.getElementById("shapeWidth");
-    const shapeWidth = parseInt(shapeWidthInput.value, 10);
-    console.log("Validating shape width:", shapeWidth);
+/**
+ * Validates the size input field.
+ * @param {Event} event - The change event.
+ * @returns {void}
+ */
+function validateSize(event) {
+  const sizeInput = event.target;
+  const size = parseInt(sizeInput.value, 10);
+  if (size < 10 || isNaN(size)) {
+    sizeInput.value = 10;
+  }
+}
 
-    if (shapeWidth < 10 || isNaN(shapeWidth)) {
-      shapeWidthInput.value = 10;
-    }
-  };
+/**
+ * Validates the radius input field.
+ * @param {Event} event - The change event.
+ * @returns {void}
+ */
+function validateRadius(event) {
+  const radiusInput = event.target;
+  const radius = parseInt(radiusInput.value, 10);
+
+  if (radius < 5 || isNaN(radius)) {
+    radiusInput.value = 5;
+  }
+}
+
+/**
+ * Validates the angle input field.
+ * @param {Event} event - The change event.
+ * @returns {void}
+ */
+function validateAngle(event) {
+  const angleInput = event.target;
+  const angle = parseInt(angleInput.value, 10);
+  if (angle < 0 || isNaN(angle)) {
+    angleInput.value = 0;
+  }
+  if (angle > 360) {
+    angleInput.value = 360;
+  }
+}
+
+/**
+ * Validates the position input field.
+ * @param {Event} event - The change event.
+ * @returns {void}
+ */
+function validatePosition(event) {
+  const positionInput = event.target;
+  const position = parseInt(positionInput.value, 10);
+  if (position < 0 || isNaN(position)) {
+    positionInput.value = 0;
+  }
+}
+
+function addValidationHandlersToAddShapeModal() {
   document
     .getElementById("shapeWidth")
-    .addEventListener("change", validateShapeWidth);
+    .addEventListener("change", validateSize);
 
-  const validateShapeHeight = function () {
-    const shapeHeightInput = document.getElementById("shapeHeight");
-    const shapeHeight = parseInt(shapeHeightInput.value, 10);
-
-    if (shapeHeight < 10 || isNaN(shapeHeight)) {
-      shapeHeightInput.value = 10;
-    }
-  };
   document
     .getElementById("shapeHeight")
-    .addEventListener("change", validateShapeHeight);
+    .addEventListener("change", validateSize);
 
-  const validateShapeRadius = function () {
-    const shapeRadiusInput = document.getElementById("shapeRadius");
-    const shapeRadius = parseInt(shapeRadiusInput.value, 10);
-
-    if (shapeRadius < 5 || isNaN(shapeRadius)) {
-      shapeRadiusInput.value = 5;
-    }
-  };
   document
     .getElementById("shapeRadius")
-    .addEventListener("change", validateShapeRadius);
+    .addEventListener("change", validateRadius);
 
-  const validateShapeAngle = function () {
-    const shapeAngleInput = document.getElementById("shapeAngle");
-    const shapeAngle = parseInt(shapeAngleInput.value, 10);
-
-    if (shapeAngle < 0 || isNaN(shapeAngle)) {
-      shapeAngleInput.value = 0;
-    }
-    if (shapeAngle > 360 || isNaN(shapeAngle)) {
-      shapeAngleInput.value = 360;
-    }
-  };
   document
-    .getElementById("shapeAngle")
-    .addEventListener("change", validateShapeAngle);
+    .getElementById("shapeStartAngle")
+    .addEventListener("change", validateAngle);
+  document
+    .getElementById("shapeEndAngle")
+    .addEventListener("change", validateAngle);
+
+  document
+    .getElementById("shapeX")
+    .addEventListener("change", validatePosition);
+  document
+    .getElementById("shapeY")
+    .addEventListener("change", validatePosition);
+
+  document
+    .getElementById("shapeRotation")
+    .addEventListener("change", validateAngle);
 }
 
 /**
@@ -190,13 +226,20 @@ function addShapeConfirmationButtonHandler(addShape) {
 
       let x = parseInt(document.getElementById("shapeX").value, 10);
       let y = parseInt(document.getElementById("shapeY").value, 10);
+      let rotation = parseInt(
+        document.getElementById("shapeRotation").value,
+        10,
+      );
+      rotation = convertDegreesToRadiansSigned(rotation);
+      console.log("Adding shape:", shapeId, x, y, rotation);
 
       if (shapeId === ShapeTypes.ARC) {
         const radius = parseInt(
           document.getElementById("shapeRadius").value,
           10,
         );
-        const angle = document.getElementById("shapeAngle").value;
+        const startAngle = document.getElementById("shapeStartAngle").value;
+        const endAngle = document.getElementById("shapeEndAngle").value;
         x += radius;
         y += radius;
         const color = document.getElementById("shapeColor").value;
@@ -204,8 +247,10 @@ function addShapeConfirmationButtonHandler(addShape) {
         addShape(shapeId, {
           x: x,
           y: y,
+          rotation: rotation,
           radius: radius,
-          angle: parseInt(angle, 10),
+          startAngle: parseInt(startAngle, 10),
+          endAngle: parseInt(endAngle, 10),
           color: parseInt(color.slice(1), 16),
         });
       } else if (shapeId === ShapeTypes.POLYGON) {
@@ -224,6 +269,7 @@ function addShapeConfirmationButtonHandler(addShape) {
         addShape(shapeId, {
           x: x,
           y: y,
+          rotation: rotation,
           points: points,
           color: parseInt(color.slice(1), 16),
         });
@@ -233,13 +279,15 @@ function addShapeConfirmationButtonHandler(addShape) {
       ) {
         const width = document.getElementById("shapeWidth").value;
         const height = document.getElementById("shapeHeight").value;
+        const color = document.getElementById("shapeColor").value;
+
         x += width / 2;
         y += height / 2;
-        const color = document.getElementById("shapeColor").value;
 
         addShape(shapeId, {
           x: x,
           y: y,
+          rotation: rotation,
           width: parseInt(width, 10),
           height: parseInt(height, 10),
           color: parseInt(color.slice(1), 16),
@@ -247,9 +295,17 @@ function addShapeConfirmationButtonHandler(addShape) {
       } else {
         const color = document.getElementById("shapeColor").value;
 
+        const width = document.getElementById("shapeWidth").value;
+        const height = document.getElementById("shapeHeight").value;
+        x += width / 2;
+        y += height / 2;
+
         addShape(shapeId, {
           x: x,
           y: y,
+          rotation: rotation,
+          width: parseInt(width, 10),
+          height: parseInt(height, 10),
           color: parseInt(color.slice(1), 16),
         });
       }
@@ -297,19 +353,11 @@ function addHandlerToAddPolygonPoints() {
 
     document
       .getElementById(`shapePoint${pointIndex}X`)
-      .addEventListener("input", () => {
-        if (document.getElementById(`shapePoint${pointIndex}X`).value < 0) {
-          document.getElementById(`shapePoint${pointIndex}X`).value = 0;
-        }
-      });
+      .addEventListener("change", validatePosition);
 
     document
       .getElementById(`shapePoint${pointIndex}Y`)
-      .addEventListener("input", () => {
-        if (document.getElementById(`shapePoint${pointIndex}Y`).value < 0) {
-          document.getElementById(`shapePoint${pointIndex}Y`).value = 0;
-        }
-      });
+      .addEventListener("change", validatePosition);
   });
 }
 
@@ -434,6 +482,9 @@ function addFurnitureConfirmationButtonHandler(addFurniture) {
       const height = document.getElementById("furnitureHeight").value;
       x += width / 2;
       y += height / 2;
+      const rotation = convertDegreesToRadiansSigned(
+        parseInt(document.getElementById("furnitureRotation").value, 10),
+      );
       const color = document.getElementById("furnitureColor").value;
       const textColor = document.getElementById("furnitureTextColor").value;
 
@@ -442,6 +493,7 @@ function addFurnitureConfirmationButtonHandler(addFurniture) {
         y: y,
         width: parseInt(width, 10),
         height: parseInt(height, 10),
+        rotation: rotation,
         color: parseInt(color.slice(1), 16),
         textColor: textColor,
         id: furnitureId,
@@ -455,12 +507,38 @@ function addFurnitureConfirmationButtonHandler(addFurniture) {
 }
 
 /**
+ * Adds validation handlers to the add furniture modal.
+ * @returns {void}
+ */
+function initializeFurnitureModalHandlers() {
+  document
+    .getElementById("furnitureWidth")
+    .addEventListener("change", validateSize);
+
+  document
+    .getElementById("furnitureHeight")
+    .addEventListener("change", validateSize);
+
+  document
+    .getElementById("furnitureX")
+    .addEventListener("change", validatePosition);
+  document
+    .getElementById("furnitureY")
+    .addEventListener("change", validatePosition);
+
+  document
+    .getElementById("furnitureRotation")
+    .addEventListener("change", validateAngle);
+}
+
+/**
  * Initializes the add furniture modal.
  * @param {Function} addFurniture - Function to call when the modal is confirmed.
  * @returns {void}
  */
 function initializeAddFurnitureModal(addFurniture) {
   addFurnitureConfirmationButtonHandler(addFurniture);
+  initializeFurnitureModalHandlers();
 }
 
 function showAddFurnitureModal(button) {

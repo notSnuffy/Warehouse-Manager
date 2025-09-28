@@ -163,50 +163,50 @@ class ShapeEditor extends Phaser.Scene {
     const addShape = async function (shapeId, parameters) {
       console.log(shapeId, parameters);
       if (shapeId === ShapeTypes.RECTANGLE) {
-        this.#shapes.push(
-          new Shapes.Rectangle(
-            this,
-            parameters.x,
-            parameters.y,
-            parameters.width,
-            parameters.height,
-            parameters.color,
-          ),
+        const rectangle = new Shapes.Rectangle(
+          this,
+          parameters.x,
+          parameters.y,
+          parameters.width,
+          parameters.height,
+          parameters.color,
         );
+        rectangle.setRotation(parameters.rotation);
+        this.#shapes.push(rectangle);
       } else if (shapeId === ShapeTypes.ELLIPSE) {
-        this.#shapes.push(
-          new Shapes.Ellipse(
-            this,
-            parameters.x,
-            parameters.y,
-            parameters.width,
-            parameters.height,
-            parameters.color,
-          ),
+        const ellipse = new Shapes.Ellipse(
+          this,
+          parameters.x,
+          parameters.y,
+          parameters.width,
+          parameters.height,
+          parameters.color,
         );
+        ellipse.setRotation(parameters.rotation);
+        this.#shapes.push(ellipse);
       } else if (shapeId === ShapeTypes.ARC) {
-        this.#shapes.push(
-          new Shapes.Arc(
-            this,
-            parameters.x,
-            parameters.y,
-            parameters.radius,
-            0,
-            parameters.angle,
-            false,
-            parameters.color,
-          ),
+        const arc = new Shapes.Arc(
+          this,
+          parameters.x,
+          parameters.y,
+          parameters.radius,
+          parameters.startAngle,
+          parameters.endAngle,
+          false,
+          parameters.color,
         );
+        arc.setRotation(parameters.rotation);
+        this.#shapes.push(arc);
       } else if (shapeId === ShapeTypes.POLYGON) {
-        this.#shapes.push(
-          new Shapes.Polygon(
-            this,
-            parameters.x,
-            parameters.y,
-            parameters.points,
-            parameters.color,
-          ),
+        const polygon = new Shapes.Polygon(
+          this,
+          parameters.x,
+          parameters.y,
+          parameters.points,
+          parameters.color,
         );
+        polygon.setRotation(parameters.rotation);
+        this.#shapes.push(polygon);
       } else {
         try {
           const shapeInstance = await fetch(
@@ -227,6 +227,8 @@ class ShapeEditor extends Phaser.Scene {
 
           rebuiltShape.id = shapeId;
           rebuiltShape.setPosition(parameters.x, parameters.y);
+          rebuiltShape.setDisplaySize(parameters.width, parameters.height);
+          rebuiltShape.setRotation(parameters.rotation);
 
           this.#shapes.push(rebuiltShape);
         } catch (error) {

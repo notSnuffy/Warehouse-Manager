@@ -185,8 +185,8 @@ class FurnitureEditor extends Phaser.Scene {
           parameters.x,
           parameters.y,
           parameters.radius,
-          0,
-          parameters.angle,
+          parameters.startAngle,
+          parameters.endAngle,
           false,
           shapeColor,
         );
@@ -218,6 +218,7 @@ class FurnitureEditor extends Phaser.Scene {
           )[0];
 
           rebuiltShape.setPosition(parameters.x, parameters.y);
+          rebuiltShape.setDisplaySize(parameters.width, parameters.height);
 
           shape = rebuiltShape;
           shape.id = shapeId;
@@ -232,6 +233,7 @@ class FurnitureEditor extends Phaser.Scene {
         this.#shapes.push(shape);
       }
 
+      shape.setRotation(parameters.rotation);
       shape.setInteractive({ draggable: true });
       this.#moveManager.create(shape);
       this.#selectManager.create(shape);
