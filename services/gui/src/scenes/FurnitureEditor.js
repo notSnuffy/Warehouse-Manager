@@ -234,6 +234,7 @@ class FurnitureEditor extends Phaser.Scene {
       }
 
       shape.setRotation(parameters.rotation);
+
       shape.setInteractive({ draggable: true });
       this.#moveManager.create(shape);
       this.#selectManager.create(shape);

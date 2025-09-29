@@ -7,6 +7,7 @@ import * as Shapes from "../shapes";
 import {
   buildShapeFromInstructions,
   ShapeTypes,
+  getShapePoints,
 } from "../lib/functions/shapes";
 
 /**
@@ -237,6 +238,50 @@ class ShapeEditor extends Phaser.Scene {
       }
 
       const shape = this.#shapes[this.#shapes.length - 1];
+
+      let shapePoints = Object.values(getShapePoints(shape));
+      let minX = Math.min(...shapePoints.map((p) => p.x));
+      let minY = Math.min(...shapePoints.map((p) => p.y));
+      let maxX = Math.max(...shapePoints.map((p) => p.x));
+      let maxY = Math.max(...shapePoints.map((p) => p.y));
+
+      const canvasWidth = this.cameras.main.width;
+      const canvasHeight = this.cameras.main.height;
+
+      let scaleX = shape.scaleX;
+      let scaleY = shape.scaleY;
+      let needsScaling = false;
+      if (maxX - minX > canvasWidth) {
+        scaleX = canvasWidth / (maxX - minX);
+        needsScaling = true;
+      }
+      if (maxY - minY > canvasHeight) {
+        scaleY = canvasHeight / (maxY - minY);
+        needsScaling = true;
+      }
+      const scale = Math.min(scaleX, scaleY);
+      if (needsScaling) {
+        shape.setScale(scale);
+      }
+
+      shapePoints = Object.values(getShapePoints(shape));
+      minX = Math.min(...shapePoints.map((p) => p.x));
+      minY = Math.min(...shapePoints.map((p) => p.y));
+      maxX = Math.max(...shapePoints.map((p) => p.x));
+      maxY = Math.max(...shapePoints.map((p) => p.y));
+
+      if (minX < 0) {
+        shape.x += -minX;
+      }
+      if (minY < 0) {
+        shape.y += -minY;
+      }
+      if (maxX > canvasWidth) {
+        shape.x -= maxX - canvasWidth;
+      }
+      if (maxY > canvasHeight) {
+        shape.y -= maxY - canvasHeight;
+      }
 
       shape.setInteractive({ draggable: true });
       this.#moveManager.create(shape);
