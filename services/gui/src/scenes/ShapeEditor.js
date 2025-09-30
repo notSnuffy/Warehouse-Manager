@@ -173,6 +173,7 @@ class ShapeEditor extends Phaser.Scene {
           parameters.color,
         );
         rectangle.setRotation(parameters.rotation);
+        rectangle.setInteractive({ draggable: true });
         this.#shapes.push(rectangle);
       } else if (shapeId === ShapeTypes.ELLIPSE) {
         const ellipse = new Shapes.Ellipse(
@@ -184,6 +185,13 @@ class ShapeEditor extends Phaser.Scene {
           parameters.color,
         );
         ellipse.setRotation(parameters.rotation);
+
+        const hitArea = ellipse.geom;
+        ellipse.setInteractive({
+          hitArea: hitArea,
+          hitAreaCallback: Phaser.Geom.Ellipse.Contains,
+          draggable: true,
+        });
         this.#shapes.push(ellipse);
       } else if (shapeId === ShapeTypes.ARC) {
         const arc = new Shapes.Arc(
@@ -197,6 +205,14 @@ class ShapeEditor extends Phaser.Scene {
           parameters.color,
         );
         arc.setRotation(parameters.rotation);
+
+        const hitArea = new Phaser.Geom.Polygon(arc.pathData);
+        arc.setInteractive({
+          hitArea: hitArea,
+          hitAreaCallback: Phaser.Geom.Polygon.Contains,
+          draggable: true,
+        });
+
         this.#shapes.push(arc);
       } else if (shapeId === ShapeTypes.POLYGON) {
         const polygon = new Shapes.Polygon(
@@ -207,6 +223,12 @@ class ShapeEditor extends Phaser.Scene {
           parameters.color,
         );
         polygon.setRotation(parameters.rotation);
+        const hitArea = polygon.geom;
+        polygon.setInteractive({
+          hitArea: hitArea,
+          hitAreaCallback: Phaser.Geom.Polygon.Contains,
+          draggable: true,
+        });
         this.#shapes.push(polygon);
       } else {
         try {
@@ -230,6 +252,8 @@ class ShapeEditor extends Phaser.Scene {
           rebuiltShape.setPosition(parameters.x, parameters.y);
           rebuiltShape.setDisplaySize(parameters.width, parameters.height);
           rebuiltShape.setRotation(parameters.rotation);
+
+          rebuiltShape.setInteractive({ draggable: true });
 
           this.#shapes.push(rebuiltShape);
         } catch (error) {
@@ -283,7 +307,7 @@ class ShapeEditor extends Phaser.Scene {
         shape.y -= maxY - canvasHeight;
       }
 
-      shape.setInteractive({ draggable: true });
+      //shape.setInteractive({ draggable: true });
       this.#moveManager.create(shape);
       this.#selectManager.create(shape);
     }.bind(this);
