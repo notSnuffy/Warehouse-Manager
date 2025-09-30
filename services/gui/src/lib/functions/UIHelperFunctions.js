@@ -33,16 +33,15 @@ function showAddShapeModal(button) {
 
   // Having the 0, 0 point as read-only should prevent the hitbox being broken
   const defaultPoints = [
-    { x: 0, y: 0, readOnly: true },
-    { x: 50, y: 0, readOnly: false },
-    { x: 50, y: 50, readOnly: false },
+    { x: 0, y: 0 },
+    { x: 50, y: 0 },
+    { x: 50, y: 50 },
   ];
 
   for (let i = 0; i < 3; ++i) {
     const point = document.createElement("div");
     const pointX = defaultPoints[i].x;
     const pointY = defaultPoints[i].y;
-    const readOnly = defaultPoints[i].readOnly;
     point.className = "input-group";
     point.innerHTML = `
       <span class="input-group-text">Point${i} X</span>
@@ -52,7 +51,6 @@ function showAddShapeModal(button) {
         id="shapePoint${i}X"
         required
         value="${pointX}"
-        ${readOnly ? "readonly" : ""}
         min="0"
       />
       <span class="input-group-text">Point${i} Y</span>
@@ -62,7 +60,6 @@ function showAddShapeModal(button) {
         id="shapePoint${i}Y"
         required
         value="${pointY}"
-        ${readOnly ? "readonly" : ""}
         min="0"
       />
       `;
