@@ -1,5 +1,4 @@
 import Manager from "../Manager";
-import { getShapePoints } from "../functions/shapes";
 
 /**
  * Manage the movement of shapes
@@ -9,6 +8,21 @@ import { getShapePoints } from "../functions/shapes";
  */
 class MoveManager extends Manager {
   /**
+   * Flag to indicate if dragging is active
+   * @type {boolean}
+   * @private
+   */
+  #isDragging = false;
+
+  /**
+   * The shape currently being moved
+   * @type {Phaser.GameObjects.Shape|null}
+   * @private
+   * @default null
+   */
+  #currentlyMoving = null;
+
+  /**
    * Constructor
    * @param {Phaser.Scene} scene - The scene
    * @constructor
@@ -16,21 +30,6 @@ class MoveManager extends Manager {
    */
   constructor(scene) {
     super(scene);
-
-    this.moveWorker = new Worker(
-      new URL("../../workers/dragWorker.js", import.meta.url),
-    );
-
-    this.pending = null;
-
-    this.moveWorker.onmessage = (event) => {
-      const { withinBounds } = event.data;
-      if (this.pending && withinBounds) {
-        this.pending.shape.setPosition(this.pending.dragX, this.pending.dragY);
-        this.scene.events.emit("shapeMoved", this.pending.shape);
-        this.pending = null;
-      }
-    };
   }
 
   /**
@@ -46,6 +45,28 @@ class MoveManager extends Manager {
   }
 
   /**
+   * Flag to indicate if dragging is active
+   * @type {boolean}
+   * @readonly
+   * @public
+   * @returns {boolean} The dragging active flag
+   */
+  get isDragging() {
+    return this.#isDragging;
+  }
+
+  /**
+   * The shape currently being moved
+   * @type {Phaser.GameObjects.Shape|null}
+   * @readonly
+   * @public
+   * @returns {Phaser.GameObjects.Shape|null} The shape currently being moved
+   */
+  get currentlyMoving() {
+    return this.#currentlyMoving;
+  }
+
+  /**
    * Adds shape drag event
    * @param {Phaser.GameObjects.Shape} shape - Shape to add drag event to
    * @returns {void}
@@ -54,6 +75,8 @@ class MoveManager extends Manager {
    */
   create(shape) {
     shape.on("dragstart", () => {
+      this.#isDragging = true;
+      this.#currentlyMoving = shape;
       this.scene.children.bringToTop(shape);
       if (shape.label) {
         shape.label.setToTop();
@@ -62,20 +85,14 @@ class MoveManager extends Manager {
 
     shape.on("drag", (_, dragX, dragY) => {
       if (this.scene.activeTool === "move") {
-        const points = Object.values(getShapePoints(shape));
-
-        this.moveWorker.postMessage({
-          points,
-          dragX,
-          dragY,
-          sceneWidth: this.scene.cameras.main.width,
-          sceneHeight: this.scene.cameras.main.height,
-          shapeX: shape.x,
-          shapeY: shape.y,
-        });
-
-        this.pending = { shape, dragX, dragY };
+        shape.setPosition(dragX, dragY);
+        this.scene.events.emit("shapeMoved", shape);
       }
+    });
+
+    shape.on("dragend", () => {
+      this.#isDragging = false;
+      this.#currentlyMoving = null;
     });
   }
 

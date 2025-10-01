@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import { API_URL } from "../config";
+import PanningManager from "../lib/PanningManager";
 import MoveManager from "../lib/move/MoveManager";
 import SelectShapeManager from "../lib/select/SelectShapeManager";
 import ShapeEditorUIInitializer from "../lib/ShapeEditorUIInitializer";
@@ -61,6 +62,14 @@ class ShapeEditor extends Phaser.Scene {
    * @private
    */
   #selectManager = null;
+
+  /**
+   * Panning manager
+   * @type {PanningManager}
+   * @default null
+   * @private
+   */
+  #panningManager = null;
 
   /**
    * Loads a shape by its ID
@@ -314,6 +323,9 @@ class ShapeEditor extends Phaser.Scene {
 
     this.#selectManager = new SelectShapeManager(this);
     this.#moveManager = new MoveManager(this);
+    this.#panningManager = new PanningManager(this);
+
+    this.#panningManager.create();
 
     ShapeEditorUIInitializer.initialize(
       handleMoveButtonClick,
@@ -338,7 +350,16 @@ class ShapeEditor extends Phaser.Scene {
    * Updates the scene
    * @public
    */
-  update() {}
+  update() {
+    if (this.#moveManager.isDragging && this.#panningManager.isPanning) {
+      this.input.activePointer.updateWorldPoint(this.cameras.main);
+      this.#moveManager.currentlyMoving.setPosition(
+        this.input.activePointer.worldX,
+        this.input.activePointer.worldY,
+      );
+    }
+    this.#panningManager.update();
+  }
 }
 
 export { ShapeEditor as ShapeEditor, DEFAULT_SHAPES };
