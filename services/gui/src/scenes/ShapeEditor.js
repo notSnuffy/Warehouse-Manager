@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import { API_URL } from "../config";
 import PanningManager from "../lib/PanningManager";
+import ZoomManager from "../lib/ZoomManager";
 import MoveManager from "../lib/move/MoveManager";
 import SelectShapeManager from "../lib/select/SelectShapeManager";
 import ShapeEditorUIInitializer from "../lib/ShapeEditorUIInitializer";
@@ -326,6 +327,9 @@ class ShapeEditor extends Phaser.Scene {
     this.#panningManager = new PanningManager(this);
 
     this.#panningManager.create();
+
+    const zoomManager = new ZoomManager(this);
+    zoomManager.create();
 
     ShapeEditorUIInitializer.initialize(
       handleMoveButtonClick,
