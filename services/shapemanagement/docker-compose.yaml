@@ -29,6 +29,7 @@ services:
       - shape-network
     volumes:
       - shape-db-data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
 networks:
   shape-network:
     driver: bridge

@@ -1,0 +1,1 @@
+CREATE SEQUENCE IF NOT EXISTS furniture_id_seq START 1;

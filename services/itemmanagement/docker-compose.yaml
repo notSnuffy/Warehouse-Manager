@@ -29,6 +29,7 @@ services:
       - item-network
     volumes:
       - item-db-data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
 networks:
   item-network:
     driver: bridge
