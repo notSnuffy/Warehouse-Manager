@@ -7,6 +7,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinColumns;
 import jakarta.persistence.ManyToOne;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -30,7 +31,10 @@ public class Zone {
 
   /** The furniture that this zone belongs to. */
   @ManyToOne
-  @JoinColumn(name = "furniture_id", nullable = false)
+  @JoinColumns({
+    @JoinColumn(name = "furniture_id", referencedColumnName = "id"),
+    @JoinColumn(name = "furniture_version", referencedColumnName = "version")
+  })
   @JsonBackReference
   private Furniture furniture;
 

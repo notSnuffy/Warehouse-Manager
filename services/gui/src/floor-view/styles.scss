@@ -16,6 +16,7 @@ html {
   height: calc(100vh - 56px); /* Adjust height to fit below navbar */
 }
 #itemsMenu {
+  z-index: 1100;
   padding: 10px;
   overflow-y: auto;
   border-top: 2px solid #000000;

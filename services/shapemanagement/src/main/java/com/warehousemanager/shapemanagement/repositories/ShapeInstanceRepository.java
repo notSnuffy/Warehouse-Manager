@@ -2,7 +2,6 @@ package com.warehousemanager.shapemanagement.repositories;
 
 import com.warehousemanager.shapemanagement.entities.ShapeInstance;
 import java.util.Optional;
-import java.util.UUID;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
@@ -22,5 +21,5 @@ public interface ShapeInstanceRepository extends CrudRepository<ShapeInstance, L
           WHERE subSi.shapeId = :shapeId AND subSi.isTemplate = true
         )
       """)
-  Optional<ShapeInstance> findLatestTemplateByShapeId(@Param("shapeId") UUID shapeId);
+  Optional<ShapeInstance> findLatestTemplateByShapeId(@Param("shapeId") Long shapeId);
 }

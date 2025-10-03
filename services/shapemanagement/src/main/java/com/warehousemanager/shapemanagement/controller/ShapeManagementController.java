@@ -15,7 +15,6 @@ import jakarta.validation.Valid;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -67,7 +66,8 @@ public class ShapeManagementController {
   @PostMapping("/shapes")
   public Shape createShape(@Valid @RequestBody ShapeDataTransferObject shapeDataTransferObject) {
     logger.info("Received request to create shape: {}", shapeDataTransferObject.getName());
-    Shape shape = ShapeDtoMapper.mapToEntity(shapeDataTransferObject);
+    Long nextId = shapeRepository.getNextId();
+    Shape shape = ShapeDtoMapper.mapToEntityWithId(nextId, shapeDataTransferObject);
 
     Shape savedShape = shapeRepository.save(shape);
 
@@ -95,7 +95,7 @@ public class ShapeManagementController {
    * @return the shape entity with the specified ID
    */
   @GetMapping("/shapes/{id}")
-  public Shape getShapeById(@PathVariable UUID id) {
+  public Shape getShapeById(@PathVariable Long id) {
     logger.info("Fetching shape with ID: {}", id);
     Shape shape =
         shapeRepository
@@ -107,7 +107,7 @@ public class ShapeManagementController {
 
   @PutMapping("/shapes/{id}")
   public Shape updateShape(
-      @PathVariable UUID id, @Valid @RequestBody ShapeDataTransferObject shapeDataTransferObject) {
+      @PathVariable Long id, @Valid @RequestBody ShapeDataTransferObject shapeDataTransferObject) {
     logger.info("Updating shape with ID: {}", id);
     Shape existingShape =
         shapeRepository
@@ -142,7 +142,7 @@ public class ShapeManagementController {
   }
 
   @DeleteMapping("/shapes/{id}")
-  public void deleteShape(@PathVariable UUID id) {
+  public void deleteShape(@PathVariable Long id) {
     logger.info("Deleting shape with ID: {}", id);
     List<Shape> shapes = shapeRepository.findByIdEqualsAndDeletedFalseOrderByVersionDesc(id);
 
@@ -165,7 +165,7 @@ public class ShapeManagementController {
    * @throws ShapeTemplateDoesNotExistException if no template exists for the given shape ID
    */
   @GetMapping("/shapes/{id}/template/latest")
-  public ShapeInstanceResponseDataTransferObject getShapeTemplate(@PathVariable UUID id) {
+  public ShapeInstanceResponseDataTransferObject getShapeTemplate(@PathVariable Long id) {
     logger.info("Fetching shape template with ID: {}", id);
     ShapeInstance shapeInstance =
         shapeInstanceRepository
@@ -209,7 +209,7 @@ public class ShapeManagementController {
   public ShapeInstanceResponseDataTransferObject createShapeInstance(
       @Valid @RequestBody ShapeInstanceDataTransferObject shapeInstanceDataTransferObject) {
     logger.info("Creating shape instance with data: {}", shapeInstanceDataTransferObject);
-    UUID shapeId = shapeInstanceDataTransferObject.shapeId();
+    Long shapeId = shapeInstanceDataTransferObject.shapeId();
     Shape shape =
         shapeRepository
             .findByIdEqualsAndDeletedFalseAndCurrentTrue(shapeId)

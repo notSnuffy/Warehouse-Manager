@@ -177,9 +177,7 @@ itemModalConfirmButtonElement.addEventListener("click", async () => {
 async function fetchItems() {
   try {
     const response = await fetch(API_URL + "/item-management/items");
-    if (!response.ok) {
-      throw new Error("Network response was not ok");
-    }
+
     const data = await response.json();
     if (!response.ok) {
       if (data.errors && data.errors.length > 0) {
@@ -301,10 +299,18 @@ async function removeItem(id) {
     const response = await fetch(API_URL + `/item-management/items/${id}`, {
       method: "DELETE",
     });
+    const data = await response.json();
     if (!response.ok) {
-      throw new Error("Network response was not ok");
+      if (data.errors && data.errors.length > 0) {
+        alert(data.errors.join("\n"));
+      }
+      console.error("Failed to remove item:", data);
+      return;
     }
-    delete items[id]; // Remove the item from the items object
+
+    data.forEach((removedId) => {
+      delete items[removedId];
+    });
 
     const totalPages = Math.ceil(Object.keys(items).length / itemsPerPage);
     if (currentPage > totalPages) {

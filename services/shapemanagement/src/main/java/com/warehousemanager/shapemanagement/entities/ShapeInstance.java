@@ -10,7 +10,6 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import java.time.Instant;
 import java.util.List;
-import java.util.UUID;
 import org.hibernate.annotations.ColumnTransformer;
 
 /** Represents specific instances of shapes in the warehouse management system. */
@@ -23,7 +22,7 @@ public class ShapeInstance {
 
   /** ID of the shape that this instance represents. */
   @Column(nullable = false)
-  private UUID shapeId;
+  private Long shapeId;
 
   /** Version of the shape at the time this instance was created. */
   @Column(nullable = false)
@@ -48,7 +47,7 @@ public class ShapeInstance {
    * @param shapeVersion the version of the shape at the time this instance was created
    * @param instructions the instructions for how to create this shape instance
    */
-  public ShapeInstance(UUID shapeId, Instant shapeVersion, List<Instruction> instructions) {
+  public ShapeInstance(Long shapeId, Instant shapeVersion, List<Instruction> instructions) {
     this.shapeId = shapeId;
     this.shapeVersion = shapeVersion;
     this.instructions = instructions;
@@ -68,7 +67,7 @@ public class ShapeInstance {
    *
    * @return the shape ID
    */
-  public UUID getShapeId() {
+  public Long getShapeId() {
     return shapeId;
   }
 
@@ -77,7 +76,7 @@ public class ShapeInstance {
    *
    * @param shapeId the new shape ID
    */
-  public void setShapeId(UUID shapeId) {
+  public void setShapeId(Long shapeId) {
     this.shapeId = shapeId;
   }
 

@@ -1,7 +1,6 @@
 package com.warehousemanager.floormanagement;
 
 import java.util.List;
-import java.util.UUID;
 
 /**
  * Data Transfer Object (DTO) for Furniture entity.
@@ -11,4 +10,4 @@ import java.util.UUID;
  * @param instructions A list of instructions that define how to create the furniture.
  */
 public record FurnitureQueryDataTransferObject(
-    Long furnitureId, UUID shapeId, List<Instruction> instructions) {}
+    Long furnitureId, Long shapeId, List<Instruction> instructions) {}

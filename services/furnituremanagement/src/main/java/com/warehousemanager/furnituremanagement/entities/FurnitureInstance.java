@@ -7,6 +7,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinColumns;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import java.util.List;
@@ -30,7 +31,10 @@ public class FurnitureInstance {
 
   /** The furniture that this instance represents. */
   @ManyToOne
-  @JoinColumn(name = "furniture_id", nullable = false)
+  @JoinColumns({
+    @JoinColumn(name = "furniture_id", referencedColumnName = "id", nullable = false),
+    @JoinColumn(name = "furniture_version", referencedColumnName = "version", nullable = false)
+  })
   private Furniture furniture;
 
   /** Default constructor for JPA. */

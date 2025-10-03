@@ -12,7 +12,6 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.UUID;
 
 @Entity
 public class ZoneInstance {
@@ -38,7 +37,7 @@ public class ZoneInstance {
       name = "zone_instance_items",
       joinColumns = @JoinColumn(name = "zone_instance_id"))
   @Column(name = "item_id")
-  private Set<UUID> itemIds = new HashSet<>();
+  private Set<Long> itemIds = new HashSet<>();
 
   /** Default constructor for JPA. */
   protected ZoneInstance() {}
@@ -103,7 +102,7 @@ public class ZoneInstance {
    *
    * @return the set of item IDs
    */
-  public Set<UUID> getItemIds() {
+  public Set<Long> getItemIds() {
     return itemIds;
   }
 
@@ -112,7 +111,7 @@ public class ZoneInstance {
    *
    * @param itemIds the new list of item IDs
    */
-  public void setItemIds(Set<UUID> itemIds) {
+  public void setItemIds(Set<Long> itemIds) {
     this.itemIds = itemIds;
   }
 
@@ -121,7 +120,7 @@ public class ZoneInstance {
    *
    * @param itemId the item ID to add
    */
-  public void addItemId(UUID itemId) {
+  public void addItemId(Long itemId) {
     this.itemIds.add(itemId);
   }
 
@@ -130,7 +129,7 @@ public class ZoneInstance {
    *
    * @param itemId the item ID to remove
    */
-  public void removeItemId(UUID itemId) {
+  public void removeItemId(Long itemId) {
     this.itemIds.remove(itemId);
   }
 
@@ -140,7 +139,7 @@ public class ZoneInstance {
    * @param itemId the item ID to check
    * @return true if the item ID is present, false otherwise
    */
-  public boolean containsItemId(UUID itemId) {
+  public boolean containsItemId(Long itemId) {
     return this.itemIds.contains(itemId);
   }
 }

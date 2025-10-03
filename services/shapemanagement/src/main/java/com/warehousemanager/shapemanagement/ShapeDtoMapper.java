@@ -12,13 +12,15 @@ public class ShapeDtoMapper {
   public static Logger logger = LoggerFactory.getLogger(ShapeDtoMapper.class);
 
   /**
-   * Maps a ShapeDataTransferObject to a Shape entity.
+   * Maps a ShapeDataTransferObject to a Shape entity with the given id.
    *
+   * @param id the id to set on the Shape entity
    * @param shapeDateTransferObject the ShapeDataTransferObject to map
    * @return the mapped Shape entity
    */
-  public static Shape mapToEntity(ShapeDataTransferObject shapeDateTransferObject) {
-    Shape shape = new Shape(shapeDateTransferObject.getName(), shapeDateTransferObject.getType());
+  public static Shape mapToEntityWithId(Long id, ShapeDataTransferObject shapeDateTransferObject) {
+    Shape shape =
+        new Shape(id, shapeDateTransferObject.getName(), shapeDateTransferObject.getType());
     shape.setPublic(shapeDateTransferObject.isPublic());
     return shape;
   }

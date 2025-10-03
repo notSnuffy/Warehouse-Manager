@@ -1,24 +1,38 @@
 package com.warehousemanager.furnituremanagement.entities;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.warehousemanager.furnituremanagement.FurnitureId;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.IdClass;
 import jakarta.persistence.OneToMany;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import java.time.Instant;
 import java.util.List;
-import java.util.UUID;
 
 /** Represents a piece of furniture. */
 @Entity
+@IdClass(FurnitureId.class)
 public class Furniture {
   /** Unique identifier for the furniture. */
   @Id
-  @GeneratedValue(strategy = GenerationType.SEQUENCE)
+  @Column(nullable = false, updatable = false)
   private Long id;
+
+  /** Version of the furniture. */
+  @Id
+  @Column(nullable = false, updatable = false)
+  private Instant version = Instant.now();
+
+  /** Indicates if this is the current/latest record. */
+  @Column(nullable = false)
+  private Boolean current = true;
+
+  /** Flag indicating whether the furniture is deleted (soft delete). */
+  @Column(nullable = false)
+  private Boolean deleted = false;
 
   /** Name of the furniture. */
   @Column(nullable = false)
@@ -28,7 +42,7 @@ public class Furniture {
 
   /** Identifier for the shape that represents the furniture from a top-down view. */
   @Column(nullable = false)
-  private UUID topDownViewId;
+  private Long topDownViewId;
 
   /** List of shape instance IDs representing how the furniture should be created. */
   private List<Long> shapeIds;
@@ -48,7 +62,21 @@ public class Furniture {
    * @param topDownViewId the identifier for the shape that represents the furniture from a top-down
    *     view
    */
-  public Furniture(String name, UUID topDownViewId) {
+  public Furniture(String name, Long topDownViewId) {
+    this.name = name;
+    this.topDownViewId = topDownViewId;
+  }
+
+  /**
+   * Constructs a Furniture with the specified id, name, and topDownViewId.
+   *
+   * @param id the unique identifier for the furniture
+   * @param name the name of the furniture
+   * @param topDownViewId the identifier for the shape that represents the furniture from a top-down
+   *     view
+   */
+  public Furniture(Long id, String name, Long topDownViewId) {
+    this.id = id;
     this.name = name;
     this.topDownViewId = topDownViewId;
   }
@@ -60,6 +88,51 @@ public class Furniture {
    */
   public Long getId() {
     return id;
+  }
+
+  /**
+   * Gets the version of the furniture.
+   *
+   * @return the version of the furniture
+   */
+  public Instant getVersion() {
+    return version;
+  }
+
+  /**
+   * Checks if this is the current/latest record of the furniture.
+   *
+   * @return true if this is the current record, false otherwise
+   */
+  public Boolean getCurrent() {
+    return current;
+  }
+
+  /**
+   * Sets whether this is the current/latest record of the furniture.
+   *
+   * @param current true if this is the current record, false otherwise
+   */
+  public void setCurrent(Boolean current) {
+    this.current = current;
+  }
+
+  /**
+   * Gets the deleted status of the furniture.
+   *
+   * @return the deleted status of the furniture
+   */
+  public Boolean getDeleted() {
+    return deleted;
+  }
+
+  /**
+   * Sets the deleted status of the furniture.
+   *
+   * @param deleted the new deleted status of the furniture
+   */
+  public void setDeleted(Boolean deleted) {
+    this.deleted = deleted;
   }
 
   /**
@@ -85,7 +158,7 @@ public class Furniture {
    *
    * @return the identifier for the top-down view shape
    */
-  public UUID getTopDownViewId() {
+  public Long getTopDownViewId() {
     return topDownViewId;
   }
 
@@ -94,7 +167,7 @@ public class Furniture {
    *
    * @param topDownViewId the new identifier for the top-down view shape
    */
-  public void setTopDownViewId(UUID topDownViewId) {
+  public void setTopDownViewId(Long topDownViewId) {
     this.topDownViewId = topDownViewId;
   }
 

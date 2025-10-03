@@ -3,14 +3,22 @@ package com.warehousemanager.shapemanagement.repositories;
 import com.warehousemanager.shapemanagement.entities.Shape;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 
 /**
  * Repository interface for managing Shape entities. This interface extends CrudRepository to
  * provide basic CRUD operations.
  */
-public interface ShapeRepository extends CrudRepository<Shape, UUID> {
+public interface ShapeRepository extends CrudRepository<Shape, Long> {
+
+  /**
+   * Retrieves the next available ID for a new shape.
+   *
+   * @return the next available shape ID as a Long
+   */
+  @Query(value = "SELECT nextval('shapes_id_seq')", nativeQuery = true)
+  Long getNextId();
 
   /**
    * Finds all shapes that are marked as current and not deleted.
@@ -26,7 +34,7 @@ public interface ShapeRepository extends CrudRepository<Shape, UUID> {
    * @return a list of shapes that match the given ID, are not deleted, ordered by version
    *     descending
    */
-  List<Shape> findByIdEqualsAndDeletedFalseOrderByVersionDesc(UUID id);
+  List<Shape> findByIdEqualsAndDeletedFalseOrderByVersionDesc(Long id);
 
   /**
    * Finds a shape by its ID that is not deleted and is marked as current.
@@ -34,5 +42,5 @@ public interface ShapeRepository extends CrudRepository<Shape, UUID> {
    * @param id the ID of the shape to search for
    * @return an optional containing the shape if found, otherwise empty
    */
-  Optional<Shape> findByIdEqualsAndDeletedFalseAndCurrentTrue(UUID id);
+  Optional<Shape> findByIdEqualsAndDeletedFalseAndCurrentTrue(Long id);
 }

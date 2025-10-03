@@ -5,7 +5,6 @@ import com.warehousemanager.shapemanagement.entities.ShapeInstance;
 import com.warehousemanager.shapemanagement.repositories.ShapeInstanceRepository;
 import com.warehousemanager.shapemanagement.repositories.ShapeRepository;
 import java.util.Arrays;
-import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
@@ -16,10 +15,10 @@ import org.springframework.context.annotation.Bean;
 @SpringBootApplication
 public class ShapeManagementApplication {
   private static final Logger logger = LoggerFactory.getLogger(ShapeManagementApplication.class);
-  private static final UUID RECTANGLE_ID = UUID.fromString("11111111-1111-1111-1111-111111111111");
-  private static final UUID ELLIPSE_ID = UUID.fromString("22222222-2222-2222-2222-222222222222");
-  private static final UUID ARC_ID = UUID.fromString("33333333-3333-3333-3333-333333333333");
-  private static final UUID POLYGON_ID = UUID.fromString("44444444-4444-4444-4444-444444444444");
+  private static final Long RECTANGLE_ID = 1L;
+  private static final Long ELLIPSE_ID = 2L;
+  private static final Long ARC_ID = 3L;
+  private static final Long POLYGON_ID = 4L;
 
   public static void main(String[] args) {
     SpringApplication.run(ShapeManagementApplication.class, args);

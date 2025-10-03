@@ -31,7 +31,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -90,7 +89,7 @@ public class FurnitureManagementController {
   @GetMapping("/furniture")
   public Iterable<Furniture> getFurniture() {
     logger.info("Received request to get all furniture");
-    Iterable<Furniture> furnitureList = furnitureRepository.findAll();
+    Iterable<Furniture> furnitureList = furnitureRepository.findByDeletedFalseAndCurrentTrue();
     logger.info("Retrieved {} furniture items", furnitureList.spliterator().getExactSizeIfKnown());
     return furnitureList;
   }
@@ -105,9 +104,10 @@ public class FurnitureManagementController {
   public FurnitureResponseDataTransferObject getFurnitureById(@PathVariable Long id) {
     logger.info("Received request to get furniture with ID: {}", id);
     Furniture furniture =
-        furnitureRepository
-            .findById(id)
-            .orElseThrow(() -> new IllegalArgumentException("Furniture not found with ID: " + id));
+        furnitureRepository.findByIdEqualsAndDeletedFalseAndCurrentTrue(id).orElse(null);
+    if (furniture == null) {
+      throw new IllegalArgumentException("Furniture not found with ID: " + id);
+    }
     logger.info("Found furniture: {}", furniture);
     ServiceInstance serviceInstance = discoveryClient.getInstances("shape-management").get(0);
     String baseUrl = serviceInstance.getUri() + "/shapes/";
@@ -129,7 +129,7 @@ public class FurnitureManagementController {
             .uri(baseUrl + furniture.getTopDownViewId())
             .retrieve()
             .body(new ParameterizedTypeReference<ShapeType>() {});
-    logger.info("Top-down view shape instance retrieved: {}", topDownView);
+    logger.info("Top-down view shape template retrieved: {}", topDownView);
     List<ZoneResponseDataTransferObject> zones = new ArrayList<>();
     for (Zone zone : furniture.getZones()) {
       Long shapeId = zone.getShapeId();
@@ -162,9 +162,10 @@ public class FurnitureManagementController {
   public FurnitureTopDownView getFurnitureTopDownViewTemplate(@PathVariable Long id) {
     logger.info("Received request to get top-down view template for furniture with ID: {}", id);
     Furniture furniture =
-        furnitureRepository
-            .findById(id)
-            .orElseThrow(() -> new IllegalArgumentException("Furniture not found with ID: " + id));
+        furnitureRepository.findByIdEqualsAndDeletedFalseAndCurrentTrue(id).orElse(null);
+    if (furniture == null) {
+      throw new IllegalArgumentException("Furniture not found with ID: " + id);
+    }
     logger.info("Found furniture: {}", furniture);
     ServiceInstance serviceInstance = discoveryClient.getInstances("shape-management").get(0);
     String baseUrl = serviceInstance.getUri() + "/shapes/";
@@ -190,10 +191,11 @@ public class FurnitureManagementController {
     logger.info("Received request to create furniture: {}", furnitureDataTransferObject);
     String furnitureName = furnitureDataTransferObject.name();
     List<Shape> shapes = furnitureDataTransferObject.shapes();
-    UUID topDownViewId = furnitureDataTransferObject.topDownViewId();
+    Long topDownViewId = furnitureDataTransferObject.topDownViewId();
     logger.info("Creating furniture with name: {}", furnitureName);
 
-    Furniture furniture = new Furniture(furnitureName, topDownViewId);
+    Long nextId = furnitureRepository.getNextId();
+    Furniture furniture = new Furniture(nextId, furnitureName, topDownViewId);
 
     ServiceInstance serviceInstance = discoveryClient.getInstances("shape-management").get(0);
     String batchShapeUrl = serviceInstance.getUri() + "/shapes/instances/batch";
@@ -249,7 +251,7 @@ public class FurnitureManagementController {
     Set<Map.Entry<String, JsonNode>> properties = items.properties();
     for (Map.Entry<String, JsonNode> entry : properties) {
       JsonNode itemNode = entry.getValue();
-      UUID itemId = UUID.fromString(itemNode.get("id").asText());
+      Long itemId = itemNode.get("id").asLong();
 
       boolean isDeleted = itemNode.get("deleted").asBoolean();
       if (!isDeleted) {
@@ -292,7 +294,7 @@ public class FurnitureManagementController {
       ZoneResponseDataTransferObject zoneResponse =
           new ZoneResponseDataTransferObject(zone.getId(), zone.getName(), zoneShape);
 
-      Set<UUID> itemIds = zoneInstance.getItemIds();
+      Set<Long> itemIds = zoneInstance.getItemIds();
       String itemIdsParameter =
           itemIds.stream().map(String::valueOf).collect(Collectors.joining(","));
       JsonNode items =
@@ -374,7 +376,7 @@ public class FurnitureManagementController {
           zoneShape = zoneShapeMap.get(shapeId);
         }
 
-        Set<UUID> itemIds = zoneInstance.getItemIds();
+        Set<Long> itemIds = zoneInstance.getItemIds();
         String itemIdsParameter =
             itemIds.stream().map(String::valueOf).collect(Collectors.joining(","));
         JsonNode items =
@@ -474,7 +476,7 @@ public class FurnitureManagementController {
   @PostMapping("/furniture/zones/instances/moveItem/batch")
   public void moveItems(@RequestBody List<MoveItemRequest> requests) {
     for (MoveItemRequest request : requests) {
-      UUID itemId = request.itemId();
+      Long itemId = request.itemId();
       Long oldZoneId = request.oldZoneId();
       ZoneInstance oldZoneInstance =
           oldZoneId != null ? zoneInstanceRepository.findById(oldZoneId).orElse(null) : null;

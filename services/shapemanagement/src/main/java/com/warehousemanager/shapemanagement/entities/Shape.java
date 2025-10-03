@@ -11,7 +11,6 @@ import jakarta.persistence.IdClass;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import java.time.Instant;
-import java.util.UUID;
 
 /** Represents a shape in the warehouse management system. */
 @Entity
@@ -21,7 +20,7 @@ public class Shape {
   /** Primary key for the shape entity. */
   @Id
   @Column(nullable = false, updatable = false)
-  private UUID id = UUID.randomUUID();
+  private Long id;
 
   /** Version of the shape. */
   @Id
@@ -72,7 +71,7 @@ public class Shape {
    * @param name the name of the shape
    * @param type the type of the shape
    */
-  public Shape(UUID id, String name, ShapeType type) {
+  public Shape(Long id, String name, ShapeType type) {
     this.id = id;
     this.name = name;
     this.type = type;
@@ -97,7 +96,7 @@ public class Shape {
    *
    * @return the unique identifier of the shape
    */
-  public UUID getId() {
+  public Long getId() {
     return id;
   }
 

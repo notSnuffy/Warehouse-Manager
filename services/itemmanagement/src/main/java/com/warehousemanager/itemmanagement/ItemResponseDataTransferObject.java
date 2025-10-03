@@ -2,7 +2,6 @@ package com.warehousemanager.itemmanagement;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.UUID;
 
 /**
  * Data Transfer Object (DTO) for transferring item response data.
@@ -17,11 +16,10 @@ import java.util.UUID;
  * @param floorId the identifier for the floor where the item is stored
  * @param zoneId the identifier for the zone where the item is stored
  * @param parentId the identifier of the parent item, if applicable
- * @param parentVersion the version timestamp of the parent item, if applicable
  * @param children the list of child items, representing a hierarchical structure
  */
 public record ItemResponseDataTransferObject(
-    UUID id,
+    Long id,
     Instant version,
     Boolean deleted,
     String name,
@@ -30,6 +28,5 @@ public record ItemResponseDataTransferObject(
     String quantity,
     Long floorId,
     Long zoneId,
-    UUID parentId,
-    Instant parentVersion,
+    Long parentId,
     List<ItemResponseDataTransferObject> children) {}

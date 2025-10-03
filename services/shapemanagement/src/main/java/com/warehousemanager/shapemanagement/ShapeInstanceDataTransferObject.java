@@ -2,7 +2,6 @@ package com.warehousemanager.shapemanagement;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.UUID;
 
 /**
  * Represents a data transfer object for shape instances in the warehouse management system.
@@ -12,4 +11,4 @@ import java.util.UUID;
  * @param instructions A list of instructions that define how to create the shape instance.
  */
 public record ShapeInstanceDataTransferObject(
-    UUID shapeId, Instant shapeVersion, List<Instruction> instructions) {}
+    Long shapeId, Instant shapeVersion, List<Instruction> instructions) {}

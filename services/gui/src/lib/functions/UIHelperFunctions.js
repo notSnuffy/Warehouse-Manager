@@ -11,7 +11,7 @@ import { convertDegreesToRadiansSigned } from "../functions/math";
  * @returns {void}
  */
 function showAddShapeModal(button) {
-  const shapeId = button.dataset.id;
+  const shapeId = parseInt(button.dataset.id, 10);
   const shapeName = button.dataset.shape_name;
   const modalElement = document.getElementById("newShapeModal");
   const shapeIdElement = document.getElementById("shapeId");
@@ -219,7 +219,7 @@ function addShapeConfirmationButtonHandler(addShape) {
   document
     .getElementById("addShapeConfirmButton")
     .addEventListener("click", function () {
-      const shapeId = document.getElementById("shapeId").value;
+      const shapeId = parseInt(document.getElementById("shapeId").value, 10);
 
       let x = parseInt(document.getElementById("shapeX").value, 10);
       let y = parseInt(document.getElementById("shapeY").value, 10);
@@ -627,6 +627,7 @@ async function populateFloorViewItemList(setDragged) {
       return;
     }
     const itemMap = new Map();
+    console.log("Items data:", data);
     data.forEach((item) => {
       addItemIntoFloorViewItemList(item.name, item.id);
       let children = new Set();
@@ -642,6 +643,7 @@ async function populateFloorViewItemList(setDragged) {
         children: children,
       });
     });
+    console.log(itemMap);
     const itemsMenuItemsElement = document.getElementById("itemsMenuItems");
     Sortable.create(itemsMenuItemsElement, {
       group: {

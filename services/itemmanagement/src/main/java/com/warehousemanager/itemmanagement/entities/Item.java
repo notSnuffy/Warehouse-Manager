@@ -1,21 +1,13 @@
 package com.warehousemanager.itemmanagement.entities;
 
 import com.warehousemanager.itemmanagement.ItemId;
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.IdClass;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinColumns;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
 
 @Entity
 @IdClass(ItemId.class)
@@ -23,7 +15,7 @@ public class Item {
   /** Unique identifier for the item. */
   @Id
   @Column(nullable = false, updatable = false)
-  private UUID id = UUID.randomUUID();
+  private Long id;
 
   /** Version timestamp for versioning. */
   @Id
@@ -59,17 +51,8 @@ public class Item {
   /** Identifier for the zone where the item is stored. */
   private Long zoneId;
 
-  /** Parent item in the hierarchical structure. */
-  @ManyToOne
-  @JoinColumns({
-    @JoinColumn(name = "parent_id", referencedColumnName = "id"),
-    @JoinColumn(name = "parent_version", referencedColumnName = "version")
-  })
-  private Item parent;
-
-  /** List of child items, representing a hierarchical structure. */
-  @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL)
-  private List<Item> children = new ArrayList<>();
+  /** Parent item id in the hierarchical structure. */
+  private Long parentId;
 
   /** Default constructor for JPA. */
   protected Item() {}
@@ -90,6 +73,7 @@ public class Item {
    * @param name the name of the item
    */
   public Item(Long id, String name) {
+    this.id = id;
     this.name = name;
   }
 
@@ -109,8 +93,7 @@ public class Item {
     this.quantity = other.quantity;
     this.floorId = other.floorId;
     this.zoneId = other.zoneId;
-    this.parent = other.parent;
-    this.children = new ArrayList<>(other.children);
+    this.parentId = other.parentId;
   }
 
   /**
@@ -118,7 +101,7 @@ public class Item {
    *
    * @return the unique identifier of the item
    */
-  public UUID getId() {
+  public Long getId() {
     return id;
   }
 
@@ -276,59 +259,20 @@ public class Item {
   }
 
   /**
-   * Gets the parent item in the hierarchical structure.
+   * Gets the parent item id in the hierarchical structure.
    *
-   * @return the parent item
+   * @return the parent item id
    */
-  public Item getParent() {
-    return parent;
+  public Long getParentId() {
+    return parentId;
   }
 
   /**
-   * Sets the parent item in the hierarchical structure.
+   * Sets the parent item id in the hierarchical structure.
    *
-   * @param parent the new parent item
+   * @param parentId the new parent item id
    */
-  public void setParent(Item parent) {
-    this.parent = parent;
-  }
-
-  /**
-   * Adds a child item to the list of children and sets this item as the parent of the child.
-   *
-   * @param child the child item to be added
-   */
-  public void addChild(Item child) {
-    children.add(child);
-    child.setParent(this);
-  }
-
-  /**
-   * Removes a child item from the list of children and clears its parent reference.
-   *
-   * @param child the child item to be removed
-   */
-  public void removeChild(Item child) {
-    children.remove(child);
-    child.setParent(null);
-  }
-
-  /**
-   * Gets the list of child items.
-   *
-   * @return the list of child items
-   */
-  public List<Item> getChildren() {
-    return children;
-  }
-
-  /**
-   * Sets the list of child items.
-   *
-   * @param children the new list of child items
-   */
-  public void setChildren(List<Item> children) {
-    this.children = children;
-    children.forEach(child -> child.setParent(this));
+  public void setParentId(Long parentId) {
+    this.parentId = parentId;
   }
 }

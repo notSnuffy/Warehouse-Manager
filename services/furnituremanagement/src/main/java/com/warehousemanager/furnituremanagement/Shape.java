@@ -2,7 +2,6 @@ package com.warehousemanager.furnituremanagement;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.UUID;
 
 /**
  * Represents a shape transfer object in the warehouse management system.
@@ -11,4 +10,4 @@ import java.util.UUID;
  * @param shapeVersion The version of the shape.
  * @param instructions A list of instructions that define how to create the shape.
  */
-public record Shape(UUID shapeId, Instant shapeVersion, List<Instruction> instructions) {}
+public record Shape(Long shapeId, Instant shapeVersion, List<Instruction> instructions) {}

@@ -136,13 +136,13 @@ class FurnitureView extends Phaser.Scene {
       invertSwap: true,
       onAdd: (evt) => {
         const item = evt.item;
-        const id = item.dataset.id;
+        const id = parseInt(item.dataset.id, 10);
         const itemMap = this.scene.get("FloorView").itemMap;
         const itemData = itemMap.get(id);
         const previousList = evt.from;
         console.log("Event onAdd:", evt);
         const thisList = evt.to;
-        const newParentId = thisList.dataset.parentId;
+        const newParentId = parseInt(thisList.dataset.parentId, 10);
         const newParentItemData = itemMap.get(newParentId);
         const oldParentId = itemData.parentId;
         let parentId = newParentId;
@@ -366,7 +366,7 @@ class FurnitureView extends Phaser.Scene {
       onAdd: (evt) => {
         console.log("Item added to zone:", evt);
         const item = evt.item;
-        const id = item.dataset.id;
+        const id = parseInt(item.dataset.id, 10);
         const itemMap = this.scene.get("FloorView").itemMap;
         const itemData = itemMap.get(id);
         const previousList = evt.from;
