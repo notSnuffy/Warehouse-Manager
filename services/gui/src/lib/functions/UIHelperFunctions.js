@@ -173,7 +173,7 @@ function validateAngle(event) {
 function validatePosition(event) {
   const positionInput = event.target;
   const position = parseInt(positionInput.value, 10);
-  if (position < 0 || isNaN(position)) {
+  if (isNaN(position)) {
     positionInput.value = 0;
   }
 }
