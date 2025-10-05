@@ -9,6 +9,7 @@ import {
 } from "../lib/functions/shapes";
 import { Modal } from "bootstrap";
 import { DEFAULT_SHAPES } from "../scenes/ShapeEditor";
+import { API_URL } from "../config";
 
 /**
  * @class FurnitureEditorUIInitializer
@@ -209,9 +210,21 @@ class FurnitureEditorUIInitializer {
         FurnitureEditorUIInitializer.#pendingFurniture,
       );
 
+      const currentFurnitureIdElement =
+        document.getElementById("currentFurnitureId");
+      const currentFurnitureId = currentFurnitureIdElement
+        ? currentFurnitureIdElement.value
+        : "";
+      const isUpdate = currentFurnitureId !== "";
+
+      const method = isUpdate ? "PUT" : "POST";
+      const endpoint = isUpdate
+        ? `/furniture-management/furniture/${currentFurnitureId}`
+        : "/furniture-management/furniture";
+
       try {
-        const response = await fetch("/furniture-management/furniture", {
-          method: "POST",
+        const response = await fetch(API_URL + endpoint, {
+          method: method,
           headers: {
             "Content-Type": "application/json",
           },
@@ -225,8 +238,12 @@ class FurnitureEditorUIInitializer {
           console.error("Failed to save furniture:", data);
           return;
         }
-        console.log("Furniture saved successfully:", data);
-        alert("Furniture saved successfully!");
+
+        if (isUpdate) {
+          alert("Furniture updated successfully!");
+        } else {
+          alert("Furniture created successfully!");
+        }
       } catch (error) {
         console.error(error);
       }

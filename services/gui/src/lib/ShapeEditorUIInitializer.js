@@ -100,9 +100,11 @@ class ShapeEditorUIInitializer {
 
       console.log("Shape to save:", shape);
 
-      let currentShapeId = document.getElementById("currentShapeId").value;
-      console.log("Current Shape ID:", currentShapeId);
-      let isUpdate = currentShapeId !== "";
+      const currentShapeIdElement = document.getElementById("currentShapeId");
+      const currentShapeId = currentShapeIdElement
+        ? currentShapeIdElement.value
+        : "";
+      const isUpdate = currentShapeId !== "";
 
       const method = isUpdate ? "PUT" : "POST";
       const endpoint = isUpdate
@@ -138,7 +140,6 @@ class ShapeEditorUIInitializer {
         }
 
         addItemButtonIntoList(data.name, data.id);
-        document.getElementById("currentShapeId").value = data.id;
         alert("Shape saved successfully!");
       } catch (error) {
         console.error(error);

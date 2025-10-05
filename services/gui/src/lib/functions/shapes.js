@@ -63,7 +63,6 @@ function getContainerWrapper(shapes) {
   };
 
   const rootContainer = {
-    shapeId: -1,
     positionX: boundingBox.centerX,
     positionY: boundingBox.centerY,
     width: boundingBox.width,
@@ -246,10 +245,13 @@ function saveShapeAsInstructions(shape) {
   };
 
   const convertShapeToInstruction = (shape) => {
+    console.log("Converting shape:", shape);
     const commandName = getShapeCommandName(shape.shapeId);
     const instruction = {
       command: commandName,
       parameters: {
+        shapeId: shape.shapeId,
+        shapeVersion: shape.shapeVersion,
         positionX: shape.positionX,
         positionY: shape.positionY,
         width: shape.width,
@@ -313,6 +315,8 @@ function buildShapeFromInstructions(instructions, scene, color = 0xffffff) {
           color,
         );
         rectangle.setRotation(parameters.rotation);
+        rectangle.id = parameters.shapeId;
+        rectangle.version = parameters.shapeVersion;
         if (containerStack.length > 0) {
           const parentContainer = containerStack[containerStack.length - 1];
           parentContainer.add(rectangle);
@@ -331,6 +335,8 @@ function buildShapeFromInstructions(instructions, scene, color = 0xffffff) {
           color,
         );
         ellipse.setRotation(parameters.rotation);
+        ellipse.id = parameters.shapeId;
+        ellipse.version = parameters.shapeVersion;
         if (containerStack.length > 0) {
           const parentContainer = containerStack[containerStack.length - 1];
           parentContainer.add(ellipse);
@@ -352,6 +358,8 @@ function buildShapeFromInstructions(instructions, scene, color = 0xffffff) {
         );
         arc.setDisplaySize(parameters.width, parameters.height);
         arc.setRotation(parameters.rotation);
+        arc.id = parameters.shapeId;
+        arc.version = parameters.shapeVersion;
         if (containerStack.length > 0) {
           const parentContainer = containerStack[containerStack.length - 1];
           parentContainer.add(arc);
@@ -373,6 +381,8 @@ function buildShapeFromInstructions(instructions, scene, color = 0xffffff) {
         );
         polygon.setDisplaySize(parameters.width, parameters.height);
         polygon.setRotation(parameters.rotation);
+        polygon.id = parameters.shapeId;
+        polygon.version = parameters.shapeVersion;
         if (containerStack.length > 0) {
           const parentContainer = containerStack[containerStack.length - 1];
           parentContainer.add(polygon);
@@ -390,6 +400,8 @@ function buildShapeFromInstructions(instructions, scene, color = 0xffffff) {
         );
         container.setSize(parameters.width, parameters.height);
         container.setRotation(parameters.rotation);
+        container.id = parameters.shapeId;
+        container.version = parameters.shapeVersion;
 
         if (containerStack.length > 0) {
           const parentContainer = containerStack[containerStack.length - 1];

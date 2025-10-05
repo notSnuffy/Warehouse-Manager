@@ -82,6 +82,22 @@ public class Furniture {
   }
 
   /**
+   * Copy constructor to create a new Furniture instance by copying another instance. The version is
+   * set to the current time to indicate a new version.
+   *
+   * @param other the Furniture instance to copy
+   */
+  public Furniture(Furniture other) {
+    this.id = other.id;
+    this.version = Instant.now();
+    this.deleted = other.deleted;
+    this.name = other.name;
+    this.topDownViewId = other.topDownViewId;
+    this.shapeIds = other.shapeIds;
+    this.zones = other.zones;
+  }
+
+  /**
    * Gets the unique identifier of the furniture.
    *
    * @return the unique identifier of the furniture

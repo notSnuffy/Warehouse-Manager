@@ -92,6 +92,10 @@ class FurnitureEditor extends Phaser.Scene {
       const furnitureNameElement = document.getElementById("furnitureName");
       furnitureNameElement.value = furnitureData.name;
 
+      const currentFurnitureIdElement =
+        document.getElementById("currentFurnitureId");
+      currentFurnitureIdElement.value = furnitureId;
+
       const topDownViewElement = document.getElementById("topDownView");
       topDownViewElement.value = furnitureData.topDownView.name;
 
@@ -222,6 +226,7 @@ class FurnitureEditor extends Phaser.Scene {
 
           shape = rebuiltShape;
           shape.id = shapeId;
+          shape.version = shapeData.shape.version;
         } catch (error) {
           console.error("Error fetching shape template:", error);
         }

@@ -171,7 +171,6 @@ class ShapeEditor extends Phaser.Scene {
     }.bind(this);
 
     const addShape = async function (shapeId, parameters) {
-      console.log(shapeId, parameters);
       if (shapeId === ShapeTypes.RECTANGLE) {
         const rectangle = new Shapes.Rectangle(
           this,
@@ -258,6 +257,7 @@ class ShapeEditor extends Phaser.Scene {
           )[0];
 
           rebuiltShape.id = shapeId;
+          rebuiltShape.version = shapeData.shape.version;
           rebuiltShape.setPosition(parameters.x, parameters.y);
           rebuiltShape.setDisplaySize(parameters.width, parameters.height);
           rebuiltShape.setRotation(parameters.rotation);

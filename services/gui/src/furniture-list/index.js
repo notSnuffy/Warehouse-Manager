@@ -118,15 +118,19 @@ async function removeFurniture(id) {
   if (!confirm("Are you sure you want to remove this furniture?")) {
     return; // User canceled the deletion
   }
+
+  const endpoint = `/furniture-management/furniture/${id}`;
+
   try {
-    //const response = await fetch(API_URL + `/furniture-management/furniture/${id}`, {
-    //  method: "DELETE",
-    //});
-    //if (!response.ok) {
-    //  throw new Error("Network response was not ok");
-    //}
-    // Remove the furniture from the list
-    //}
+    const response = await fetch(API_URL + endpoint, {
+      method: "DELETE",
+    });
+
+    if (!response.ok) {
+      console.error("Failed to remove furniture:", response.statusText);
+      alert("Failed to remove furniture: " + response.statusText);
+      return;
+    }
 
     // Technically, we could remove just the specific furniture from the DOM,
     // but for simplicity, we re-render the entire list.
@@ -140,6 +144,7 @@ async function removeFurniture(id) {
     populateFurnitureSuggestions();
   } catch (error) {
     console.error("Error removing furniture:", error);
+    alert("An error occurred while removing the furniture.");
   }
 }
 

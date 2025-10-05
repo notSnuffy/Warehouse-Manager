@@ -228,7 +228,6 @@ function addShapeConfirmationButtonHandler(addShape) {
         10,
       );
       rotation = convertDegreesToRadiansSigned(rotation);
-      console.log("Adding shape:", shapeId, x, y, rotation);
 
       if (shapeId === ShapeTypes.ARC) {
         const radius = parseInt(

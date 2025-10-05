@@ -2,10 +2,17 @@ package com.warehousemanager.shapemanagement;
 
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import java.time.Instant;
 import java.util.List;
 
 /** Represents parameters for creating shapes in the warehouse management system. */
 public class ShapeParameters {
+  /** ID of the shape these parameters represent. */
+  public Long shapeId;
+
+  /** Version of the shape at the time these parameters were created. */
+  public Instant shapeVersion;
+
   /** X position of the shape in the warehouse. */
   public double positionX;
 

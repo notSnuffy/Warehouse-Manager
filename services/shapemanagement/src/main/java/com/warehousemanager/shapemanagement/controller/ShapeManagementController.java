@@ -146,7 +146,7 @@ public class ShapeManagementController {
     logger.info("Deleting shape with ID: {}", id);
     List<Shape> shapes = shapeRepository.findByIdEqualsAndDeletedFalseOrderByVersionDesc(id);
 
-    if (shapes.size() == 0) {
+    if (shapes.isEmpty()) {
       throw new IllegalArgumentException("Shape not found");
     }
 

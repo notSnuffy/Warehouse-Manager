@@ -37,9 +37,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -234,6 +236,78 @@ public class FurnitureManagementController {
     savedFurniture.setZones(zones);
 
     return savedFurniture;
+  }
+
+  @PutMapping("/furniture/{id}")
+  public Furniture updateFurniture(
+      @PathVariable Long id, @RequestBody FurnitureDataTransferObject furnitureDataTransferObject) {
+    logger.info("Received request to update furniture with ID: {}", id);
+    Furniture existingFurniture =
+        furnitureRepository
+            .findByIdEqualsAndDeletedFalseAndCurrentTrue(id)
+            .orElseThrow(() -> new IllegalArgumentException("Furniture not found with ID: " + id));
+    String newName = furnitureDataTransferObject.name();
+    List<Shape> newShapes = furnitureDataTransferObject.shapes();
+    Long newTopDownViewId = furnitureDataTransferObject.topDownViewId();
+
+    Furniture updatedFurniture = new Furniture(existingFurniture);
+    updatedFurniture.setName(newName);
+    updatedFurniture.setTopDownViewId(newTopDownViewId);
+
+    ServiceInstance serviceInstance = discoveryClient.getInstances("shape-management").get(0);
+    String batchShapeUrl = serviceInstance.getUri() + "/shapes/instances/batch";
+    List<ShapeInstance> shapeInstances =
+        restClient
+            .post()
+            .uri(batchShapeUrl)
+            .contentType(APPLICATION_JSON)
+            .body(newShapes)
+            .retrieve()
+            .body(new ParameterizedTypeReference<List<ShapeInstance>>() {});
+    updatedFurniture.setShapeIds(shapeInstances.stream().map(ShapeInstance::id).toList());
+    Furniture savedFurniture = furnitureRepository.save(updatedFurniture);
+
+    existingFurniture.setCurrent(false);
+    furnitureRepository.save(existingFurniture);
+
+    String zoneCreationUrl = serviceInstance.getUri() + "/shapes/instances";
+    List<ZoneDataTransferObject> zoneDataTransferObjects = furnitureDataTransferObject.zones();
+    List<Zone> zones = new ArrayList<>();
+    for (ZoneDataTransferObject zoneDataTransferObject : zoneDataTransferObjects) {
+      Shape shape = zoneDataTransferObject.shape();
+      ShapeInstance shapeInstance =
+          restClient
+              .post()
+              .uri(zoneCreationUrl)
+              .contentType(APPLICATION_JSON)
+              .body(shape)
+              .retrieve()
+              .body(new ParameterizedTypeReference<ShapeInstance>() {});
+      String zoneName = zoneDataTransferObject.name();
+      logger.info("Creating zone with name: {} and shape ID: {}", zoneName, shape.shapeId());
+      Zone zone = new Zone(zoneName, shapeInstance.id(), savedFurniture);
+      Zone savedZone = zoneRepository.save(zone);
+      zones.add(savedZone);
+    }
+
+    return savedFurniture;
+  }
+
+  @DeleteMapping("/furniture/{id}")
+  public void deleteFurniture(@PathVariable Long id) {
+    logger.info("Received request to delete furniture with ID: {}", id);
+    List<Furniture> furniture =
+        furnitureRepository.findByIdEqualsAndDeletedFalseOrderByVersionDesc(id);
+
+    if (furniture.isEmpty()) {
+      throw new IllegalArgumentException("Furniture not found with ID: " + id);
+    }
+
+    for (Furniture item : furniture) {
+      item.setDeleted(true);
+      furnitureRepository.save(item);
+    }
+    logger.info("Furniture with ID: {} has been deleted", id);
   }
 
   /**
