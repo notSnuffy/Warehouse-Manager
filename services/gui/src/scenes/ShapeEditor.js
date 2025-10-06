@@ -3,6 +3,7 @@ import { API_URL } from "../config";
 import PanningManager from "../lib/PanningManager";
 import ZoomManager from "../lib/ZoomManager";
 import MoveManager from "../lib/move/MoveManager";
+import OutlineManager from "../lib/outlines/OutlineManager";
 import SelectShapeManager from "../lib/select/SelectShapeManager";
 import ShapeEditorUIInitializer from "../lib/ShapeEditorUIInitializer";
 import * as Shapes from "../shapes";
@@ -278,7 +279,7 @@ class ShapeEditor extends Phaser.Scene {
     }.bind(this);
 
     this.#selectManager = new SelectShapeManager(this);
-    this.#moveManager = new MoveManager(this);
+    this.#moveManager = new MoveManager(this, new OutlineManager(this));
     this.#panningManager = new PanningManager(this);
 
     this.#panningManager.create();
@@ -312,7 +313,8 @@ class ShapeEditor extends Phaser.Scene {
   update() {
     if (this.#moveManager.isDragging && this.#panningManager.isPanning) {
       this.input.activePointer.updateWorldPoint(this.cameras.main);
-      this.#moveManager.currentlyMoving.setPosition(
+      this.#moveManager.update(
+        null,
         this.input.activePointer.worldX,
         this.input.activePointer.worldY,
       );
