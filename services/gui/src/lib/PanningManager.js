@@ -83,7 +83,13 @@ class PanningManager {
     const camera = this.scene.cameras.main;
 
     const scrollSpeed = 3;
-    const edgeSize = 20;
+    const edgeSize = 40;
+
+    if (pointer.event?.target.closest("#scrollY, #scrollX")) {
+      this.#isPanning = false;
+      this.#panStart = null;
+      return;
+    }
 
     if (
       pointer.x < 0 ||

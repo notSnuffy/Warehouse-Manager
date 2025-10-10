@@ -156,6 +156,44 @@ class ShapeEditor extends Phaser.Scene {
       await this.#loadShape(shapeId);
     }
 
+    const camera = this.cameras.main;
+
+    const scrollXElement = document.getElementById("scrollX");
+    const scrollYElement = document.getElementById("scrollY");
+
+    const cameraWidth = camera.width;
+    const cameraHeight = camera.height;
+
+    const initialWorldWidth = cameraWidth * 3;
+    const initialWorldHeight = cameraHeight * 3;
+
+    scrollXElement.max = initialWorldWidth;
+    scrollYElement.max = initialWorldHeight;
+
+    scrollXElement.value = cameraWidth;
+    scrollYElement.value = cameraHeight;
+
+    camera.setBounds(
+      -cameraWidth,
+      -cameraHeight,
+      initialWorldWidth,
+      initialWorldHeight,
+    );
+
+    scrollXElement.addEventListener("input", (event) => {
+      const value = parseInt(event.target.value, 10);
+      camera.scrollX = value - cameraWidth;
+    });
+    scrollYElement.addEventListener("input", (event) => {
+      const value = parseInt(event.target.value, 10);
+      camera.scrollY = value - cameraHeight;
+    });
+
+    this.events.on("postupdate", () => {
+      scrollXElement.value = camera.scrollX + cameraWidth;
+      scrollYElement.value = camera.scrollY + cameraHeight;
+    });
+
     /**
      * Handles the move button click event
      */
