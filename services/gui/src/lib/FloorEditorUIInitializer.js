@@ -102,6 +102,7 @@ class FloorEditorUIInitializer {
       console.log("Editor furniture:", editorFurniture);
       const furniture = preprocessedFurniture.map((furniture, index) => ({
         furnitureId: editorFurniture[index].furnitureId,
+        furnitureInstanceId: editorFurniture[index].furnitureInstanceId ?? null,
         shapeId: furniture.shapeId,
         instructions: saveShapeAsInstructions(furniture),
       }));
@@ -111,23 +112,42 @@ class FloorEditorUIInitializer {
 
       console.log("Floor data to save:", floorData);
 
+      const currentFloorIdElement = document.getElementById("currentFloorId");
+      const currentFloorId = currentFloorIdElement
+        ? currentFloorIdElement.value
+        : null;
+      const isUpdate = currentFloorId !== "";
+
+      const method = isUpdate ? "PUT" : "POST";
+      const endpoint = isUpdate
+        ? `/floor-management/floors/${currentFloorId}`
+        : `/floor-management/floors`;
+
       try {
-        const response = await fetch(`${API_URL}/floor-management/floors`, {
-          method: "POST",
+        const response = await fetch(API_URL + endpoint, {
+          method: method,
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify(floorData),
         });
 
+        const data = await response.json();
         if (!response.ok) {
-          throw new Error("Failed to save floor data.");
+          if (data.errors && data.errors.length > 0) {
+            alert(data.errors.join("\n"));
+          }
+          console.error("Failed to save furniture:", data);
+          return;
         }
 
-        const result = await response.json();
-        console.log("Floor saved successfully:", result);
+        if (isUpdate) {
+          alert("Floor updated successfully!");
+        } else {
+          alert("Floor created successfully!");
+        }
       } catch (error) {
-        console.error("Error saving floor data:", error);
+        console.error(error);
       }
     });
   }

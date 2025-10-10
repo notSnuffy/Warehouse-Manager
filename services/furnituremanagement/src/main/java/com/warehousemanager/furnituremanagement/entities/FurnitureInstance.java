@@ -10,6 +10,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinColumns;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
+import java.time.Instant;
 import java.util.List;
 
 /** Represents a furniture instance. */
@@ -23,6 +24,10 @@ public class FurnitureInstance {
   /** Identifier for the shape instance that represents the furniture from a top-down view. */
   @Column(nullable = false)
   private Long topDownViewInstanceId;
+
+  /** Version of the furniture instance. */
+  @Column(nullable = false)
+  private Instant version = Instant.now();
 
   /** List of zone instances in the furniture where items can be placed. */
   @OneToMany(mappedBy = "furnitureInstance")
@@ -59,6 +64,24 @@ public class FurnitureInstance {
    */
   public Long getId() {
     return id;
+  }
+
+  /**
+   * Gets the version of the furniture instance.
+   *
+   * @return the version of the furniture instance
+   */
+  public Instant getVersion() {
+    return version;
+  }
+
+  /**
+   * Sets the version of the furniture instance.
+   *
+   * @param version the new version of the furniture instance
+   */
+  public void setVersion(Instant version) {
+    this.version = version;
   }
 
   /**

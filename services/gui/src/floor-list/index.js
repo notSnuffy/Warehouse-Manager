@@ -112,15 +112,17 @@ async function removeFloor(id) {
   if (!confirm("Are you sure you want to remove this floor?")) {
     return; // User canceled the deletion
   }
+
+  const endpoint = `/floor-management/floors/${id}`;
+
   try {
-    //const response = await fetch(API_URL + `/floor-management/floors/${id}`, {
-    //  method: "DELETE",
-    //});
-    //if (!response.ok) {
-    //  throw new Error("Network response was not ok");
-    //}
-    // Remove the floor from the list
-    //}
+    const response = await fetch(API_URL + endpoint, {
+      method: "DELETE",
+    });
+    if (!response.ok) {
+      console.error("Failed to remove floor:", response.statusText);
+      alert("Failed to remove floor: " + response.statusText);
+    }
 
     // Technically, we could remove just the specific floor from the DOM,
     // but for simplicity, we re-render the entire list.

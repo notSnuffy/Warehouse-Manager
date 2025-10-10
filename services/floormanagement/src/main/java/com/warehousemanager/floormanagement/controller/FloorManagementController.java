@@ -6,7 +6,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.warehousemanager.floormanagement.CornerDataTransferObject;
 import com.warehousemanager.floormanagement.FloorDataTransferObject;
 import com.warehousemanager.floormanagement.FloorResponseDataTransferObject;
+import com.warehousemanager.floormanagement.FloorUpdateDataTransferObject;
 import com.warehousemanager.floormanagement.FurnitureInstanceId;
+import com.warehousemanager.floormanagement.FurnitureUpdateQueryDataTransferObject;
 import com.warehousemanager.floormanagement.WallDataTransferObject;
 import com.warehousemanager.floormanagement.entities.Corner;
 import com.warehousemanager.floormanagement.entities.Floor;
@@ -14,6 +16,7 @@ import com.warehousemanager.floormanagement.entities.Wall;
 import com.warehousemanager.floormanagement.repositories.CornerRepository;
 import com.warehousemanager.floormanagement.repositories.FloorRepository;
 import com.warehousemanager.floormanagement.repositories.WallRepository;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,9 +26,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestClient;
@@ -64,12 +69,13 @@ public class FloorManagementController {
 
   @GetMapping("/floors")
   public Iterable<Floor> getAllFloors() {
-    return floorRepository.findAll();
+    return floorRepository.findByDeletedFalseAndCurrentTrue();
   }
 
   @PostMapping("/floors")
   public Floor saveFloor(@RequestBody FloorDataTransferObject floorDataTransferObject) {
-    Floor floor = new Floor(floorDataTransferObject.name());
+    Long nextId = floorRepository.getNextId();
+    Floor floor = new Floor(nextId, floorDataTransferObject.name());
     floor = floorRepository.save(floor);
 
     Map<Long, Corner> corners = new HashMap<>();
@@ -121,7 +127,7 @@ public class FloorManagementController {
   public FloorResponseDataTransferObject getFloorById(@PathVariable Long id) {
     Floor floor =
         floorRepository
-            .findById(id)
+            .findByIdEqualsAndDeletedFalseAndCurrentTrue(id)
             .orElseThrow(() -> new IllegalArgumentException("Floor not found with id: " + id));
 
     List<Corner> corners = cornerRepository.findByFloor(floor);
@@ -157,10 +163,112 @@ public class FloorManagementController {
     FloorResponseDataTransferObject floorDto =
         new FloorResponseDataTransferObject(
             floor.getId(),
+            floor.getVersion(),
             floor.getName(),
             cornerDataTransferObjects,
             wallDataTransferObjects,
             furniture);
     return floorDto;
+  }
+
+  @PutMapping("/floors/{id}")
+  public Floor updateFloor(
+      @PathVariable Long id, @RequestBody FloorUpdateDataTransferObject floorDataTransferObject) {
+    Floor existingFloor =
+        floorRepository
+            .findByIdEqualsAndDeletedFalseAndCurrentTrue(id)
+            .orElseThrow(() -> new IllegalArgumentException("Floor not found with id: " + id));
+
+    Floor newFloor = new Floor(existingFloor);
+    newFloor.setName(floorDataTransferObject.name());
+    newFloor = floorRepository.save(newFloor);
+
+    Map<Long, Corner> corners = new HashMap<>();
+
+    for (CornerDataTransferObject cornerDataTransferObject : floorDataTransferObject.corners()) {
+      Corner corner =
+          new Corner(cornerDataTransferObject.positionX, cornerDataTransferObject.positionY);
+      corner.setFloor(newFloor);
+      corner = cornerRepository.save(corner);
+      corners.put(cornerDataTransferObject.id, corner);
+    }
+
+    for (WallDataTransferObject wallDataTransferObject : floorDataTransferObject.walls()) {
+      Corner startCorner = corners.get(wallDataTransferObject.startCornerId);
+      Corner endCorner = corners.get(wallDataTransferObject.endCornerId);
+
+      if (startCorner == null || endCorner == null) {
+        throw new IllegalArgumentException("Invalid corner IDs in wall data transfer object.");
+      }
+
+      Wall wall = new Wall(startCorner, endCorner);
+      wall.setFloor(newFloor);
+      wallRepository.save(wall);
+    }
+
+    ServiceInstance serviceInstance = discoveryClient.getInstances("furniture-management").get(0);
+    String url = serviceInstance.getUri() + "/furniture/instances";
+
+    List<FurnitureUpdateQueryDataTransferObject> newFurniture = new ArrayList<>();
+
+    List<FurnitureUpdateQueryDataTransferObject> existingFurniture = new ArrayList<>();
+
+    for (FurnitureUpdateQueryDataTransferObject furnitureDto :
+        floorDataTransferObject.furniture()) {
+      if (furnitureDto.furnitureInstanceId() == null) {
+        newFurniture.add(furnitureDto);
+      } else {
+        existingFurniture.add(furnitureDto);
+      }
+    }
+
+    List<FurnitureInstanceId> newFurnitureInstanceIds =
+        restClient
+            .post()
+            .uri(url + "/batch")
+            .contentType(APPLICATION_JSON)
+            .body(newFurniture)
+            .retrieve()
+            .body(new ParameterizedTypeReference<List<FurnitureInstanceId>>() {});
+    logger.info("Furniture instances created: {}", newFurnitureInstanceIds);
+
+    for (FurnitureUpdateQueryDataTransferObject furnitureDto : existingFurniture) {
+      JsonNode updatedFurniture =
+          restClient
+              .put()
+              .uri(url + "/" + furnitureDto.furnitureInstanceId())
+              .contentType(APPLICATION_JSON)
+              .body(furnitureDto)
+              .retrieve()
+              .body(JsonNode.class);
+      logger.info("Furniture instance updated: {}", updatedFurniture);
+      newFurnitureInstanceIds.add(new FurnitureInstanceId(furnitureDto.furnitureInstanceId()));
+    }
+
+    newFloor.setFurnitureIds(
+        newFurnitureInstanceIds.stream().map(FurnitureInstanceId::id).toList());
+    Floor savedFloor = floorRepository.save(newFloor);
+
+    existingFloor.setCurrent(false);
+    floorRepository.save(existingFloor);
+
+    return savedFloor;
+  }
+
+  @DeleteMapping("/floors/{id}")
+  public void deleteFloor(@PathVariable Long id) {
+    logger.info("Deleting floor with id: {}", id);
+
+    List<Floor> floors = floorRepository.findByIdEqualsAndDeletedFalseOrderByVersionDesc(id);
+
+    if (floors.isEmpty()) {
+      throw new IllegalArgumentException("Floor not found with id: " + id);
+    }
+
+    for (Floor floor : floors) {
+      floor.setDeleted(true);
+      floorRepository.save(floor);
+    }
+    logger.info("Floor with id: {} has been deleted", id);
   }
 }

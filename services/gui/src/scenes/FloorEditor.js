@@ -202,6 +202,9 @@ class FloorEditor extends Phaser.Scene {
     const floorNameInput = document.getElementById("floorName");
     floorNameInput.value = floorData.name;
 
+    const currentFloorIdElement = document.getElementById("currentFloorId");
+    currentFloorIdElement.value = floorId;
+
     const cornerMap = new Map();
 
     floorData.corners.forEach((cornerData) => {
@@ -241,6 +244,7 @@ class FloorEditor extends Phaser.Scene {
 
       furniture.id = shapeId;
       furniture.furnitureId = furnitureId;
+      furniture.furnitureInstanceId = furnitureData.id;
 
       const label = this.add.text(furniture.x, furniture.y, name, {
         fontSize: "16px",
@@ -415,7 +419,6 @@ class FloorEditor extends Phaser.Scene {
         }
         this.#addCorner(event.x, event.y);
       }
-      addCornerButton.classList.remove("active");
     });
 
     this.events.on("shapeMoved", (shape) => {

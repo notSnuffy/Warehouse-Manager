@@ -1,11 +1,13 @@
 package com.warehousemanager.furnituremanagement;
 
+import java.time.Instant;
 import java.util.List;
 
 /**
  * Represents a data transfer object for furniture response in the warehouse management system.
  *
  * @param id The unique identifier for the furniture.
+ * @param version The version of the furniture.
  * @param name The name of the furniture.
  * @param topDownView The shape representing the top-down view of the furniture.
  * @param shapes A list of shape instances that define how the furniture should be created.
@@ -13,6 +15,7 @@ import java.util.List;
  */
 public record FurnitureResponseDataTransferObject(
     Long id,
+    Instant version,
     String name,
     ShapeType topDownView,
     List<ShapeInstance> shapes,

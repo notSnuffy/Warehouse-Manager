@@ -14,18 +14,21 @@ import com.warehousemanager.furnituremanagement.MoveItemRequest;
 import com.warehousemanager.furnituremanagement.Shape;
 import com.warehousemanager.furnituremanagement.ShapeInstance;
 import com.warehousemanager.furnituremanagement.ShapeInstanceCreateObject;
-import com.warehousemanager.furnituremanagement.ShapeType;
 import com.warehousemanager.furnituremanagement.ZoneDataTransferObject;
 import com.warehousemanager.furnituremanagement.ZoneInstanceResponseDataTransferObject;
 import com.warehousemanager.furnituremanagement.ZoneResponseDataTransferObject;
 import com.warehousemanager.furnituremanagement.entities.Furniture;
 import com.warehousemanager.furnituremanagement.entities.FurnitureInstance;
+import com.warehousemanager.furnituremanagement.entities.FurnitureInstanceHistory;
 import com.warehousemanager.furnituremanagement.entities.Zone;
 import com.warehousemanager.furnituremanagement.entities.ZoneInstance;
+import com.warehousemanager.furnituremanagement.repositories.FurnitureInstanceHistoryRepository;
 import com.warehousemanager.furnituremanagement.repositories.FurnitureInstanceRepository;
 import com.warehousemanager.furnituremanagement.repositories.FurnitureRepository;
 import com.warehousemanager.furnituremanagement.repositories.ZoneInstanceRepository;
 import com.warehousemanager.furnituremanagement.repositories.ZoneRepository;
+import com.warehousemanager.furnituremanagement.services.FurnitureService;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -56,7 +59,9 @@ public class FurnitureManagementController {
   private final FurnitureRepository furnitureRepository;
   private final ZoneRepository zoneRepository;
   private final FurnitureInstanceRepository furnitureInstanceRepository;
+  private final FurnitureInstanceHistoryRepository furnitureInstanceHistoryRepository;
   private final ZoneInstanceRepository zoneInstanceRepository;
+  private final FurnitureService furnitureService;
   private static final Logger logger = LoggerFactory.getLogger(FurnitureManagementController.class);
 
   /**
@@ -66,6 +71,11 @@ public class FurnitureManagementController {
    * @param restClientBuilder the RestClient builder for making REST calls
    * @param furnitureRepository the repository for managing furniture entities
    * @param zoneRepository the repository for managing zone entities
+   * @param furnitureInstanceRepository the repository for managing furniture instance entities
+   * @param furnitureInstanceHistoryRepository the repository for managing furniture instance
+   *     history entities
+   * @param zoneInstanceRepository the repository for managing zone instance entities
+   * @param furnitureService the service for managing furniture operations
    */
   public FurnitureManagementController(
       DiscoveryClient discoveryClient,
@@ -73,14 +83,17 @@ public class FurnitureManagementController {
       FurnitureRepository furnitureRepository,
       ZoneRepository zoneRepository,
       FurnitureInstanceRepository furnitureInstanceRepository,
-      ZoneInstanceRepository zoneInstanceRepository) {
-
+      ZoneInstanceRepository zoneInstanceRepository,
+      FurnitureInstanceHistoryRepository furnitureInstanceHistoryRepository,
+      FurnitureService furnitureService) {
     this.discoveryClient = discoveryClient;
     this.restClient = restClientBuilder.build();
     this.furnitureRepository = furnitureRepository;
     this.zoneRepository = zoneRepository;
     this.furnitureInstanceRepository = furnitureInstanceRepository;
     this.zoneInstanceRepository = zoneInstanceRepository;
+    this.furnitureService = furnitureService;
+    this.furnitureInstanceHistoryRepository = furnitureInstanceHistoryRepository;
   }
 
   /**
@@ -111,44 +124,8 @@ public class FurnitureManagementController {
       throw new IllegalArgumentException("Furniture not found with ID: " + id);
     }
     logger.info("Found furniture: {}", furniture);
-    ServiceInstance serviceInstance = discoveryClient.getInstances("shape-management").get(0);
-    String baseUrl = serviceInstance.getUri() + "/shapes/";
-    List<ShapeInstance> shapeInstances = new ArrayList<>();
-    for (Long shapeId : furniture.getShapeIds()) {
-      ShapeInstance shapeInstance =
-          restClient
-              .get()
-              .uri(baseUrl + shapeId + "/instance")
-              .retrieve()
-              .body(new ParameterizedTypeReference<ShapeInstance>() {});
-
-      shapeInstances.add(shapeInstance);
-    }
-    logger.info("Shape instances retrieved: {}", shapeInstances);
-    ShapeType topDownView =
-        restClient
-            .get()
-            .uri(baseUrl + furniture.getTopDownViewId())
-            .retrieve()
-            .body(new ParameterizedTypeReference<ShapeType>() {});
-    logger.info("Top-down view shape template retrieved: {}", topDownView);
-    List<ZoneResponseDataTransferObject> zones = new ArrayList<>();
-    for (Zone zone : furniture.getZones()) {
-      Long shapeId = zone.getShapeId();
-      ShapeInstance zoneShape =
-          restClient
-              .get()
-              .uri(baseUrl + shapeId + "/instance")
-              .retrieve()
-              .body(new ParameterizedTypeReference<ShapeInstance>() {});
-      ZoneResponseDataTransferObject zoneResponse =
-          new ZoneResponseDataTransferObject(zone.getId(), zone.getName(), zoneShape);
-      zones.add(zoneResponse);
-    }
-    logger.info("Zones retrieved: {}", zones);
     FurnitureResponseDataTransferObject furnitureResponse =
-        new FurnitureResponseDataTransferObject(
-            furniture.getId(), furniture.getName(), topDownView, shapeInstances, zones);
+        furnitureService.convertToDto(furniture);
     logger.info("Returning furniture response: {}", furnitureResponse);
     return furnitureResponse;
   }
@@ -350,7 +327,7 @@ public class FurnitureManagementController {
     ServiceInstance shapeServiceInstance = discoveryClient.getInstances("shape-management").get(0);
     String shapesUrl = shapeServiceInstance.getUri() + "/shapes/";
     FurnitureResponseDataTransferObject furnitureResponseDataTransferObject =
-        getFurnitureById(furnitureInstance.getFurniture().getId());
+        furnitureService.convertToDto(furnitureInstance.getFurniture(), shapesUrl);
     List<ZoneInstanceResponseDataTransferObject> zoneInstances = new ArrayList<>();
 
     ServiceInstance itemServiceInstance = discoveryClient.getInstances("item-management").get(0);
@@ -358,15 +335,8 @@ public class FurnitureManagementController {
 
     for (ZoneInstance zoneInstance : furnitureInstance.getZoneInstances()) {
       Zone zone = zoneInstance.getZone();
-      Long shapeId = zone.getShapeId();
-      ShapeInstance zoneShape =
-          restClient
-              .get()
-              .uri(shapesUrl + shapeId + "/instance")
-              .retrieve()
-              .body(new ParameterizedTypeReference<ShapeInstance>() {});
       ZoneResponseDataTransferObject zoneResponse =
-          new ZoneResponseDataTransferObject(zone.getId(), zone.getName(), zoneShape);
+          furnitureService.convertZoneToDto(zone, shapesUrl);
 
       Set<Long> itemIds = zoneInstance.getItemIds();
       String itemIdsParameter =
@@ -386,11 +356,7 @@ public class FurnitureManagementController {
       zoneInstances.add(zoneInstanceResponse);
     }
     ShapeInstance topDownViewShapeInstance =
-        restClient
-            .get()
-            .uri(shapesUrl + furnitureInstance.getTopDownViewInstanceId() + "/instance")
-            .retrieve()
-            .body(new ParameterizedTypeReference<ShapeInstance>() {});
+        furnitureService.getShapeInstance(furnitureInstance.getTopDownViewInstanceId(), shapesUrl);
     FurnitureInstanceResponseDataTransferObject response =
         new FurnitureInstanceResponseDataTransferObject(
             furnitureInstance.getId(),
@@ -427,7 +393,8 @@ public class FurnitureManagementController {
       FurnitureResponseDataTransferObject furnitureResponseDataTransferObject = null;
       Long furnitureId = furnitureInstance.getFurniture().getId();
       if (!furnitureMap.containsKey(furnitureId)) {
-        furnitureResponseDataTransferObject = getFurnitureById(furnitureId);
+        furnitureResponseDataTransferObject =
+            furnitureService.convertToDto(furnitureInstance.getFurniture());
         furnitureMap.put(furnitureId, furnitureResponseDataTransferObject);
       } else {
         furnitureResponseDataTransferObject = furnitureMap.get(furnitureId);
@@ -440,12 +407,7 @@ public class FurnitureManagementController {
         Long shapeId = zone.getShapeId();
         ShapeInstance zoneShape = null;
         if (!zoneShapeMap.containsKey(shapeId)) {
-          zoneShape =
-              restClient
-                  .get()
-                  .uri(shapesUrl + shapeId + "/instance")
-                  .retrieve()
-                  .body(new ParameterizedTypeReference<ShapeInstance>() {});
+          zoneShape = furnitureService.getShapeInstance(shapeId, shapesUrl);
         } else {
           zoneShape = zoneShapeMap.get(shapeId);
         }
@@ -472,11 +434,8 @@ public class FurnitureManagementController {
 
       // Fetch the top-down view shape instance for the zone
       ShapeInstance topDownViewShapeInstance =
-          restClient
-              .get()
-              .uri(shapesUrl + furnitureInstance.getTopDownViewInstanceId() + "/instance")
-              .retrieve()
-              .body(new ParameterizedTypeReference<ShapeInstance>() {});
+          furnitureService.getShapeInstance(
+              furnitureInstance.getTopDownViewInstanceId(), shapesUrl);
 
       // Prepare the furniture instance response data transfer object
       FurnitureInstanceResponseDataTransferObject furnitureInstanceResponse =
@@ -506,7 +465,8 @@ public class FurnitureManagementController {
           furnitureDataTransferObject.furnitureId());
       Furniture furniture =
           furnitureRepository
-              .findById(furnitureDataTransferObject.furnitureId())
+              .findByIdEqualsAndDeletedFalseAndCurrentTrue(
+                  furnitureDataTransferObject.furnitureId())
               .orElseThrow(
                   () ->
                       new RuntimeException(
@@ -547,6 +507,39 @@ public class FurnitureManagementController {
     return savedFurnitureInstances;
   }
 
+  @PutMapping("/furniture/instances/{id}")
+  public FurnitureInstance updateFurnitureInstance(
+      @PathVariable Long id, @RequestBody FurnitureInstanceCreateDataTransferObject dto) {
+    logger.info("Received request to update furniture instance with ID: {}", id);
+    FurnitureInstance existingInstance =
+        furnitureInstanceRepository
+            .findById(id)
+            .orElseThrow(() -> new RuntimeException("Furniture instance not found with ID: " + id));
+
+    FurnitureInstanceHistory historyRecord = new FurnitureInstanceHistory(existingInstance);
+    furnitureInstanceHistoryRepository.save(historyRecord);
+
+    existingInstance.setVersion(Instant.now());
+
+    ServiceInstance serviceInstance = discoveryClient.getInstances("shape-management").get(0);
+    String url = serviceInstance.getUri() + "/shapes/instances";
+    ShapeInstanceCreateObject shapeInstanceCreateObject =
+        new ShapeInstanceCreateObject(dto.shapeId(), dto.instructions());
+    ShapeInstance topDownViewInstance =
+        restClient
+            .post()
+            .uri(url)
+            .contentType(APPLICATION_JSON)
+            .body(shapeInstanceCreateObject)
+            .retrieve()
+            .body(new ParameterizedTypeReference<ShapeInstance>() {});
+    existingInstance.setTopDownViewId(topDownViewInstance.id());
+    FurnitureInstance savedInstance = furnitureInstanceRepository.save(existingInstance);
+
+    logger.info("Updated furniture instance: {}", savedInstance);
+    return savedInstance;
+  }
+
   @PostMapping("/furniture/zones/instances/moveItem/batch")
   public void moveItems(@RequestBody List<MoveItemRequest> requests) {
     for (MoveItemRequest request : requests) {
@@ -557,8 +550,7 @@ public class FurnitureManagementController {
 
       if (oldZoneInstance != null) {
         if (!oldZoneInstance.containsItemId(itemId)) {
-          throw new IllegalArgumentException(
-              "Item ID " + itemId + " not found in old zone instance " + oldZoneId);
+          logger.warn("Item ID {} not found in old zone instance {}", itemId, oldZoneId);
         }
         oldZoneInstance.removeItemId(itemId);
         zoneInstanceRepository.save(oldZoneInstance);

@@ -1,21 +1,36 @@
 package com.warehousemanager.floormanagement.entities;
 
+import com.warehousemanager.floormanagement.FloorId;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.IdClass;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import java.time.Instant;
 import java.util.List;
 
 /** Represents a floor in the warehouse. */
 @Entity
+@IdClass(FloorId.class)
 public class Floor {
   /** The unique identifier for the floor. */
   @Id
-  @GeneratedValue(strategy = GenerationType.SEQUENCE)
+  @Column(nullable = false, updatable = false)
   private Long id;
+
+  /** Version timestamp for versioning. */
+  @Id
+  @Column(nullable = false, updatable = false)
+  private Instant version = Instant.now();
+
+  /** Indicates if this is the current/latest record. */
+  @Column(nullable = false)
+  private Boolean current = true;
+
+  /** Flag indicating whether the floor is deleted (soft delete). */
+  @Column(nullable = false)
+  private Boolean deleted = false;
 
   /** The name of the floor. */
   @Column(nullable = false)
@@ -39,12 +54,82 @@ public class Floor {
   }
 
   /**
+   * Constructs a Floor with the specified id and name.
+   *
+   * @param id the unique identifier of the floor
+   * @param name the name of the floor
+   */
+  public Floor(Long id, String name) {
+    this.id = id;
+    this.name = name;
+  }
+
+  /**
+   * Copy constructor to create a new Floor instance by copying an existing one. The version is
+   * updated to the current timestamp.
+   *
+   * @param other the Floor instance to copy
+   */
+  public Floor(Floor other) {
+    this.id = other.id;
+    this.version = Instant.now();
+    this.deleted = other.deleted;
+    this.name = other.name;
+    this.furnitureIds = other.furnitureIds;
+  }
+
+  /**
    * Gets the unique identifier of the floor.
    *
    * @return the unique identifier of the floor
    */
   public Long getId() {
     return id;
+  }
+
+  /**
+   * Gets the version timestamp of the floor.
+   *
+   * @return the version timestamp of the floor
+   */
+  public Instant getVersion() {
+    return version;
+  }
+
+  /**
+   * Checks if this is the current/latest record.
+   *
+   * @return true if this is the current record, false otherwise
+   */
+  public Boolean getCurrent() {
+    return current;
+  }
+
+  /**
+   * Sets the current status of this record.
+   *
+   * @param current true if this is the current record, false otherwise
+   */
+  public void setCurrent(Boolean current) {
+    this.current = current;
+  }
+
+  /**
+   * Checks if the floor is marked as deleted (soft delete).
+   *
+   * @return true if the floor is deleted, false otherwise
+   */
+  public Boolean getDeleted() {
+    return deleted;
+  }
+
+  /**
+   * Sets the deleted status of the floor (soft delete).
+   *
+   * @param deleted true to mark the floor as deleted, false otherwise
+   */
+  public void setDeleted(Boolean deleted) {
+    this.deleted = deleted;
   }
 
   /**
