@@ -1,6 +1,6 @@
-import Manager from "../Manager";
-import OutlineManager from "../outlines/OutlineManager";
-import { rectangleDottedOutline } from "../outlines/outlines";
+import Manager from "@managers/Manager";
+import OutlineManager from "@managers/outlines/OutlineManager";
+import { rectangleDottedOutline } from "@managers/outlines/outlines";
 
 /**
  * Manage the movement of shapes

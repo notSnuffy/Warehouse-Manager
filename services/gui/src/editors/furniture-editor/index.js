@@ -1,4 +1,4 @@
-import { FurnitureEditor } from "../../scenes/FurnitureEditor";
+import { FurnitureEditor } from "@scenes/FurnitureEditor";
 import Phaser from "phaser";
 import "./styles.scss";
 import * as _bootstrap from "bootstrap";

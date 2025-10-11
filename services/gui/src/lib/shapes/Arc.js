@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { getRealDimensions, getRealPosition } from "@utils/shapes";
 
 /**
  * Wrapper for Phaser's Arc class.
@@ -41,6 +42,50 @@ class Arc extends Phaser.GameObjects.Arc {
       alpha,
     );
     this.scene.add.existing(this);
+  }
+
+  /**
+   * Creates a snapshot of the arc's current state.
+   * @returns {Object} An object representing the snapshot of the arc.
+   */
+  createSnapshot() {
+    let position;
+    let dimensions;
+    if (this.parentContainer) {
+      position = getRealPosition(this, this.parentContainer);
+      dimensions = getRealDimensions(this);
+    } else {
+      position = { x: this.x, y: this.y };
+      dimensions = {
+        width: this.displayWidth,
+        height: this.displayHeight,
+      };
+    }
+
+    return {
+      type: "arc",
+      params: {
+        x: position.x,
+        y: position.y,
+        width: dimensions.width,
+        height: dimensions.height,
+        rotation: this.rotation,
+        radius: this.radius,
+        startAngle: this.startAngle,
+        endAngle: this.endAngle,
+        antiClockwise: this.antiClockwise,
+        color: this.fillColor,
+        alpha: this.alpha,
+      },
+
+      metadata: {
+        ...this.metadata,
+      },
+      additionalData: {
+        id: this.internalId,
+        interactive: this.input?.enabled ? this.interactiveData : null,
+      },
+    };
   }
 }
 

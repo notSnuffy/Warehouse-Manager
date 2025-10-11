@@ -1,4 +1,4 @@
-import { FloorEditor } from "../../scenes/FloorEditor";
+import { FloorEditor } from "@scenes/FloorEditor";
 import Phaser from "phaser";
 import "./styles.scss";
 import * as _bootstrap from "bootstrap";

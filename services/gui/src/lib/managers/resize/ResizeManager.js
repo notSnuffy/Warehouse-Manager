@@ -1,5 +1,5 @@
-import { getShapePoints } from "../functions/shapes";
-import Manager from "../Manager";
+import { getShapePoints } from "@utils/shapes";
+import Manager from "@managers/Manager";
 import * as Handles from "./handles";
 import MoveHandlerVisitor from "./MoveHandlerVisitor";
 

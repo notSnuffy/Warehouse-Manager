@@ -1,7 +1,7 @@
 import Phaser from "phaser";
 import { Modal } from "bootstrap";
 import Sortable from "sortablejs";
-import { buildShapeFromInstructions } from "../lib/functions/shapes";
+import { buildShapeFromInstructions } from "@utils/shapes";
 
 /**
  * Represents the furniture view scene

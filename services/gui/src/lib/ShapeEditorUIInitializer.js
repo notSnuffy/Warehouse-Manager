@@ -1,15 +1,15 @@
-import { DEFAULT_SHAPES } from "../scenes/ShapeEditor";
-import { API_URL } from "../config";
+import { DEFAULT_SHAPES } from "@scenes/ShapeEditor";
+import { API_URL } from "@/config";
 import {
   getShapesWrappedInContainer,
   saveShapeAsInstructions,
-} from "../lib/functions/shapes";
+} from "@utils/shapes";
 import {
   addButtonHandler,
   initializeAddShapeModal,
   populateShapeList,
   addItemButtonIntoList,
-} from "../lib/functions/UIHelperFunctions";
+} from "@utils/UIHelperFunctions";
 
 /**
  * @class ShapeEditorUIInitializer

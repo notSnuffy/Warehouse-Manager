@@ -1,4 +1,4 @@
-import Manager from "../Manager";
+import Manager from "@managers/Manager";
 
 /**
  * Radius of the rotation knob

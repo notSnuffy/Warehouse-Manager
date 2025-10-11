@@ -1,10 +1,7 @@
 import "./styles.scss";
 import * as _bootstrap from "bootstrap";
-import { API_URL } from "../config";
-import {
-  paginateList,
-  renderPaginationControls,
-} from "../lib/functions/pagination";
+import { API_URL } from "@/config";
+import { paginateList, renderPaginationControls } from "@utils/pagination";
 
 const furnitureListElement = document.getElementById("furnitureList");
 const furnitureSuggestionsElement = document.getElementById(

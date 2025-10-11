@@ -1,9 +1,9 @@
-import { API_URL } from "../config";
+import { API_URL } from "@/config";
 import Phaser from "phaser";
-import MoveManager from "../lib/move/MoveManager";
-import SelectShapeManager from "../lib/select/SelectShapeManager";
-import FloorEditorUIInitializer from "../lib/FloorEditorUIInitializer";
-import { buildShapeFromInstructions } from "../lib/functions/shapes";
+import MoveManager from "@managers//move/MoveManager";
+import SelectShapeManager from "@managers/select/SelectShapeManager";
+import FloorEditorUIInitializer from "@lib/FloorEditorUIInitializer";
+import { buildShapeFromInstructions } from "@utils/shapes";
 
 class FloorEditor extends Phaser.Scene {
   /**

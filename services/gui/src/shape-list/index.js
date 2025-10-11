@@ -1,11 +1,8 @@
 import "./styles.scss";
 import * as _bootstrap from "bootstrap";
-import { API_URL } from "../config";
-import { DEFAULT_SHAPES } from "../scenes/ShapeEditor";
-import {
-  paginateList,
-  renderPaginationControls,
-} from "../lib/functions/pagination";
+import { API_URL } from "@/config";
+import { DEFAULT_SHAPES } from "@scenes/ShapeEditor";
+import { paginateList, renderPaginationControls } from "@utils/pagination";
 
 const shapeListElement = document.getElementById("shapeList");
 const shapeSuggestionsElement = document.getElementById("shapeSuggestions");

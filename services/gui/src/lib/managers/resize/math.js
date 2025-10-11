@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import { calculateCenterPoint } from "../functions/points";
+import { calculateCenterPoint } from "@utils/points";
 import MoveDimensionVisitor from "./MoveDimensionVisitor";
 
 /**

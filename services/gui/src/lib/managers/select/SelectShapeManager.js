@@ -1,6 +1,6 @@
-import Manager from "../Manager";
-import RotationManager from "../rotation/RotationManager";
-import ResizeManager from "../resize/ResizeManager";
+import Manager from "@managers/Manager";
+import RotationManager from "@managers/rotation/RotationManager";
+import ResizeManager from "@managers/resize/ResizeManager";
 
 /**
  * Manager for selecting shapes

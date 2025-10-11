@@ -1,13 +1,10 @@
 import Phaser from "phaser";
-import { API_URL } from "../config";
-import MoveManager from "../lib/move/MoveManager";
-import SelectShapeManager from "../lib/select/SelectShapeManager";
-import FurnitureEditorUIInitializer from "../lib/FurnitureEditorUIInitializer";
-import * as Shapes from "../shapes";
-import {
-  buildShapeFromInstructions,
-  ShapeTypes,
-} from "../lib/functions/shapes";
+import { API_URL } from "@/config";
+import MoveManager from "@managers/move/MoveManager";
+import SelectShapeManager from "@managers/select/SelectShapeManager";
+import FurnitureEditorUIInitializer from "@lib/FurnitureEditorUIInitializer";
+import * as Shapes from "@shapes";
+import { buildShapeFromInstructions, ShapeTypes } from "@utils/shapes";
 
 /**
  * Represents the editor scene

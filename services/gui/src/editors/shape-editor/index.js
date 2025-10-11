@@ -1,6 +1,6 @@
-import { Boot } from "../../scenes/Boot";
-import { Preloader } from "../../scenes/Preloader";
-import { ShapeEditor } from "../../scenes/ShapeEditor";
+import { Boot } from "@scenes/Boot";
+import { Preloader } from "@scenes/Preloader";
+import { ShapeEditor } from "@scenes/ShapeEditor";
 import Phaser from "phaser";
 import "./styles.scss";
 import * as _bootstrap from "bootstrap";

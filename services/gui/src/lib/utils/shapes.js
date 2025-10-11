@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import * as Shapes from "../../shapes";
+import * as Shapes from "@shapes";
 
 /**
  * Retrieves the key points of a shape
@@ -82,6 +82,44 @@ const ShapeCommands = Object.freeze({
   BEGIN_CONTAINER: "beginContainer",
   END_CONTAINER: "endContainer",
 });
+
+/**
+ * Gets the real dimensions of a shape considering its transformations
+ * @param {Phaser.GameObjects.Shape} shape - The shape to get dimensions from
+ * @return {Object} An object containing the real width and height of the shape
+ */
+function getRealDimensions(shape) {
+  const width = Phaser.Math.Distance.BetweenPoints(
+    shape.getLeftCenter(undefined, true),
+    shape.getRightCenter(undefined, true),
+  );
+  const height = Phaser.Math.Distance.BetweenPoints(
+    shape.getTopCenter(undefined, true),
+    shape.getBottomCenter(undefined, true),
+  );
+  return { width, height };
+}
+
+/**
+ * Gets the real position of a child shape relative to its parent
+ * @param {Phaser.GameObjects.Shape} child - The child shape
+ * @param {Phaser.GameObjects.Container} parent - The parent container
+ * @return {Object} An object containing the real x and y position of the child shape
+ * relative to its parent
+ */
+function getRealPosition(child, parent) {
+  const parentWorldMatrix = parent.getWorldTransformMatrix();
+  const childWorldMatrix = child.getWorldTransformMatrix();
+
+  const dx = childWorldMatrix.tx - parentWorldMatrix.tx;
+  const dy = childWorldMatrix.ty - parentWorldMatrix.ty;
+
+  const rotation = parentWorldMatrix.rotationNormalized;
+
+  const rotatedX = dx * Math.cos(-rotation) - dy * Math.sin(-rotation);
+  const rotatedY = dx * Math.sin(-rotation) + dy * Math.cos(-rotation);
+  return { x: rotatedX, y: rotatedY };
+}
 
 /**
  * Preprocesses shapes for instruction saving
@@ -425,4 +463,6 @@ export {
   buildShapeFromInstructions,
   preprocessShapesForSaving,
   ShapeTypes,
+  getRealDimensions,
+  getRealPosition,
 };

@@ -1,7 +1,7 @@
-import { API_URL } from "../config";
+import { API_URL } from "@/config";
 import Phaser from "phaser";
-import { populateFloorViewItemList } from "../lib/functions/UIHelperFunctions";
-import { buildShapeFromInstructions } from "../lib/functions/shapes";
+import { populateFloorViewItemList } from "@utils/UIHelperFunctions";
+import { buildShapeFromInstructions } from "@utils/shapes";
 
 class FloorView extends Phaser.Scene {
   /**

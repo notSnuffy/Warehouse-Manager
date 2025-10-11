@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { getRealPosition, getRealDimensions } from "@utils/shapes";
 
 /**
  * Wrapper for Phaser's Container class.
@@ -119,6 +120,51 @@ class Container extends Phaser.GameObjects.Container {
   getCenter() {
     const { tx, ty } = this.getWorldTransformMatrix();
     return { x: tx, y: ty };
+  }
+
+  /**
+   * Creates a snapshot of the container's current state.
+   * @returns {Object} An object representing the snapshot of the container.
+   */
+  createSnapshot() {
+    let position;
+    let dimensions;
+    if (this.parentContainer) {
+      position = getRealPosition(this, this.parentContainer);
+      dimensions = getRealDimensions(this);
+    } else {
+      position = { x: this.x, y: this.y };
+      dimensions = {
+        width: this.displayWidth,
+        height: this.displayHeight,
+      };
+    }
+
+    return {
+      type: "container",
+      params: {
+        x: position.x,
+        y: position.y,
+        width: dimensions.width,
+        height: dimensions.height,
+        rotation: this.rotation,
+        children: this.list
+          .map((child) => {
+            if (typeof child.createSnapshot === "function") {
+              return child.createSnapshot();
+            }
+            return null;
+          })
+          .filter((child) => child !== null),
+      },
+      metadata: {
+        ...this.metadata,
+      },
+      additionalData: {
+        id: this.internalId,
+        interactive: this.input?.enabled ? this.interactiveData : null,
+      },
+    };
   }
 }
 

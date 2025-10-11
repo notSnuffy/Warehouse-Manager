@@ -2,14 +2,14 @@ import {
   addButtonHandler,
   initializeAddShapeModal,
   populateShapeList,
-} from "../lib/functions/UIHelperFunctions";
+} from "@utils/UIHelperFunctions";
 import {
   preprocessShapesForSaving,
   saveShapeAsInstructions,
-} from "../lib/functions/shapes";
+} from "@utils/shapes";
 import { Modal } from "bootstrap";
-import { DEFAULT_SHAPES } from "../scenes/ShapeEditor";
-import { API_URL } from "../config";
+import { DEFAULT_SHAPES } from "@scenes/ShapeEditor";
+import { API_URL } from "@/config";
 
 /**
  * @class FurnitureEditorUIInitializer

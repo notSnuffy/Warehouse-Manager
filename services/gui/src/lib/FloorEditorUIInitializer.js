@@ -1,13 +1,13 @@
-import { API_URL } from "../config";
+import { API_URL } from "@/config";
 import {
   addButtonHandler,
   initializeAddFurnitureModal,
   populateFurnitureList,
-} from "../lib/functions/UIHelperFunctions";
+} from "@utils/UIHelperFunctions";
 import {
   preprocessShapesForSaving,
   saveShapeAsInstructions,
-} from "../lib/functions/shapes";
+} from "@utils/shapes";
 
 /**
  * @class FloorEditorUIInitializer
