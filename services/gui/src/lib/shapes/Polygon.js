@@ -54,7 +54,7 @@ class Polygon extends Phaser.GameObjects.Polygon {
         width: dimensions.width,
         height: dimensions.height,
         rotation: this.rotation,
-        points: this.points,
+        points: this.pathData.slice(0, -2),
         color: this.fillColor,
         alpha: this.alpha,
       },

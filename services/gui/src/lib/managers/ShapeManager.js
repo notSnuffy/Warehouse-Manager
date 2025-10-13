@@ -107,6 +107,7 @@ class ShapeManager {
   async addShapeHistoryManaged(type, params, additionalData = {}) {
     const command = new AddShapeCommand(this, type, params, additionalData);
     const shape = await command.execute();
+    console.log(shape);
     return shape;
   }
 

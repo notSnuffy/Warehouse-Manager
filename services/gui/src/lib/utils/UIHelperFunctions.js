@@ -4,6 +4,7 @@ import { API_URL } from "@/config";
 import { DEFAULT_SHAPES } from "@scenes/ShapeEditor";
 import { ShapeTypes } from "@utils/shapes";
 import { convertDegreesToRadiansSigned } from "@utils/math";
+import ShapeFieldSchemas from "@ui/ShapeFieldSchemas";
 
 /**
  * Adds a handler to add point fields.
@@ -23,7 +24,8 @@ function addPointFieldHandler(element, pointsElement, name) {
       <input
         type="number"
         class="form-control"
-        id="${name}Point${pointIndex}X"
+        id="${name}${pointIndex}X"
+        name="pointX[]" 
         required
         value="0"
       />
@@ -32,18 +34,19 @@ function addPointFieldHandler(element, pointsElement, name) {
         type="number"
         class="form-control"
         id="${name}${pointIndex}Y"
+        name="pointY[]"
         required
         value="0"
       />
       `;
     pointsElement.appendChild(point);
 
-    document
-      .getElementById(`${name}Point${pointIndex}X`)
+    point
+      .querySelector(`#${name}${pointIndex}X`)
       .addEventListener("change", validatePosition);
 
-    document
-      .getElementById(`${name}Point${pointIndex}Y`)
+    point
+      .querySelector(`#${name}${pointIndex}Y`)
       .addEventListener("change", validatePosition);
   });
 }
@@ -119,6 +122,7 @@ function createInputField(field) {
         required
         value="${pointX}"
         min="0"
+        name="pointX[]"
       />
       <span class="input-group-text">Point${i} Y</span>
       <input
@@ -128,16 +132,17 @@ function createInputField(field) {
         required
         value="${pointY}"
         min="0"
+        name="pointY[]"
       />
       `;
       inputElement.appendChild(point);
 
-      document
-        .getElementById(`${field.name}${i}X`)
+      point
+        .querySelector(`#${field.name}${i}X`)
         .addEventListener("change", validatePosition);
 
-      document
-        .getElementById(`${field.name}${i}Y`)
+      point
+        .querySelector(`#${field.name}${i}Y`)
         .addEventListener("change", validatePosition);
     }
 
@@ -188,6 +193,27 @@ function createInputField(field) {
 }
 
 /**
+ * Renders dynamic modal fields based on the selected shape type.
+ * @param {HTMLElement} fieldsElement - The container element for the fields.
+ * @param {string} shapeType - The type of the shape.
+ * @returns {void}
+ */
+function renderDynamicModalFields(fieldsElement, shapeType) {
+  fieldsElement.innerHTML = "";
+
+  const fields = ShapeFieldSchemas[shapeType.toUpperCase()];
+  if (!fields) {
+    fieldsElement.innerHTML = "<p>No fields available for this shape type.</p>";
+    return;
+  }
+
+  fields.forEach((field) => {
+    const fieldElement = createInputField(field);
+    fieldsElement.appendChild(fieldElement);
+  });
+}
+
+/**
  * Displays a modal for adding a new shape.
  * @param {HTMLElement} button - The button that triggered the modal.
  * @returns {void}
@@ -197,7 +223,7 @@ function showAddShapeModal(button) {
   const shapeName = button.dataset.shape_name;
   const modalElement = document.getElementById("newShapeModal");
   const shapeIdElement = document.getElementById("shapeId");
-  const modalTitle = document.getElementById("newShapeModalLabel");
+  const modalTitle = document.getElementById("modalTitle");
 
   modalTitle.textContent =
     "Add New " + shapeName.charAt(0).toUpperCase() + shapeName.slice(1);
@@ -583,7 +609,7 @@ function initializeAddShapeModal(addShape) {
  * @param {string} shapeId - The ID of the shape.
  * @returns {void}
  */
-function addItemButtonIntoList(shapeName, shapeId) {
+function addItemButtonIntoList(shapeName, shapeId, shapeModalUI) {
   const newShapeButton = document.createElement("button");
   newShapeButton.classList.add("btn", "btn-secondary", "mb-2");
   newShapeButton.dataset.shape_name = shapeName;
@@ -591,7 +617,8 @@ function addItemButtonIntoList(shapeName, shapeId) {
   newShapeButton.textContent = shapeName;
   newShapeButton.id = "add-" + shapeId;
   newShapeButton.addEventListener("click", function () {
-    showAddShapeModal(newShapeButton);
+    shapeModalUI.openShapeModal("custom", shapeId, shapeName);
+    //showAddShapeModal(newShapeButton);
   });
   const itemsMenuButtons = document.getElementById("itemsMenuButtons");
   itemsMenuButtons.appendChild(newShapeButton);
@@ -599,9 +626,10 @@ function addItemButtonIntoList(shapeName, shapeId) {
 
 /**
  * Populates the shape list with available shapes from the API.
+ * @param {HTMLElement} shapeUIModal - The shape UI modal element.
  * @returns {Promise<void>}
  */
-async function populateShapeList() {
+async function populateShapeList(shapeModalUI) {
   const getDefaultShapeId = (shape) => {
     switch (shape) {
       case "rectangle":
@@ -621,7 +649,8 @@ async function populateShapeList() {
     const shapeId = getDefaultShapeId(shape);
     const button = document.getElementById("add-" + shapeId);
     button.addEventListener("click", function () {
-      showAddShapeModal(button);
+      shapeModalUI.openShapeModal(shape, shapeId, button.dataset.shape_name);
+      //showAddShapeModal(button);
     });
   }
 
@@ -860,4 +889,6 @@ export {
   validateAngle,
   validatePosition,
   createInputField,
+  renderDynamicModalFields,
+  showAddShapeModal,
 };

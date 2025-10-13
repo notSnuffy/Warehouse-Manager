@@ -8,8 +8,8 @@ import SelectShapeManager from "@managers/select/SelectShapeManager";
 import ShapeManager from "@managers/ShapeManager";
 import ShapeEditorUIInitializer from "@lib/ShapeEditorUIInitializer";
 import * as Shapes from "@shapes";
-import { buildShapeFromInstructions, ShapeTypes } from "@utils/shapes";
-import ShapeFieldSchemas from "@ui/ShapeFieldSchemas";
+import { buildShapeFromInstructions } from "@utils/shapes";
+import ShapeModalUserInterface from "@ui/ShapeModalUserInterface";
 
 /**
  * Default shapes
@@ -24,13 +24,6 @@ const DEFAULT_SHAPES = ["rectangle", "ellipse", "arc", "polygon"];
  * @extends Phaser.Scene
  */
 class ShapeEditor extends Phaser.Scene {
-  /**
-   * Array of shapes in the scene
-   * @type {Phaser.GameObjects.Shape[]}
-   * @private
-   */
-  #shapes = [];
-
   /**
    * Current tool selected
    * @type {string}
@@ -78,6 +71,14 @@ class ShapeEditor extends Phaser.Scene {
    * @private
    */
   #shapeManager = null;
+
+  /**
+   * Shape modal UI
+   * @type {ShapeModalUserInterface}
+   * @default null
+   * @private
+   */
+  #shapeModalUI = null;
 
   /**
    * Loads a shape by its ID
@@ -131,8 +132,9 @@ class ShapeEditor extends Phaser.Scene {
         }
       });
 
-      this.#shapes = buildShapeFromInstructions(instructions, this);
-      console.log("Shape loaded successfully:", this.#shapes);
+      const shapes = buildShapeFromInstructions(instructions, this);
+
+      return shapes;
     } catch (error) {
       console.error("Error fetching shape data:", error);
     }
@@ -165,81 +167,61 @@ class ShapeEditor extends Phaser.Scene {
 
     this.#shapeManager = new ShapeManager(this);
 
-    this.#shapeManager.registerShape(
-      ShapeTypes.RECTANGLE,
-      (scene, params) => {
-        const rectangle = new Shapes.Rectangle(
-          scene,
-          params.x,
-          params.y,
-          params.width,
-          params.height,
-          params.color,
-        );
-        rectangle.setRotation(params.rotation);
-        return rectangle;
-      },
-      {
-        fieldSchema: ShapeFieldSchemas.RECTANGLE,
-      },
-    );
-    this.#shapeManager.registerShape(
-      ShapeTypes.ELLIPSE,
-      (scene, params) => {
-        const ellipse = new Shapes.Ellipse(
-          scene,
-          params.x,
-          params.y,
-          params.width,
-          params.height,
-          params.color,
-        );
-        ellipse.setRotation(params.rotation);
-        return ellipse;
-      },
-      {
-        fieldSchema: ShapeFieldSchemas.ELLIPSE,
-      },
-    );
-    this.#shapeManager.registerShape(
-      ShapeTypes.ARC,
-      (scene, params) => {
-        const arc = new Shapes.Arc(
-          scene,
-          params.x,
-          params.y,
-          params.radius,
-          params.startAngle,
-          params.endAngle,
-          false,
-          params.color,
-        );
-        arc.setRotation(params.rotation);
+    this.#shapeManager.registerShape("rectangle", (scene, params) => {
+      const rectangle = new Shapes.Rectangle(
+        scene,
+        params.x,
+        params.y,
+        params.width,
+        params.height,
+        params.color,
+      );
+      rectangle.setRotation(params.rotation);
+      return rectangle;
+    });
+    this.#shapeManager.registerShape("ellipse", (scene, params) => {
+      const ellipse = new Shapes.Ellipse(
+        scene,
+        params.x,
+        params.y,
+        params.width,
+        params.height,
+        params.color,
+      );
+      ellipse.setRotation(params.rotation);
+      return ellipse;
+    });
+    this.#shapeManager.registerShape("arc", (scene, params) => {
+      const arc = new Shapes.Arc(
+        scene,
+        params.x,
+        params.y,
+        params.radius,
+        params.startAngle,
+        params.endAngle,
+        false,
+        params.color,
+      );
+      arc.setRotation(params.rotation);
+      if (params.width && params.height) {
         arc.setDisplaySize(params.width, params.height);
-        return arc;
-      },
-      {
-        fieldSchema: ShapeFieldSchemas.ARC,
-      },
-    );
-    this.#shapeManager.registerShape(
-      ShapeTypes.POLYGON,
-      (scene, params) => {
-        const polygon = new Shapes.Polygon(
-          scene,
-          params.x,
-          params.y,
-          params.points,
-          params.color,
-        );
-        polygon.setRotation(params.rotation);
+      }
+      return arc;
+    });
+    this.#shapeManager.registerShape("polygon", (scene, params) => {
+      const polygon = new Shapes.Polygon(
+        scene,
+        params.x,
+        params.y,
+        params.points,
+        params.color,
+      );
+      polygon.setRotation(params.rotation);
+      if (params.width && params.height) {
         polygon.setDisplaySize(params.width, params.height);
-        return polygon;
-      },
-      {
-        fieldSchema: ShapeFieldSchemas.POLYGON,
-      },
-    );
+      }
+      return polygon;
+    });
     this.#shapeManager.registerShape("container", async (scene, params) => {
       const children = [];
       if (params.children && params.children.length > 0) {
@@ -264,38 +246,34 @@ class ShapeEditor extends Phaser.Scene {
       container.setSize(params.width, params.height);
       return container;
     });
-    this.#shapeManager.registerShape(
-      "custom",
-      async (scene, params) => {
-        try {
-          const response = await fetch(
-            API_URL +
-              "/shape-management/shapes/" +
-              params.templateId +
-              "/template/latest",
-          );
+    this.#shapeManager.registerShape("custom", async (scene, params) => {
+      try {
+        const response = await fetch(
+          API_URL +
+            "/shape-management/shapes/" +
+            params.templateId +
+            "/template/latest",
+        );
 
-          const shapeData = await response.json();
-          const instructions = shapeData.instructions;
-          // Build from instructions returns array to make it more generic
-          // but we only expect one shape to be returned
-          const rebuiltShape = buildShapeFromInstructions(
-            instructions,
-            scene,
-            params.color,
-          )[0];
+        const shapeData = await response.json();
+        const instructions = shapeData.instructions;
+        // Build from instructions returns array to make it more generic
+        // but we only expect one shape to be returned
+        const rebuiltShape = buildShapeFromInstructions(
+          instructions,
+          scene,
+          params.color,
+        )[0];
 
-          rebuiltShape.metadata.id = shapeId;
-          rebuiltShape.metadata.version = shapeData.shape.version;
-          rebuiltShape.setPosition(params.x, params.y);
-          rebuiltShape.setDisplaySize(params.width, params.height);
-          rebuiltShape.setRotation(params.rotation);
-        } catch (error) {
-          console.error("Error fetching shape template:", error);
-        }
-      },
-      { fieldSchema: ShapeFieldSchemas.CUSTOM },
-    );
+        rebuiltShape.metadata.id = params.templateId;
+        rebuiltShape.metadata.version = shapeData.shape.version;
+        rebuiltShape.setPosition(params.x, params.y);
+        rebuiltShape.setDisplaySize(params.width, params.height);
+        rebuiltShape.setRotation(params.rotation);
+      } catch (error) {
+        console.error("Error fetching shape template:", error);
+      }
+    });
 
     const camera = this.cameras.main;
 
@@ -350,112 +328,112 @@ class ShapeEditor extends Phaser.Scene {
       this.#currentTool = "select";
     }.bind(this);
 
-    const addShape = async function (shapeId, parameters) {
-      if (shapeId === ShapeTypes.RECTANGLE) {
-        const rectangle = new Shapes.Rectangle(
-          this,
-          parameters.x,
-          parameters.y,
-          parameters.width,
-          parameters.height,
-          parameters.color,
-        );
-        rectangle.setRotation(parameters.rotation);
-        rectangle.setInteractive({ draggable: true });
-        this.#shapes.push(rectangle);
-      } else if (shapeId === ShapeTypes.ELLIPSE) {
-        const ellipse = new Shapes.Ellipse(
-          this,
-          parameters.x,
-          parameters.y,
-          parameters.width,
-          parameters.height,
-          parameters.color,
-        );
-        ellipse.setRotation(parameters.rotation);
+    //const addShape = async function (shapeId, parameters) {
+    //  if (shapeId === ShapeTypes.RECTANGLE) {
+    //    const rectangle = new Shapes.Rectangle(
+    //      this,
+    //      parameters.x,
+    //      parameters.y,
+    //      parameters.width,
+    //      parameters.height,
+    //      parameters.color,
+    //    );
+    //    rectangle.setRotation(parameters.rotation);
+    //    rectangle.setInteractive({ draggable: true });
+    //    this.#shapes.push(rectangle);
+    //  } else if (shapeId === ShapeTypes.ELLIPSE) {
+    //    const ellipse = new Shapes.Ellipse(
+    //      this,
+    //      parameters.x,
+    //      parameters.y,
+    //      parameters.width,
+    //      parameters.height,
+    //      parameters.color,
+    //    );
+    //    ellipse.setRotation(parameters.rotation);
 
-        const hitArea = ellipse.geom;
-        ellipse.setInteractive({
-          hitArea: hitArea,
-          hitAreaCallback: Phaser.Geom.Ellipse.Contains,
-          draggable: true,
-        });
-        this.#shapes.push(ellipse);
-      } else if (shapeId === ShapeTypes.ARC) {
-        const arc = new Shapes.Arc(
-          this,
-          parameters.x,
-          parameters.y,
-          parameters.radius,
-          parameters.startAngle,
-          parameters.endAngle,
-          false,
-          parameters.color,
-        );
-        arc.setRotation(parameters.rotation);
+    //    const hitArea = ellipse.geom;
+    //    ellipse.setInteractive({
+    //      hitArea: hitArea,
+    //      hitAreaCallback: Phaser.Geom.Ellipse.Contains,
+    //      draggable: true,
+    //    });
+    //    this.#shapes.push(ellipse);
+    //  } else if (shapeId === ShapeTypes.ARC) {
+    //    const arc = new Shapes.Arc(
+    //      this,
+    //      parameters.x,
+    //      parameters.y,
+    //      parameters.radius,
+    //      parameters.startAngle,
+    //      parameters.endAngle,
+    //      false,
+    //      parameters.color,
+    //    );
+    //    arc.setRotation(parameters.rotation);
 
-        const hitArea = new Phaser.Geom.Polygon(arc.pathData);
-        arc.setInteractive({
-          hitArea: hitArea,
-          hitAreaCallback: Phaser.Geom.Polygon.Contains,
-          draggable: true,
-        });
+    //    const hitArea = new Phaser.Geom.Polygon(arc.pathData);
+    //    arc.setInteractive({
+    //      hitArea: hitArea,
+    //      hitAreaCallback: Phaser.Geom.Polygon.Contains,
+    //      draggable: true,
+    //    });
 
-        this.#shapes.push(arc);
-      } else if (shapeId === ShapeTypes.POLYGON) {
-        const polygon = new Shapes.Polygon(
-          this,
-          parameters.x,
-          parameters.y,
-          parameters.points,
-          parameters.color,
-        );
-        polygon.setRotation(parameters.rotation);
-        const hitArea = polygon.geom;
-        polygon.setInteractive({
-          hitArea: hitArea,
-          hitAreaCallback: Phaser.Geom.Polygon.Contains,
-          draggable: true,
-        });
-        this.#shapes.push(polygon);
-      } else {
-        try {
-          const shapeInstance = await fetch(
-            API_URL +
-              "/shape-management/shapes/" +
-              shapeId +
-              "/template/latest",
-          );
-          const shapeData = await shapeInstance.json();
-          const instructions = shapeData.instructions;
-          // Build from instructions returns array to make it more generic
-          // but we only expect one shape to be returned
-          const rebuiltShape = buildShapeFromInstructions(
-            instructions,
-            this,
-            parameters.color,
-          )[0];
+    //    this.#shapes.push(arc);
+    //  } else if (shapeId === ShapeTypes.POLYGON) {
+    //    const polygon = new Shapes.Polygon(
+    //      this,
+    //      parameters.x,
+    //      parameters.y,
+    //      parameters.points,
+    //      parameters.color,
+    //    );
+    //    polygon.setRotation(parameters.rotation);
+    //    const hitArea = polygon.geom;
+    //    polygon.setInteractive({
+    //      hitArea: hitArea,
+    //      hitAreaCallback: Phaser.Geom.Polygon.Contains,
+    //      draggable: true,
+    //    });
+    //    this.#shapes.push(polygon);
+    //  } else {
+    //    try {
+    //      const shapeInstance = await fetch(
+    //        API_URL +
+    //          "/shape-management/shapes/" +
+    //          shapeId +
+    //          "/template/latest",
+    //      );
+    //      const shapeData = await shapeInstance.json();
+    //      const instructions = shapeData.instructions;
+    //      // Build from instructions returns array to make it more generic
+    //      // but we only expect one shape to be returned
+    //      const rebuiltShape = buildShapeFromInstructions(
+    //        instructions,
+    //        this,
+    //        parameters.color,
+    //      )[0];
 
-          rebuiltShape.id = shapeId;
-          rebuiltShape.version = shapeData.shape.version;
-          rebuiltShape.setPosition(parameters.x, parameters.y);
-          rebuiltShape.setDisplaySize(parameters.width, parameters.height);
-          rebuiltShape.setRotation(parameters.rotation);
+    //      rebuiltShape.id = shapeId;
+    //      rebuiltShape.version = shapeData.shape.version;
+    //      rebuiltShape.setPosition(parameters.x, parameters.y);
+    //      rebuiltShape.setDisplaySize(parameters.width, parameters.height);
+    //      rebuiltShape.setRotation(parameters.rotation);
 
-          rebuiltShape.setInteractive({ draggable: true });
+    //      rebuiltShape.setInteractive({ draggable: true });
 
-          this.#shapes.push(rebuiltShape);
-        } catch (error) {
-          console.error("Error fetching shape template:", error);
-        }
-      }
+    //      this.#shapes.push(rebuiltShape);
+    //    } catch (error) {
+    //      console.error("Error fetching shape template:", error);
+    //    }
+    //  }
 
-      const shape = this.#shapes[this.#shapes.length - 1];
+    //  const shape = this.#shapes[this.#shapes.length - 1];
 
-      //shape.setInteractive({ draggable: true });
-      this.#moveManager.create(shape);
-      this.#selectManager.create(shape);
-    }.bind(this);
+    //  //shape.setInteractive({ draggable: true });
+    //  this.#moveManager.create(shape);
+    //  this.#selectManager.create(shape);
+    //}.bind(this);
 
     this.#selectManager = new SelectShapeManager(this);
     this.#moveManager = new MoveManager(this, new OutlineManager(this));
@@ -466,21 +444,29 @@ class ShapeEditor extends Phaser.Scene {
     const zoomManager = new ZoomManager(this);
     zoomManager.create();
 
+    this.#shapeModalUI = new ShapeModalUserInterface(
+      this.#shapeManager,
+      "newShapeModal",
+      [this.#moveManager, this.#selectManager],
+    );
+
     ShapeEditorUIInitializer.initialize(
       handleMoveButtonClick,
       handleSelectButtonClick,
-      addShape,
+      () => this.#currentTool,
+      //addShape,
       this.#selectManager.hide.bind(this.#selectManager),
-      () => this.#shapes,
+      // () => this.#shapes,
+      this.#shapeModalUI,
     );
 
-    for (let i = 0; i < this.#shapes.length; i++) {
-      let shape = this.#shapes[i];
-      shape.setInteractive({ draggable: true });
+    // for (let i = 0; i < this.#shapes.length; i++) {
+    //   //let shape = this.#shapes[i];
+    //   shape.setInteractive({ draggable: true });
 
-      this.#moveManager.create(shape);
-      this.#selectManager.create(shape);
-    }
+    //   this.#moveManager.create(shape);
+    //   this.#selectManager.create(shape);
+    // }
 
     this.input.on("pointerdown", this.#selectManager.hide, this.#selectManager);
   }

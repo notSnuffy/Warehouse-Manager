@@ -27,6 +27,27 @@ const ShapeTypes = Object.freeze({
   POLYGON: 4,
 });
 
+const DefaultShapeInteractiveConfig = {
+  RECTANGLE: { draggable: true },
+  ELLIPSE: {
+    draggable: true,
+    hitArea: (shape) => shape.geom,
+    hitAreaCallback: Phaser.Geom.Ellipse.Contains,
+  },
+  ARC: {
+    draggable: true,
+    hitArea: (shape) => new Phaser.Geom.Polygon(shape.pathData),
+    hitAreaCallback: Phaser.Geom.Polygon.Contains,
+  },
+  POLYGON: {
+    draggable: true,
+    hitArea: (shape) => shape.geom,
+    hitAreaCallback: Phaser.Geom.Polygon.Contains,
+  },
+  CONTAINER: { draggable: true },
+  CUSTOM: { draggable: true },
+};
+
 /**
  * Returns a wrapper container for the given shapes
  * @param {Array} shapes - The shapes to wrap
@@ -465,4 +486,5 @@ export {
   ShapeTypes,
   getRealDimensions,
   getRealPosition,
+  DefaultShapeInteractiveConfig,
 };

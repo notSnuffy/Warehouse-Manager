@@ -51,11 +51,23 @@ class ShapeFactory {
     shape.internalId = additionalData.id || Phaser.Utils.String.UUID();
 
     if (metadata.defaultInteractive && !additionalData.interactive) {
-      shape.setInteractive(metadata.defaultInteractive);
+      const interactiveConfig = {
+        ...metadata.defaultInteractive,
+        hitArea: metadata.defaultInteractive.hitArea
+          ? metadata.defaultInteractive.hitArea(shape)
+          : null,
+      };
+      shape.setInteractive(interactiveConfig);
     }
 
     if (additionalData.interactive) {
-      shape.setInteractive(additionalData.interactive);
+      const interactiveConfig = {
+        ...additionalData.interactive,
+        hitArea: additionalData.interactive.hitArea
+          ? additionalData.interactive.hitArea(shape)
+          : null,
+      };
+      shape.setInteractive(interactiveConfig);
     }
 
     shape.interactiveData = additionalData.interactive || null;

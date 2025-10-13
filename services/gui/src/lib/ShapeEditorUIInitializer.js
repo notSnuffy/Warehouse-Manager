@@ -6,7 +6,6 @@ import {
 } from "@utils/shapes";
 import {
   addButtonHandler,
-  initializeAddShapeModal,
   populateShapeList,
   addItemButtonIntoList,
 } from "@utils/UIHelperFunctions";
@@ -39,6 +38,7 @@ class ShapeEditorUIInitializer {
     addShape,
     selectHide,
     getEditorShapes,
+    shapeModalUI,
   ) {
     if (ShapeEditorUIInitializer.#initialized) {
       return;
@@ -54,8 +54,8 @@ class ShapeEditorUIInitializer {
     addButtonHandler("moveButton", "click", handleMoveButtonClick);
     addButtonHandler("selectButton", "click", handleSelectButtonClick);
 
-    initializeAddShapeModal(addShape);
-    populateShapeList();
+    //initializeAddShapeModal(addShape);
+    populateShapeList(shapeModalUI);
 
     const saveButton = document.getElementById("saveButton");
     saveButton.addEventListener("click", async function () {
