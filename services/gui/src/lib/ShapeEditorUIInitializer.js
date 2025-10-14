@@ -83,6 +83,7 @@ class ShapeEditorUIInitializer {
       console.log(getEditorShapes());
 
       const shapes = getEditorShapes();
+      console.log(shapes);
 
       if (shapes.length === 0) {
         alert("Please add at least one shape before saving.");

@@ -11,6 +11,7 @@ import * as Shapes from "@shapes";
 import { buildShapeFromInstructions } from "@utils/shapes";
 import ShapeModalUserInterface from "@ui/ShapeModalUserInterface";
 import ShapeInstructionsHandler from "@instructions/ShapeInstructionsHandler";
+import InstructionCommands from "@instructions/InstructionCommands";
 
 /**
  * Default shapes
@@ -191,7 +192,7 @@ class ShapeEditor extends Phaser.Scene {
         rectangle.setRotation(params.rotation);
         return rectangle;
       },
-      { command: "CREATE_RECTANGLE" },
+      { command: InstructionCommands.CREATE_RECTANGLE },
     );
     this.#shapeManager.registerShape(
       "ellipse",
@@ -207,7 +208,7 @@ class ShapeEditor extends Phaser.Scene {
         ellipse.setRotation(params.rotation);
         return ellipse;
       },
-      { command: "CREATE_ELLIPSE" },
+      { command: InstructionCommands.CREATE_ELLIPSE },
     );
     this.#shapeManager.registerShape(
       "arc",
@@ -229,7 +230,7 @@ class ShapeEditor extends Phaser.Scene {
         return arc;
       },
       {
-        command: "CREATE_ARC",
+        command: InstructionCommands.CREATE_ARC,
         fieldMap: {
           radius: "arcRadius",
           startAngle: "arcStartAngle",
@@ -254,7 +255,7 @@ class ShapeEditor extends Phaser.Scene {
         return polygon;
       },
       {
-        command: "CREATE_POLYGON",
+        command: InstructionCommands.CREATE_POLYGON,
         fieldMap: { points: "polygonPoints" },
       },
     );
@@ -284,11 +285,11 @@ class ShapeEditor extends Phaser.Scene {
         container.setSize(params.width, params.height);
         return container;
       },
-      { command: "BEGIN_CONTAINER" },
+      { command: InstructionCommands.BEGIN_CONTAINER, priority: 1 },
     );
     this.#shapeManager.registerShape(
       "custom",
-      async (scene, params) => {
+      async (_scene, params) => {
         try {
           const response = await fetch(
             API_URL +
@@ -308,26 +309,27 @@ class ShapeEditor extends Phaser.Scene {
 
           const instructions = shapeData.instructions;
           console.log("Shape template data loaded:", shapeData);
+
           // Build from instructions returns array to make it more generic
           // but we only expect one shape to be returned
-          const rebuiltShape = buildShapeFromInstructions(
-            instructions,
-            scene,
-            params.color,
-          )[0];
+          const [reconstructedShape] =
+            await this.#instructionHandler.convertFromInstructions(
+              instructions,
+              params.color,
+            );
 
-          rebuiltShape.metadata = {};
-          rebuiltShape.metadata.id = params.templateId;
-          rebuiltShape.metadata.version = shapeData.shape.version;
-          rebuiltShape.setPosition(params.x, params.y);
-          rebuiltShape.setDisplaySize(params.width, params.height);
-          rebuiltShape.setRotation(params.rotation);
-          return rebuiltShape;
+          reconstructedShape.metadata = {};
+          reconstructedShape.metadata.id = params.templateId;
+          reconstructedShape.metadata.version = shapeData.shape.version;
+          reconstructedShape.setPosition(params.x, params.y);
+          reconstructedShape.setDisplaySize(params.width, params.height);
+          reconstructedShape.setRotation(params.rotation);
+          return reconstructedShape;
         } catch (error) {
           console.error("Error fetching shape template:", error);
         }
       },
-      { command: "BEGIN_CONTAINER" },
+      { command: InstructionCommands.BEGIN_CONTAINER },
     );
 
     const camera = this.cameras.main;
@@ -405,7 +407,7 @@ class ShapeEditor extends Phaser.Scene {
       //addShape,
       this.#selectManager.hide.bind(this.#selectManager),
       // () => this.#shapes,
-      () => this.#shapeManager.getAllShapes(),
+      () => this.#shapeManager.getRootShapes(),
       this.#shapeModalUI,
       this.#instructionHandler,
     );

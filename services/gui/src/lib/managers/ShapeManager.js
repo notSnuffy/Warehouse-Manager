@@ -1,6 +1,7 @@
 import ShapeFactory from "@factories/ShapeFactory";
 import AddShapeCommand from "@commands/AddShapeCommand";
 import RemoveShapeCommand from "@commands/RemoveShapeCommand";
+import Phaser from "phaser";
 
 /** Class for managing shapes in an editor. */
 class ShapeManager {
@@ -75,6 +76,18 @@ class ShapeManager {
   }
 
   /**
+   * Gets metadata for all registered shape types.
+   * @returns {Object} An object containing metadata for all registered shape types.
+   */
+  getAllShapeMetadata() {
+    const allMetadata = {};
+    this.#registry.forEach((value, key) => {
+      allMetadata[key] = value.metadata;
+    });
+    return allMetadata;
+  }
+
+  /**
    * Adds a shape to the manager using the factory.
    * @param {string} type - The type of shape to add.
    * @param {Object} params - The parameters to pass to the shape factory.
@@ -87,7 +100,13 @@ class ShapeManager {
    */
   async addShape(type, params, additionalData = {}) {
     const shape = await this.#factory.create(type, params, additionalData);
+
+    if (!this.#shapes.has(shape.internalId)) {
+      shape.internalId = additionalData.id || Phaser.Utils.String.UUID();
+    }
+
     this.#shapes.set(shape.internalId, shape);
+    console.log(this.#shapes);
     return shape;
   }
 
@@ -168,7 +187,18 @@ class ShapeManager {
    * @returns {Phaser.GameObjects.Shape[]} An array of all shapes.
    */
   getAllShapes() {
+    console.log(this.#shapes);
     return Array.from(this.#shapes.values());
+  }
+
+  /**
+   * Gets all root shapes (shapes without a parent container).
+   * @returns {Phaser.GameObjects.Shape[]} An array of all root shapes.
+   */
+  getRootShapes() {
+    return Array.from(this.#shapes.values()).filter(
+      (shape) => !shape.parentContainer,
+    );
   }
 
   /**

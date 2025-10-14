@@ -1,5 +1,3 @@
-import Phaser from "phaser";
-
 class ShapeFactory {
   /**
    * Scene to which to add shapes
@@ -31,7 +29,6 @@ class ShapeFactory {
    * @param {string} type - The type of shape to create.
    * @param {Object} params - The parameters to pass to the factory function.
    * @param {Object} [additionalData={}] - Additional data to attach to the created shape.
-   * @param {string} [additionalData.id] - An optional ID to assign to the shape.
    * @param {Phaser.Types.Input.InputConfiguration} [additionalData.interactive] - Optional interactive configuration for the shape.
    * @param {Object} [additionalData.metadata] - Optional metadata to attach to the shape.
    *
@@ -52,8 +49,6 @@ class ShapeFactory {
         `Factory for shape type '${type}' did not return a valid Phaser Game Object.`,
       );
     }
-
-    shape.internalId = additionalData.id || Phaser.Utils.String.UUID();
 
     if (metadata.defaultInteractive && !additionalData.interactive) {
       const interactiveConfig = {
