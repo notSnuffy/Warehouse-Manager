@@ -15,7 +15,7 @@ class Arc extends Phaser.GameObjects.Arc {
    * @param {number} [radius=128] - The radius of the arc.
    * @param {number} [startAngle=0] - The starting angle of the arc in degrees.
    * @param {number} [endAngle=360] - The ending angle of the arc in degrees.
-   * @param {boolean} [antiClockwise=false] - Whether the arc is drawn in an anti-clockwise direction.
+   * @param {boolean} [anticlockwise=false] - Whether the arc is drawn in an anti-clockwise direction.
    * @param {number} [color=0xffffff] - The color of the arc.
    * @param {number} [alpha=1] - The alpha value of the arc.
    */
@@ -26,7 +26,7 @@ class Arc extends Phaser.GameObjects.Arc {
     radius = 128,
     startAngle = 0,
     endAngle = 360,
-    antiClockwise = false,
+    anticlockwise = false,
     color = 0xffffff,
     alpha = 1,
   ) {
@@ -37,7 +37,7 @@ class Arc extends Phaser.GameObjects.Arc {
       radius,
       startAngle,
       endAngle,
-      antiClockwise,
+      anticlockwise,
       color,
       alpha,
     );
@@ -63,22 +63,23 @@ class Arc extends Phaser.GameObjects.Arc {
     }
 
     return {
-      type: "arc",
-      params: {
+      transform: {
         x: position.x,
         y: position.y,
         width: dimensions.width,
         height: dimensions.height,
         rotation: this.rotation,
+      },
+      specific: {
         radius: this.radius,
         startAngle: this.startAngle,
         endAngle: this.endAngle,
-        antiClockwise: this.antiClockwise,
+        anticlockwise: this.anticlockwise,
         color: this.fillColor,
         alpha: this.alpha,
       },
-
       metadata: {
+        type: "arc",
         ...this.metadata,
       },
       additionalData: {

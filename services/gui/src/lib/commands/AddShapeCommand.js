@@ -79,7 +79,7 @@ class AddShapeCommand extends BaseCommand {
       return;
     }
 
-    this.#shapeManager.removeShape(this.#shapeId);
+    this.#shapeManager.removeShapeById(this.#shapeId);
     this.#shapeId = null;
   }
 }

@@ -663,7 +663,7 @@ async function populateShapeList(shapeModalUI) {
     // Splice system shapes from the data
     data.splice(0, DEFAULT_SHAPES.length);
     data.forEach((shape) => {
-      addItemButtonIntoList(shape.name, shape.id);
+      addItemButtonIntoList(shape.name, shape.id, shapeModalUI);
     });
   } catch (error) {
     console.error("Error fetching shapes:", error);

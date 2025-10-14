@@ -49,17 +49,19 @@ class Ellipse extends Phaser.GameObjects.Ellipse {
     }
 
     return {
-      type: "ellipse",
-      params: {
+      transform: {
         x: position.x,
         y: position.y,
         width: dimensions.width,
         height: dimensions.height,
         rotation: this.rotation,
+      },
+      specific: {
         color: this.fillColor,
         alpha: this.alpha,
       },
       metadata: {
+        type: "ellipse",
         ...this.metadata,
       },
       additionalData: {

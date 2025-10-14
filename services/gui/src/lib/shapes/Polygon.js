@@ -47,18 +47,21 @@ class Polygon extends Phaser.GameObjects.Polygon {
     }
 
     return {
-      type: "polygon",
-      params: {
+      transform: {
         x: position.x,
         y: position.y,
         width: dimensions.width,
         height: dimensions.height,
         rotation: this.rotation,
+      },
+      specific: {
         points: this.pathData.slice(0, -2),
         color: this.fillColor,
         alpha: this.alpha,
       },
+
       metadata: {
+        type: "polygon",
         ...this.metadata,
       },
       additionalData: {

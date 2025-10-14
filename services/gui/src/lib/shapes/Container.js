@@ -141,23 +141,23 @@ class Container extends Phaser.GameObjects.Container {
     }
 
     return {
-      type: "container",
-      params: {
+      transform: {
         x: position.x,
         y: position.y,
         width: dimensions.width,
         height: dimensions.height,
         rotation: this.rotation,
-        children: this.list
-          .map((child) => {
-            if (typeof child.createSnapshot === "function") {
-              return child.createSnapshot();
-            }
-            return null;
-          })
-          .filter((child) => child !== null),
       },
+      children: this.list
+        .map((child) => {
+          if (typeof child.createSnapshot === "function") {
+            return child.createSnapshot();
+          }
+          return null;
+        })
+        .filter((child) => child !== null),
       metadata: {
+        type: "container",
         ...this.metadata,
       },
       additionalData: {

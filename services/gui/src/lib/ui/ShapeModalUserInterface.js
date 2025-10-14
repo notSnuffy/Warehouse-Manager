@@ -8,6 +8,8 @@ class ShapeModalUserInterface {
 
   #currentShapeType = null;
 
+  #currentShapeId = null;
+
   #modal;
 
   #managersToRegisterWith = [];
@@ -22,11 +24,11 @@ class ShapeModalUserInterface {
 
   openShapeModal(shapeType, shapeId, shapeName) {
     this.#currentShapeType = shapeType;
+    this.#currentShapeId = shapeId;
+
     const modalTitle = this.#modal.querySelector("#modalTitle");
     modalTitle.textContent =
       "Add New " + shapeName.charAt(0).toUpperCase() + shapeName.slice(1);
-    const shapeIdElement = this.#modal.querySelector("#shapeId");
-    shapeIdElement.value = shapeId;
 
     const dynamicFieldsContainer = this.#modal.querySelector(
       "#dynamicFieldsContainer",
@@ -44,6 +46,10 @@ class ShapeModalUserInterface {
     const formData = new FormData(form);
     console.log(formData);
     const params = Object.fromEntries(formData);
+
+    if (this.#currentShapeId) {
+      params.templateId = this.#currentShapeId;
+    }
 
     Object.keys(params).forEach((key) => {
       if (!isNaN(params[key])) {

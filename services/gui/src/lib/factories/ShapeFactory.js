@@ -47,6 +47,11 @@ class ShapeFactory {
     const { factory, metadata } = shapeEntry;
 
     const shape = await factory(this.#scene, params);
+    if (!shape) {
+      throw new Error(
+        `Factory for shape type '${type}' did not return a valid Phaser Game Object.`,
+      );
+    }
 
     shape.internalId = additionalData.id || Phaser.Utils.String.UUID();
 
@@ -73,8 +78,9 @@ class ShapeFactory {
     shape.interactiveData = additionalData.interactive || null;
 
     shape.metadata = {
-      type,
+      ...shape.metadata,
       ...(additionalData.metadata || {}),
+      type,
     };
 
     return shape;

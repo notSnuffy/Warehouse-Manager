@@ -49,6 +49,96 @@ const DefaultShapeInteractiveConfig = {
 };
 
 /**
+ * Calculates the bounding box for a set of items
+ * @param {Array} items - The items to calculate the bounding box for
+ * @param {Function} [getPoints] - A function that takes an item and returns an array of points (objects with x and y properties)
+ * @returns {Object|null} An object representing the bounding box, or null if no items are provided
+ */
+function calculateBoundingBox(
+  items,
+  getPoints = (item) => [{ x: item.x, y: item.y }],
+) {
+  if (!items || items.length === 0) {
+    return null;
+  }
+
+  let mostLeft = Infinity;
+  let mostRight = -Infinity;
+  let mostTop = Infinity;
+  let mostBottom = -Infinity;
+
+  items.forEach((item) => {
+    const points = getPoints(item);
+    points.forEach((point) => {
+      mostLeft = Math.min(mostLeft, point.x);
+      mostRight = Math.max(mostRight, point.x);
+      mostTop = Math.min(mostTop, point.y);
+      mostBottom = Math.max(mostBottom, point.y);
+    });
+  });
+
+  return {
+    left: mostLeft,
+    right: mostRight,
+    top: mostTop,
+    bottom: mostBottom,
+    width: mostRight - mostLeft,
+    height: mostBottom - mostTop,
+    centerX: (mostLeft + mostRight) / 2,
+    centerY: (mostTop + mostBottom) / 2,
+  };
+}
+
+/**
+ * Creates a container snapshot wrapping the given shapes
+ * @param {Array} shapes - The shapes to wrap
+ * @returns {Object|null} A snapshot object representing the container, or null if no shapes are provided
+ * @throws {Error} If any shape does not have a createSnapshot method
+ */
+function createContainerSnapshotFromShapes(shapes) {
+  if (!shapes || shapes.length === 0) {
+    return null;
+  }
+
+  const boundingBox = calculateBoundingBox(shapes, (shape) => {
+    const points = Object.values(getShapePoints(shape));
+    return points;
+  });
+
+  if (!boundingBox) {
+    return null;
+  }
+
+  const childrenSnapshots = shapes.map((shape) => shape.createSnapshot());
+  const childrenRelativeToContainer = childrenSnapshots.map((snapshot) => {
+    const relativeX = snapshot.transform.x - boundingBox.centerX;
+    const relativeY = snapshot.transform.y - boundingBox.centerY;
+    return {
+      ...snapshot,
+      transform: {
+        ...snapshot.transform,
+        x: relativeX,
+        y: relativeY,
+      },
+    };
+  });
+
+  return {
+    transform: {
+      x: boundingBox.centerX,
+      y: boundingBox.centerY,
+      width: boundingBox.width,
+      height: boundingBox.height,
+      rotation: 0,
+    },
+    metadata: {
+      type: "container",
+    },
+    children: childrenRelativeToContainer,
+  };
+}
+
+/**
  * Returns a wrapper container for the given shapes
  * @param {Array} shapes - The shapes to wrap
  * @return {Object} A container object that wraps the shapes
@@ -96,12 +186,12 @@ function getContainerWrapper(shapes) {
 }
 
 const ShapeCommands = Object.freeze({
-  CREATE_RECTANGLE: "createRectangle",
-  CREATE_ELLIPSE: "createEllipse",
-  CREATE_ARC: "createArc",
-  CREATE_POLYGON: "createPolygon",
-  BEGIN_CONTAINER: "beginContainer",
-  END_CONTAINER: "endContainer",
+  CREATE_RECTANGLE: "CREATE_RECTANGLE",
+  CREATE_ELLIPSE: "CREATE_ELLIPSE",
+  CREATE_ARC: "CREATE_ARC",
+  CREATE_POLYGON: "CREATE_POLYGON",
+  BEGIN_CONTAINER: "BEGIN_CONTAINER",
+  END_CONTAINER: "END_CONTAINER",
 });
 
 /**
@@ -355,7 +445,6 @@ function saveShapeAsInstructions(shape) {
  * @return {Array} An array of shape instances created from the instructions
  */
 function buildShapeFromInstructions(instructions, scene, color = 0xffffff) {
-  console.log(instructions);
   const containerStack = [];
   const shapes = [];
 
@@ -423,13 +512,14 @@ function buildShapeFromInstructions(instructions, scene, color = 0xffffff) {
       }
       case ShapeCommands.CREATE_POLYGON: {
         // Phaser always automatically adds 0, 0 to the polygon points resulting in uncessary growing of the points upon saves.
-        const polygonPointsWithRemovedLastPoint =
-          parameters.polygonPoints.slice(0, -2);
+        // const polygonPointsWithRemovedLastPoint =
+        //   parameters.polygonPoints.slice(0, -2);
         const polygon = new Shapes.Polygon(
           scene,
           parameters.positionX,
           parameters.positionY,
-          polygonPointsWithRemovedLastPoint,
+          //polygonPointsWithRemovedLastPoint,
+          parameters.polygonPoints,
           color,
         );
         polygon.setDisplaySize(parameters.width, parameters.height);
@@ -487,4 +577,6 @@ export {
   getRealDimensions,
   getRealPosition,
   DefaultShapeInteractiveConfig,
+  calculateBoundingBox,
+  createContainerSnapshotFromShapes,
 };

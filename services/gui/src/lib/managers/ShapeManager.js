@@ -48,6 +48,8 @@ class ShapeManager {
    * @param {Function} factory - The factory function to create instances of the shape.
    * @param {Object} [metadata={}] - Additional metadata for the shape type.
    * @param {Phaser.Types.Input.InputConfiguration} [metadata.defaultInteractive] - Default interactive configuration for the shape type.
+   * @param {string} [metadata.command] - The command associated with the shape type.
+   * @param {Object} [metadata.fieldMap] - A mapping of fields for the shape type.
    * @throws {Error} If the shape type is already registered.
    * @returns {void}
    */
@@ -56,6 +58,20 @@ class ShapeManager {
       throw new Error(`Shape type '${type}' is already registered.`);
     }
     this.#registry.set(type, { factory, metadata });
+  }
+
+  /**
+   * Gets the metadata for a registered shape type.
+   * @param {string} type - The type of shape.
+   * @throws {Error} If the shape type is not registered.
+   * @returns {Object} The metadata for the shape type.
+   */
+  getShapeMetadata(type) {
+    const shapeEntry = this.#registry.get(type);
+    if (!shapeEntry) {
+      throw new Error(`Shape type '${type}' is not registered.`);
+    }
+    return shapeEntry.metadata;
   }
 
   /**

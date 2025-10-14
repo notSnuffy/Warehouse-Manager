@@ -49,17 +49,19 @@ class Rectangle extends Phaser.GameObjects.Rectangle {
     }
 
     return {
-      type: "rectangle",
-      params: {
+      transform: {
         x: position.x,
         y: position.y,
         width: dimensions.width,
         height: dimensions.height,
         rotation: this.rotation,
+      },
+      specific: {
         color: this.fillColor,
         alpha: this.alpha,
       },
       metadata: {
+        type: "rectangle",
         ...this.metadata,
       },
       additionalData: {

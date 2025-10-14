@@ -1,9 +1,6 @@
 import { DEFAULT_SHAPES } from "@scenes/ShapeEditor";
 import { API_URL } from "@/config";
-import {
-  getShapesWrappedInContainer,
-  saveShapeAsInstructions,
-} from "@utils/shapes";
+import { createContainerSnapshotFromShapes } from "@utils/shapes";
 import {
   addButtonHandler,
   populateShapeList,
@@ -30,6 +27,8 @@ class ShapeEditorUIInitializer {
    * @param {Function} addShape - Function to add a shape
    * @param {Function} selectHide - Function to hide selection
    * @param {Function} getEditorShapes - Function to get editor shapes
+   * @param {ShapeModalUserInterface} shapeModalUI - Function to handle shape modal UI
+   * @param {ShapeInstructionsHandler} instructionsHandler - Instructions handler
    * @static
    */
   static initialize(
@@ -39,6 +38,7 @@ class ShapeEditorUIInitializer {
     selectHide,
     getEditorShapes,
     shapeModalUI,
+    instructionsHandler,
   ) {
     if (ShapeEditorUIInitializer.#initialized) {
       return;
@@ -93,8 +93,8 @@ class ShapeEditorUIInitializer {
         name: shapeName,
         type: "CONTAINER",
         public: publicFlag,
-        instructions: saveShapeAsInstructions(
-          getShapesWrappedInContainer(shapes),
+        instructions: instructionsHandler.convertToInstructions(
+          createContainerSnapshotFromShapes(shapes),
         ),
       };
 
@@ -139,7 +139,7 @@ class ShapeEditorUIInitializer {
           return;
         }
 
-        addItemButtonIntoList(data.name, data.id);
+        addItemButtonIntoList(data.name, data.id, shapeModalUI);
         alert("Shape saved successfully!");
       } catch (error) {
         console.error(error);
