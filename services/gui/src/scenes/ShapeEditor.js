@@ -353,9 +353,9 @@ class ShapeEditor extends Phaser.Scene {
             snapshot.additionalData = {
               interactive: interactiveConfig,
             };
-            if (snapshot.children && snapshot.children.length > 0) {
-              configureInteractive(snapshot.children);
-            }
+            //if (snapshot.children && snapshot.children.length > 0) {
+            //  configureInteractive(snapshot.children);
+            //}
           });
         };
         configureInteractive(shapesSnapshots);
@@ -364,16 +364,16 @@ class ShapeEditor extends Phaser.Scene {
             await this.#shapeManager.addShapeFromSnapshot(shapeSnapshot);
           this.#moveManager.create(shape);
           this.#selectManager.create(shape);
-          const addManagersToChildren = (parent) => {
-            if (parent.list && parent.list.length > 0) {
-              parent.list.forEach((child) => {
-                this.#moveManager.create(child);
-                this.#selectManager.create(child);
-                addManagersToChildren(child);
-              });
-            }
-          };
-          addManagersToChildren(shape);
+          //const addManagersToChildren = (parent) => {
+          //  if (parent.list && parent.list.length > 0) {
+          //    parent.list.forEach((child) => {
+          //      this.#moveManager.create(child);
+          //      this.#selectManager.create(child);
+          //      addManagersToChildren(child);
+          //    });
+          //  }
+          //};
+          //addManagersToChildren(shape);
         }
       }
     }
@@ -458,12 +458,12 @@ class ShapeEditor extends Phaser.Scene {
     // }
 
     this.input.on("pointerdown", this.#selectManager.hide, this.#selectManager);
-    this.input.on("pointerdown", () => {
-      const shape = this.#shapeManager.getRootShapes()[0];
-      shape.list.forEach((child) => {
-        child.input.enabled = !child.input.enabled;
-      });
-    });
+    //this.input.on("pointerdown", () => {
+    //  const shape = this.#shapeManager.getRootShapes()[0];
+    //  shape.list.forEach((child) => {
+    //    child.input.enabled = !child.input.enabled;
+    //  });
+    //});
   }
 
   /**
