@@ -8,7 +8,7 @@ import SelectShapeManager from "@managers/select/SelectShapeManager";
 import ShapeManager from "@managers/ShapeManager";
 import ShapeEditorUIInitializer from "@lib/ShapeEditorUIInitializer";
 import * as Shapes from "@shapes";
-import { buildShapeFromInstructions } from "@utils/shapes";
+import { DefaultShapeInteractiveConfig } from "@utils/shapes";
 import ShapeModalUserInterface from "@ui/ShapeModalUserInterface";
 import ShapeInstructionsHandler from "@instructions/ShapeInstructionsHandler";
 import InstructionCommands from "@instructions/InstructionCommands";
@@ -30,7 +30,6 @@ class ShapeEditor extends Phaser.Scene {
    * Current tool selected
    * @type {string}
    * @default "move"
-   * @private
    */
   #currentTool = "move";
 
@@ -45,7 +44,6 @@ class ShapeEditor extends Phaser.Scene {
    * Move manager
    * @type {MoveManager}
    * @default null
-   * @private
    */
   #moveManager = null;
 
@@ -54,7 +52,6 @@ class ShapeEditor extends Phaser.Scene {
    * Also handles rotation and resizing from resize:ResizeManager and rotation:RotationManager
    * @type {SelectShapeManager}
    * @default null
-   * @private
    */
   #selectManager = null;
 
@@ -62,7 +59,6 @@ class ShapeEditor extends Phaser.Scene {
    * Panning manager
    * @type {PanningManager}
    * @default null
-   * @private
    */
   #panningManager = null;
 
@@ -70,7 +66,6 @@ class ShapeEditor extends Phaser.Scene {
    * Shape manager
    * @type {ShapeManager}
    * @default null
-   * @private
    */
   #shapeManager = null;
 
@@ -78,7 +73,6 @@ class ShapeEditor extends Phaser.Scene {
    * Instruction handler
    * @type {ShapeInstructionsHandler}
    * @default null
-   * @private
    */
   #instructionHandler = null;
 
@@ -86,14 +80,13 @@ class ShapeEditor extends Phaser.Scene {
    * Shape modal UI
    * @type {ShapeModalUserInterface}
    * @default null
-   * @private
    */
   #shapeModalUI = null;
 
   /**
    * Loads a shape by its ID
    * @param {string} shapeId - The ID of the shape to load
-   * @private
+   * @return {Promise<Array>} The instructions of the loaded shape
    * @async
    */
   async #loadShape(shapeId) {
@@ -126,25 +119,24 @@ class ShapeEditor extends Phaser.Scene {
       // Adjusts the position of the shapes based on the world position
       const containerStack = [];
       instructions.forEach((instruction) => {
+        console.log(instruction);
         if (
           containerStack.length === 0 &&
-          instruction.command !== "endContainer"
+          instruction.command !== InstructionCommands.END_CONTAINER
         ) {
           instruction.parameters.positionX += worldPositionX;
           instruction.parameters.positionY += worldPositionY;
         }
 
-        if (instruction.command === "beginContainer") {
+        if (instruction.command === InstructionCommands.BEGIN_CONTAINER) {
           containerStack.push(instruction);
         }
-        if (instruction.command === "endContainer") {
+        if (instruction.command === InstructionCommands.END_CONTAINER) {
           containerStack.pop();
         }
       });
 
-      const shapes = buildShapeFromInstructions(instructions, this);
-
-      return shapes;
+      return instructions;
     } catch (error) {
       console.error("Error fetching shape data:", error);
     }
@@ -169,14 +161,16 @@ class ShapeEditor extends Phaser.Scene {
    * @public
    */
   async create() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const shapeId = urlParams.get("shapeId");
-    if (shapeId) {
-      await this.#loadShape(shapeId);
-    }
-
     this.#shapeManager = new ShapeManager(this);
     this.#instructionHandler = new ShapeInstructionsHandler(this.#shapeManager);
+    this.#selectManager = new SelectShapeManager(this);
+    this.#moveManager = new MoveManager(this, new OutlineManager(this));
+    this.#panningManager = new PanningManager(this);
+
+    this.#panningManager.create();
+
+    const zoomManager = new ZoomManager(this);
+    zoomManager.create();
 
     this.#shapeManager.registerShape(
       "rectangle",
@@ -332,6 +326,36 @@ class ShapeEditor extends Phaser.Scene {
       { command: InstructionCommands.BEGIN_CONTAINER },
     );
 
+    const urlParams = new URLSearchParams(window.location.search);
+    const shapeId = urlParams.get("shapeId");
+    if (shapeId) {
+      const loadedInstructions = await this.#loadShape(shapeId);
+      if (loadedInstructions && loadedInstructions.length > 0) {
+        const shapes = await this.#instructionHandler.convertFromInstructions(
+          loadedInstructions,
+          0xffffff,
+        );
+        shapes.forEach((shape) => {
+          const type = shape.metadata?.type || shape.type;
+
+          const interactiveConfig = DefaultShapeInteractiveConfig[
+            type.toUpperCase()
+          ] || {
+            draggable: true,
+          };
+
+          shape.setInteractive({
+            ...interactiveConfig,
+            hitArea: interactiveConfig.hitArea
+              ? interactiveConfig.hitArea(shape)
+              : null,
+          });
+          this.#moveManager.create(shape);
+          this.#selectManager.create(shape);
+        });
+      }
+    }
+
     const camera = this.cameras.main;
 
     const scrollXElement = document.getElementById("scrollX");
@@ -384,15 +408,6 @@ class ShapeEditor extends Phaser.Scene {
     const handleSelectButtonClick = function () {
       this.#currentTool = "select";
     }.bind(this);
-
-    this.#selectManager = new SelectShapeManager(this);
-    this.#moveManager = new MoveManager(this, new OutlineManager(this));
-    this.#panningManager = new PanningManager(this);
-
-    this.#panningManager.create();
-
-    const zoomManager = new ZoomManager(this);
-    zoomManager.create();
 
     this.#shapeModalUI = new ShapeModalUserInterface(
       this.#shapeManager,

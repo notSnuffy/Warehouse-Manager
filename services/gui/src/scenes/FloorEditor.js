@@ -8,7 +8,7 @@ import { buildShapeFromInstructions } from "@utils/shapes";
 class FloorEditor extends Phaser.Scene {
   /**
    * Graph representing the floor layout
-   * @type {Map<Phaser.GameObjects.Circle, Map<Phaser.GameObjects.Circle, Phaser.GameObjects.Line>>}
+   * @type {Map<Phaser.GameObjects.Arc, Map<Phaser.GameObjects.Arc, Phaser.GameObjects.Line>>}
    * @private
    * @default new Map()
    */
@@ -23,7 +23,7 @@ class FloorEditor extends Phaser.Scene {
 
   /**
    * Array to hold selected corners
-   * @type {Phaser.GameObjects.Circle[]}
+   * @type {Phaser.GameObjects.Arc[]}
    * @private
    * @default []
    */
@@ -31,7 +31,7 @@ class FloorEditor extends Phaser.Scene {
 
   /**
    * Preview corner before placement
-   * @type {Phaser.GameObjects.Circle|null}
+   * @type {Phaser.GameObjects.Arc|null}
    * @private
    * @default null
    */
@@ -85,8 +85,8 @@ class FloorEditor extends Phaser.Scene {
   /**
    * Creates a wall between two corners
    * @private
-   * @param {Phaser.GameObjects.Circle} corner1 - The first corner
-   * @param {Phaser.GameObjects.Circle} corner2 - The second corner
+   * @param {Phaser.GameObjects.Arc} corner1 - The first corner
+   * @param {Phaser.GameObjects.Arc} corner2 - The second corner
    * @return {void}
    */
   #createWall(corner1, corner2) {
@@ -112,7 +112,7 @@ class FloorEditor extends Phaser.Scene {
   /**
    * Updates the walls connected to a corner
    * @private
-   * @param {Phaser.GameObjects.Circle} corner - The corner to update walls for
+   * @param {Phaser.GameObjects.Arc} corner - The corner to update walls for
    * @return {void}
    */
   #updateWalls(corner) {
@@ -128,7 +128,7 @@ class FloorEditor extends Phaser.Scene {
    * @param {number} positionX - The x-coordinate of the corner
    * @param {number} positionY - The y-coordinate of the corner
    * @private
-   * @return {Phaser.GameObjects.Circle} - The created corner object
+   * @return {Phaser.GameObjects.Arc} - The created corner object
    */
   #addCorner(positionX = 100, positionY = 100) {
     const corner = this.add

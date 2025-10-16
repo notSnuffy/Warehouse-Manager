@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "target": "ES6",
+    "module": "ES6",
+    "baseUrl": "src",
+    "paths": {
+      "@/*": ["*"],
+      "@scenes/*": ["scenes/*"],
+      "@shapes": ["lib/shapes/index"],
+      "@shapes/*": ["lib/shapes/*"],
+      "@lib/*": ["lib/*"],
+      "@managers/*": ["lib/managers/*"],
+      "@factories/*": ["lib/factories/*"],
+      "@utils/*": ["lib/utils/*"],
+      "@commands/*": ["lib/commands/*"],
+      "@ui/*": ["lib/ui/*"],
+      "@instructions/*": ["lib/instructions/*"]
+    },
+    "checkJs": true
+  },
+  "include": ["src"]
+}

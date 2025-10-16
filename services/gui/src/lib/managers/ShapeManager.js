@@ -50,6 +50,7 @@ class ShapeManager {
    * @param {Object} [metadata={}] - Additional metadata for the shape type.
    * @param {Phaser.Types.Input.InputConfiguration} [metadata.defaultInteractive] - Default interactive configuration for the shape type.
    * @param {string} [metadata.command] - The command associated with the shape type.
+   * @param {number} [metadata.priority] - The priority of the shape type for command resolution.
    * @param {Object} [metadata.fieldMap] - A mapping of fields for the shape type.
    * @throws {Error} If the shape type is already registered.
    * @returns {void}

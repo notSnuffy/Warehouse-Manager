@@ -128,8 +128,8 @@ class ShapeInstructionsHandler {
   /**
    * Converts a list of instructions into shapes.
    * @param {Array} instructions - The list of instructions to convert.
-   * @param {string} color - The color to apply to the shapes.
-   * @return {Array} The list of created shapes.
+   * @param {number} color - The color to apply to the shapes.
+   * @return {Promise<Phaser.GameObjects.Shape[]>} The list of created shapes.
    * @throws {Error} If a shape type is not registered for a command.
    * @public
    */
