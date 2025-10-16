@@ -626,7 +626,7 @@ function addItemButtonIntoList(shapeName, shapeId, shapeModalUI) {
 
 /**
  * Populates the shape list with available shapes from the API.
- * @param {HTMLElement} shapeUIModal - The shape UI modal element.
+ * @param {ShapeModalUserInterface} shapeModalUI - The shape UI modal element.
  * @returns {Promise<void>}
  */
 async function populateShapeList(shapeModalUI) {

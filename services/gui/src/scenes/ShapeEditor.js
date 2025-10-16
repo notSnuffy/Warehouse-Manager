@@ -8,10 +8,15 @@ import SelectShapeManager from "@managers/select/SelectShapeManager";
 import ShapeManager from "@managers/ShapeManager";
 import ShapeEditorUIInitializer from "@lib/ShapeEditorUIInitializer";
 import * as Shapes from "@shapes";
-import { DefaultShapeInteractiveConfig } from "@utils/shapes";
+import {
+  getShapePoints,
+  calculateBoundingBox,
+  DefaultShapeInteractiveConfig,
+} from "@utils/shapes";
 import ShapeModalUserInterface from "@ui/ShapeModalUserInterface";
 import ShapeInstructionsHandler from "@instructions/ShapeInstructionsHandler";
 import InstructionCommands from "@instructions/InstructionCommands";
+import SortedLinkedMapList from "@collections/SortedLinkedMapList";
 
 /**
  * Default shapes
@@ -362,6 +367,7 @@ class ShapeEditor extends Phaser.Scene {
         for (const shapeSnapshot of shapesSnapshots) {
           const shape =
             await this.#shapeManager.addShapeFromSnapshot(shapeSnapshot);
+          this.events.emit("shapeAdded", shape);
           this.#moveManager.create(shape);
           this.#selectManager.create(shape);
           //const addManagersToChildren = (parent) => {
@@ -389,8 +395,8 @@ class ShapeEditor extends Phaser.Scene {
     const initialWorldWidth = cameraWidth * 3;
     const initialWorldHeight = cameraHeight * 3;
 
-    scrollXElement.max = initialWorldWidth;
-    scrollYElement.max = initialWorldHeight;
+    scrollXElement.max = initialWorldWidth - cameraWidth;
+    scrollYElement.max = initialWorldHeight - cameraHeight;
 
     scrollXElement.value = cameraWidth;
     scrollYElement.value = cameraHeight;
@@ -404,17 +410,28 @@ class ShapeEditor extends Phaser.Scene {
 
     scrollXElement.addEventListener("input", (event) => {
       const value = parseInt(event.target.value, 10);
-      camera.scrollX = value - cameraWidth;
+      camera.centerOnX(
+        camera.getBounds().left + value + camera.displayWidth / 2,
+      );
     });
     scrollYElement.addEventListener("input", (event) => {
       const value = parseInt(event.target.value, 10);
-      camera.scrollY = value - cameraHeight;
+      camera.scrollY = value - camera.height;
     });
 
-    this.events.on("postupdate", () => {
-      scrollXElement.value = camera.scrollX + cameraWidth;
-      scrollYElement.value = camera.scrollY + cameraHeight;
-    });
+    //this.events.on("postupdate", () => {
+    //if (camera.scrollX < camera.getBounds().left) {
+    //  console.log(camera.scrollX);
+    //  scrollXElement.value = 0;
+    //} else {
+    //  scrollXElement.value = Math.abs(
+    //    camera.scrollX - camera.getBounds().left,
+    //  );
+    //}
+    //scrollYElement.value = Math.abs(camera.scrollY - camera.getBounds().top);
+    //});
+
+    this.minXSortedList = new SortedLinkedMapList();
 
     /**
      * Handles the move button click event
@@ -435,6 +452,7 @@ class ShapeEditor extends Phaser.Scene {
       this.#shapeManager,
       "newShapeModal",
       [this.#moveManager, this.#selectManager],
+      this,
     );
 
     ShapeEditorUIInitializer.initialize(
@@ -458,6 +476,35 @@ class ShapeEditor extends Phaser.Scene {
     // }
 
     this.input.on("pointerdown", this.#selectManager.hide, this.#selectManager);
+
+    this.events.on("shapeAdded", (shape) => {
+      const boundingBox = calculateBoundingBox([shape], (shape) => {
+        const points = Object.values(getShapePoints(shape));
+        return points;
+      });
+      this.minXSortedList.insert(shape.internalId, boundingBox.left);
+
+      const camera = this.cameras.main;
+      const oldBounds = camera.getBounds();
+      // -1542, 3084 -> 4626
+
+      const minX = this.minXSortedList.getHeadValue();
+
+      if (minX !== oldBounds.left && minX < -cameraWidth) {
+        const newWorldWidth = oldBounds.right - minX;
+        camera.setBounds(minX, oldBounds.y, newWorldWidth, oldBounds.height);
+        const pixelsOnTheRight = scrollXElement.max - scrollXElement.value;
+        scrollXElement.max = newWorldWidth - camera.displayWidth;
+        scrollXElement.value = scrollXElement.max - pixelsOnTheRight;
+      }
+    });
+
+    this.events.on("cameraZoomChanged", (_newZoom) => {
+      console.log(camera.displayWidth, camera.displayHeight);
+      scrollXElement.max = camera.getBounds().width - camera.displayWidth;
+      scrollXElement.value = Math.abs(camera.scrollX - camera.getBounds().left);
+    });
+
     //this.input.on("pointerdown", () => {
     //  const shape = this.#shapeManager.getRootShapes()[0];
     //  shape.list.forEach((child) => {

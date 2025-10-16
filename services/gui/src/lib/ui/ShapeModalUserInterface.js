@@ -4,24 +4,70 @@ import { Modal } from "bootstrap";
 import { convertDegreesToRadiansSigned } from "@utils/math";
 
 class ShapeModalUserInterface {
+  /**
+   * The shape manager instance
+   * @type {ShapeManager}
+   */
   #shapeManager;
 
+  /**
+   * The current shape type being added or edited
+   * @type {string|null}
+   * @default null
+   */
   #currentShapeType = null;
 
+  /**
+   * The current shape ID being edited (null if adding a new shape)
+   * @type {string|null}
+   * @default null
+   */
   #currentShapeId = null;
 
+  /**
+   * The modal element
+   * @type {HTMLElement}
+   * @default null
+   */
   #modal;
 
+  /**
+   * The list of managers to register new shapes with
+   * @type {Array}
+   * @default []
+   */
   #managersToRegisterWith = [];
 
-  constructor(shapeManager, modalId, managersToRegisterWith) {
+  /**
+   * The scene instance
+   * @type {Phaser.Scene}
+   * @default null
+   */
+  #scene;
+
+  /**
+   * Creates an instance of ShapeModalUserInterface.
+   * @param {ShapeManager} shapeManager - The shape manager instance
+   * @param {string} modalId - The ID of the modal element
+   * @param {Array} managersToRegisterWith - The list of managers to register new shapes with
+   * @param {Phaser.Scene} scene - The scene instance
+   */
+  constructor(shapeManager, modalId, managersToRegisterWith, scene) {
     this.#shapeManager = shapeManager;
     this.#modal = document.getElementById(modalId);
     const confirmButton = this.#modal.querySelector("#confirmButton");
     confirmButton.addEventListener("click", () => this.onModalConfirmation());
     this.#managersToRegisterWith = managersToRegisterWith;
+    this.#scene = scene;
   }
 
+  /**
+   * Opens the shape modal for adding or editing a shape.
+   * @param {string} shapeType - The type of shape to add or edit
+   * @param {string|null} shapeId - The ID of the shape to edit (null if adding a new shape)
+   * @param {string} shapeName - The name of the shape to display in the modal title
+   * @return {void}
+   */
   openShapeModal(shapeType, shapeId, shapeName) {
     this.#currentShapeType = shapeType;
     this.#currentShapeId = shapeId;
@@ -40,6 +86,11 @@ class ShapeModalUserInterface {
     bootstrapModal.show();
   }
 
+  /**
+   * Handles the confirmation action in the modal.
+   * @return {Promise<void>}
+   * @private
+   */
   async onModalConfirmation() {
     const form = this.#modal.querySelector("#shapeForm");
     console.log(form);
@@ -97,6 +148,7 @@ class ShapeModalUserInterface {
             DefaultShapeInteractiveConfig[this.#currentShapeType.toUpperCase()],
         },
       );
+      this.#scene.events.emit("shapeAdded", shape);
       for (const manager of this.#managersToRegisterWith) {
         manager.create(shape);
       }

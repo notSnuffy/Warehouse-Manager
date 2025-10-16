@@ -69,6 +69,7 @@ class ZoomManager {
     camera.setZoom(newZoom);
     camera.scrollX += scrollAdjustment.x;
     camera.scrollY += scrollAdjustment.y;
+    this.scene.events.emit("cameraZoomChanged", camera.zoom);
   }
 
   /**

@@ -3,7 +3,6 @@ import InstructionCommands from "@instructions/InstructionCommands.js";
 class ShapeInstructionsHandler {
   /**
    * @param {ShapeManager} shapeManager
-   * @private
    */
   #shapeManager;
 
@@ -20,7 +19,6 @@ class ShapeInstructionsHandler {
    * @param {Object} fieldMap - The field map to apply.
    * @param {Object} properties - The properties to map.
    * @returns {Object} The mapped properties.
-   * @private
    */
   #applyFieldMap(fieldMap, properties) {
     let mapped = {};

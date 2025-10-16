@@ -23,6 +23,7 @@ export default defineConfig({
       "@commands": path.resolve(__dirname, "./src/lib/commands"),
       "@ui": path.resolve(__dirname, "./src/lib/ui"),
       "@instructions": path.resolve(__dirname, "./src/lib/instructions"),
+      "@collections": path.resolve(__dirname, "./src/lib/collections"),
     },
   },
   root: "src",

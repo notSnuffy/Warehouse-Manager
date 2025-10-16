@@ -14,7 +14,8 @@
       "@utils/*": ["lib/utils/*"],
       "@commands/*": ["lib/commands/*"],
       "@ui/*": ["lib/ui/*"],
-      "@instructions/*": ["lib/instructions/*"]
+      "@instructions/*": ["lib/instructions/*"],
+      "@collections/*": ["lib/collections/*"]
     },
     "checkJs": true
   },
