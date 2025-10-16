@@ -114,18 +114,33 @@ class ShapeManager {
   /**
    * Adds a shape to the manager from a snapshot.
    * @param {Object} snapshot - The snapshot of the shape to add.
-   * @param {string} snapshot.type - The type of shape.
-   * @param {Object} snapshot.params - The parameters for creating the shape.
-   * @param {Object} snapshot.metadata - The metadata to attach to the shape.
-   * @param {Object} snapshot.additionalData - Additional data for the shape (e.g., id, interactive).
+   * @param {Object} snapshot.transform - The transform properties of the shape.
+   * @param {number} snapshot.transform.x - The x position of the shape.
+   * @param {number} snapshot.transform.y - The y position of the shape.
+   * @param {number} snapshot.transform.width - The width of the shape.
+   * @param {number} snapshot.transform.height - The height of the shape.
+   * @param {number} snapshot.transform.rotation - The rotation of the shape in radians.
+   * @param {Object} snapshot.specific - The specific properties of the shape.
+   * @param {Object} snapshot.metadata - The metadata of the shape, including its type.
+   * @param {string} snapshot.metadata.type - The type of the shape.
+   * @param {Object} [snapshot.additionalData] - Additional data to attach to the shape.
+   * @param {string} [snapshot.additionalData.id] - An optional ID to assign to the shape.
+   * @param {Phaser.Types.Input.InputConfiguration} [snapshot.additionalData.interactive] - Optional interactive configuration for the shape.
+   * @param {Object[]} [snapshot.children] - Optional child shapes.
    * @throws {Error} If the shape type is not registered.
    * @returns {Promise<Phaser.GameObjects.Shape>} The added shape.
    */
   async addShapeFromSnapshot(snapshot) {
-    const { type, params, metadata, additionalData } = snapshot;
-    return this.addShape(type, params, {
+    const { transform, specific, metadata, additionalData, children } =
+      snapshot;
+    const params = {
+      ...transform,
+      ...specific,
+      children: children || [],
+    };
+    return this.addShape(metadata.type, params, {
       metadata,
-      interactive: additionalData.interactive,
+      interactive: additionalData?.interactive,
     });
   }
 

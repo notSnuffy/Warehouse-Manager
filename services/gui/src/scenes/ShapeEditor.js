@@ -306,10 +306,14 @@ class ShapeEditor extends Phaser.Scene {
 
           // Build from instructions returns array to make it more generic
           // but we only expect one shape to be returned
-          const [reconstructedShape] =
+          const [reconstructedShapeSnapshot] =
             await this.#instructionHandler.convertFromInstructions(
               instructions,
               params.color,
+            );
+          const reconstructedShape =
+            await this.#shapeManager.addShapeFromSnapshot(
+              reconstructedShapeSnapshot,
             );
 
           reconstructedShape.metadata = {};
@@ -331,28 +335,46 @@ class ShapeEditor extends Phaser.Scene {
     if (shapeId) {
       const loadedInstructions = await this.#loadShape(shapeId);
       if (loadedInstructions && loadedInstructions.length > 0) {
-        const shapes = await this.#instructionHandler.convertFromInstructions(
-          loadedInstructions,
-          0xffffff,
-        );
-        shapes.forEach((shape) => {
-          const type = shape.metadata?.type || shape.type;
+        const shapesSnapshots =
+          await this.#instructionHandler.convertFromInstructions(
+            loadedInstructions,
+            0xffffff,
+          );
+        const configureInteractive = (snapshots) => {
+          snapshots.forEach(async (snapshot) => {
+            const type = snapshot.metadata.type;
 
-          const interactiveConfig = DefaultShapeInteractiveConfig[
-            type.toUpperCase()
-          ] || {
-            draggable: true,
-          };
+            const interactiveConfig = DefaultShapeInteractiveConfig[
+              type.toUpperCase()
+            ] || {
+              draggable: true,
+            };
 
-          shape.setInteractive({
-            ...interactiveConfig,
-            hitArea: interactiveConfig.hitArea
-              ? interactiveConfig.hitArea(shape)
-              : null,
+            snapshot.additionalData = {
+              interactive: interactiveConfig,
+            };
+            if (snapshot.children && snapshot.children.length > 0) {
+              configureInteractive(snapshot.children);
+            }
           });
+        };
+        configureInteractive(shapesSnapshots);
+        for (const shapeSnapshot of shapesSnapshots) {
+          const shape =
+            await this.#shapeManager.addShapeFromSnapshot(shapeSnapshot);
           this.#moveManager.create(shape);
           this.#selectManager.create(shape);
-        });
+          const addManagersToChildren = (parent) => {
+            if (parent.list && parent.list.length > 0) {
+              parent.list.forEach((child) => {
+                this.#moveManager.create(child);
+                this.#selectManager.create(child);
+                addManagersToChildren(child);
+              });
+            }
+          };
+          addManagersToChildren(shape);
+        }
       }
     }
 
@@ -436,6 +458,12 @@ class ShapeEditor extends Phaser.Scene {
     // }
 
     this.input.on("pointerdown", this.#selectManager.hide, this.#selectManager);
+    this.input.on("pointerdown", () => {
+      const shape = this.#shapeManager.getRootShapes()[0];
+      shape.list.forEach((child) => {
+        child.input.enabled = !child.input.enabled;
+      });
+    });
   }
 
   /**

@@ -12,14 +12,12 @@ class MoveManager extends Manager {
   /**
    * Flag to indicate if dragging is active
    * @type {boolean}
-   * @private
    */
   #isDragging = false;
 
   /**
    * The shape currently being moved
    * @type {Phaser.GameObjects.Shape|null}
-   * @private
    * @default null
    */
   #currentlyMoving = null;
@@ -27,7 +25,6 @@ class MoveManager extends Manager {
   /**
    * Outline manager
    * @type {OutlineManager}
-   * @private
    * @default new OutlineManager(this.scene)
    */
   #outlineManager = new OutlineManager(this.scene);

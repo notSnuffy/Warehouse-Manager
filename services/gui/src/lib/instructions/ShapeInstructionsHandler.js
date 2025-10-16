@@ -129,7 +129,7 @@ class ShapeInstructionsHandler {
    * Converts a list of instructions into shapes.
    * @param {Array} instructions - The list of instructions to convert.
    * @param {number} color - The color to apply to the shapes.
-   * @return {Promise<Phaser.GameObjects.Shape[]>} The list of created shapes.
+   * @return {Promise<Object>} The list of created snapshots.
    * @throws {Error} If a shape type is not registered for a command.
    * @public
    */
@@ -138,7 +138,7 @@ class ShapeInstructionsHandler {
     const typesForCommands = this.#getTypesForCommands(allMetadata);
 
     const containerStack = [];
-    const shapes = [];
+    const shapesSnapshots = [];
 
     for (const instruction of instructions) {
       const { command, parameters } = instruction;
@@ -151,13 +151,19 @@ class ShapeInstructionsHandler {
         ...parameters,
       });
 
-      mappedParameters.x = mappedParameters.positionX;
-      mappedParameters.y = mappedParameters.positionY;
+      const transform = {
+        x: mappedParameters.positionX,
+        y: mappedParameters.positionY,
+        width: mappedParameters.width,
+        height: mappedParameters.height,
+        rotation: mappedParameters.rotation,
+      };
 
       delete mappedParameters.positionX;
       delete mappedParameters.positionY;
-
-      mappedParameters.color = color || 0x123456;
+      delete mappedParameters.width;
+      delete mappedParameters.height;
+      delete mappedParameters.rotation;
 
       const metadata = {
         id: mappedParameters.shapeId,
@@ -168,19 +174,27 @@ class ShapeInstructionsHandler {
       delete mappedParameters.shapeId;
       delete mappedParameters.shapeVersion;
 
-      let shape;
+      const specific = { ...mappedParameters };
+
+      specific.color = color || 0x123456;
+
+      const snapshot = {
+        transform,
+        specific,
+        metadata,
+      };
+
       switch (command) {
         case InstructionCommands.BEGIN_CONTAINER:
-          shape = await this.#shapeManager.addShape(type, mappedParameters, {
-            metadata,
-          });
+          snapshot.children = [];
+
           if (containerStack.length > 0) {
             const parent = containerStack[containerStack.length - 1];
-            parent.add(shape);
+            parent.children.push(snapshot);
           } else {
-            shapes.push(shape);
+            shapesSnapshots.push(snapshot);
           }
-          containerStack.push(shape);
+          containerStack.push(snapshot);
           break;
         case InstructionCommands.END_CONTAINER:
           if (containerStack.length > 0) {
@@ -196,21 +210,16 @@ class ShapeInstructionsHandler {
             console.warn(`No shape type registered for command: ${command}`);
             continue;
           }
-          shape = await this.#shapeManager.addShape(type, mappedParameters, {
-            metadata,
-          });
           if (containerStack.length > 0) {
             const parent = containerStack[containerStack.length - 1];
-            console.log("parent", parent);
-            parent.add(shape);
+            parent.children.push(snapshot);
           } else {
-            shapes.push(shape);
+            shapesSnapshots.push(snapshot);
           }
           break;
       }
     }
-    console.log("Final shapes:", shapes);
-    return shapes;
+    return shapesSnapshots;
   }
 }
 
