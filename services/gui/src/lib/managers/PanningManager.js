@@ -59,6 +59,7 @@ class PanningManager {
 
         camera.scrollX -= deltaX;
         camera.scrollY -= deltaY;
+        this.scene.events.emit("cameraPanned", camera);
 
         this.#panStart = { x: pointer.x, y: pointer.y };
       }
@@ -104,6 +105,7 @@ class PanningManager {
 
     if (pointer.leftButtonDown()) {
       if (pointer.x <= edgeSize) {
+        console.log("panning left");
         camera.scrollX -= scrollSpeed;
         this.#isPanning = true;
       } else if (pointer.x >= camera.width - edgeSize) {
@@ -116,6 +118,9 @@ class PanningManager {
       } else if (pointer.y >= camera.height - edgeSize) {
         camera.scrollY += scrollSpeed;
         this.#isPanning = true;
+      }
+      if (this.#isPanning) {
+        this.scene.events.emit("cameraPanned", camera);
       }
     }
 

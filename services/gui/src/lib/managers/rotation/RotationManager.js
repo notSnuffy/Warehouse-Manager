@@ -100,6 +100,7 @@ class RotationManager extends Manager {
       shape.rotation =
         Math.atan2(dragY - shape.y, dragX - shape.x) + Math.PI / 2;
       this.update(shape);
+      this.scene.events.emit("shapeRotated", shape);
       this.#managersToUpdate.forEach((manager) => {
         manager.update(shape);
       });

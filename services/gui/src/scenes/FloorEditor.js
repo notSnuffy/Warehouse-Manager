@@ -431,7 +431,7 @@ class FloorEditor extends Phaser.Scene {
       shape.label.setToTop();
     });
 
-    this.events.on("resize:drag", (shape) => {
+    this.events.on("shapeResized", (shape) => {
       shape.label.setPosition(shape.x, shape.y);
       shape.label.setToTop();
     });

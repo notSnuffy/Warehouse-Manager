@@ -44,6 +44,14 @@ class SelectShapeManager extends Manager {
 
     this.#rotationManager.addManagerToUpdate(this.#resizeManager);
     this.#resizeManager.addManagerToUpdate(this.#rotationManager);
+
+    this.scene.input.on("pointerdown", (pointer) => {
+      const hitShapes = this.scene.input.hitTestPointer(pointer);
+
+      if (hitShapes.length === 0) {
+        this.hide();
+      }
+    });
   }
 
   /**
@@ -59,6 +67,17 @@ class SelectShapeManager extends Manager {
   }
 
   /**
+   * Flag to indicate if resizing is active
+   * @type {boolean}
+   * @readonly
+   * @public
+   * @returns {boolean} The resizing active flag
+   */
+  get isResizing() {
+    return this.#resizeManager.actionActive;
+  }
+
+  /**
    * Adds shape select event
    * @param {Phaser.GameObjects.Shape} shape - The shape to add select event to
    * @returns {void}
@@ -66,8 +85,7 @@ class SelectShapeManager extends Manager {
    * @override
    */
   create(shape) {
-    shape.on("pointerdown", (pointer, x, y, event) => {
-      event.stopPropagation();
+    shape.on("pointerdown", () => {
       if (this.scene.activeTool === "select") {
         this.hide();
 
@@ -88,8 +106,8 @@ class SelectShapeManager extends Manager {
    * @public
    * @override
    */
-  update() {
-    return;
+  update(dragX, dragY) {
+    this.#resizeManager.updateOnOutsideDrag(this.#lastSelected, dragX, dragY);
   }
 
   /**

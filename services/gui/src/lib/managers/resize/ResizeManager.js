@@ -269,7 +269,7 @@ class ResizeManager extends Manager {
 
     resizeHandle.on("drag", (_, dragX, dragY) => {
       this.#handleResizeDrag(dragX, dragY, shape);
-      this.scene.events.emit("resize:drag", shape);
+      this.scene.events.emit("shapeResized", shape);
     });
 
     resizeHandle.on("dragend", () => {
@@ -295,6 +295,19 @@ class ResizeManager extends Manager {
       handle.setSize(new_handle.width, new_handle.height);
       handle.setRotation(shape.rotation);
     });
+  }
+
+  /**
+   * Updates the shape during an outside drag
+   * For example, when we are panning the camera while resizing
+   * @param {Phaser.GameObjects.Shape} shape - Shape to update
+   * @param {number} dragX - X coordinate of the drag
+   * @param {number} dragY - Y coordinate of the drag
+   * @returns {void}
+   */
+  updateOnOutsideDrag(shape, dragX, dragY) {
+    this.#handleResizeDrag(dragX, dragY, shape);
+    this.scene.events.emit("shapeResized", shape);
   }
 
   /**

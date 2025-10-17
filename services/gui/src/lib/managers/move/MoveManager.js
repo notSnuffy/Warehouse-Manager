@@ -123,6 +123,7 @@ class MoveManager extends Manager {
         this.#currentlyMoving,
         rectangleDottedOutline,
       );
+      this.scene.events.emit("shapeMoved", this.#currentlyMoving);
     }
   }
 
