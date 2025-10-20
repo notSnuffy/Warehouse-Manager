@@ -104,6 +104,7 @@ class MoveManager extends Manager {
       this.#isDragging = false;
       this.#currentlyMoving = null;
       this.#outlineManager.hide(shape);
+      this.scene.events.emit("shapeMoveEnd", shape);
     });
   }
 

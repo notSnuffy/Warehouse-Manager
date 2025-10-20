@@ -409,7 +409,6 @@ class ShapeEditor extends Phaser.Scene {
     );
 
     scrollXElement.addEventListener("input", (event) => {
-      console.log("triggered");
       const value = parseInt(event.target.value, 10);
       camera.centerOnX(
         camera.getBounds().left + value + camera.displayWidth / 2,
@@ -417,25 +416,15 @@ class ShapeEditor extends Phaser.Scene {
     });
     scrollYElement.addEventListener("input", (event) => {
       const value = parseInt(event.target.value, 10);
-      camera.scrollY = value - camera.height;
+      camera.centerOnY(
+        camera.getBounds().top + value + camera.displayHeight / 2,
+      );
     });
-
-    //this.events.on("postupdate", () => {
-    //if (camera.scrollX < camera.getBounds().left) {
-    //  console.log(camera.scrollX);
-    //  scrollXElement.value = 0;
-    //} else {
-    //  scrollXElement.value = Math.abs(
-    //    camera.scrollX - camera.getBounds().left,
-    //  );
-    //}
-    //scrollYElement.value = Math.abs(camera.scrollY - camera.getBounds().top);
-    //});
 
     this.minXSortedList = new SortedLinkedMapList();
     this.minYSortedList = new SortedLinkedMapList();
-    this.maxXSortedList = new SortedLinkedMapList();
-    this.maxYSortedList = new SortedLinkedMapList();
+    this.maxXSortedList = new SortedLinkedMapList((a, b) => b - a);
+    this.maxYSortedList = new SortedLinkedMapList((a, b) => b - a);
 
     /**
      * Handles the move button click event
@@ -479,37 +468,81 @@ class ShapeEditor extends Phaser.Scene {
     //   this.#selectManager.create(shape);
     // }
 
-    const extendCameraBounds = () => {
+    /**
+     * Adjusts the camera bounds based on the shapes' positions
+     * @param {number} [extraSpace=0] - Extra space to add to the bounds
+     * @param {boolean} [allowShrink=false] - Whether to allow shrinking the bounds
+     * @returns {void}
+     */
+    const adjustCameraBounds = (extraSpace = 0, allowShrink = false) => {
       const camera = this.cameras.main;
       const oldBounds = camera.getBounds();
       // -1542, 3084 -> 4626
 
-      const minX = this.minXSortedList.getHeadValue();
-      //const minY = this.minYSortedList.getHeadValue();
-      //const maxX = this.maxXSortedList.getHeadValue();
-      //const maxY = this.maxYSortedList.getHeadValue();
+      let newWorldWidth = oldBounds.width;
+      let newWorldHeight = oldBounds.height;
+      let newLeft = oldBounds.left;
+      let newTop = oldBounds.top;
 
-      if (minX !== oldBounds.left && minX < -cameraWidth) {
-        const newWorldWidth = oldBounds.right - minX;
-        camera.setBounds(minX, oldBounds.y, newWorldWidth, oldBounds.height);
+      let minX = this.minXSortedList.getHeadValue() - extraSpace;
+      minX = Math.min(minX, -cameraWidth);
+      minX = Math.round(minX);
+
+      const canExpandLeft = minX < oldBounds.left;
+      const isShrinkingLeft = minX > oldBounds.left;
+      const canShrinkLeft = isShrinkingLeft && allowShrink;
+
+      if (canExpandLeft || canShrinkLeft) {
+        newLeft = minX;
+        newWorldWidth = oldBounds.right - minX;
+
         const pixelsOnTheRight = scrollXElement.max - scrollXElement.value;
         scrollXElement.max = newWorldWidth - camera.displayWidth;
         scrollXElement.value = scrollXElement.max - pixelsOnTheRight;
       }
 
-      //if (minY !== oldBounds.top && minY < -cameraHeight) {
-      //  const newWorldHeight = oldBounds.bottom - minY;
-      //  camera.setBounds(oldBounds.x, minY, oldBounds.width, newWorldHeight);
-      //  const pixelsAtTheBottom = scrollYElement.max - scrollYElement.value;
-      //  scrollYElement.max = newWorldHeight - camera.displayHeight;
-      //  scrollYElement.value = scrollYElement.max - pixelsAtTheBottom;
-      //}
+      let maxX = this.maxXSortedList.getHeadValue() + extraSpace;
+      maxX = Math.max(maxX, initialWorldWidth - cameraWidth);
+      maxX = Math.round(maxX);
+      const canExpandRight = maxX > oldBounds.right;
+      const isShrinkingRight = maxX < oldBounds.right;
+      const canShrinkRight = isShrinkingRight && allowShrink;
 
-      //if (maxX !== oldBounds.right && maxX > oldBounds.right) {
-      //  const newWorldWidth = maxX - oldBounds.left;
-      //  camera.setBounds(oldBounds.x, oldBounds.y, newWorldWidth, oldBounds.height);
-      //  scrollXElement.max = newWorldWidth - camera.displayWidth;
-      //}
+      if (canExpandRight || canShrinkRight) {
+        newWorldWidth = maxX - oldBounds.left;
+
+        scrollXElement.max = newWorldWidth - camera.displayWidth;
+      }
+
+      let minY = this.minYSortedList.getHeadValue() - extraSpace;
+      minY = Math.min(minY, -cameraHeight);
+      minY = Math.round(minY);
+
+      const canExpandTop = minY < oldBounds.top;
+      const isShrinkingTop = minY > oldBounds.top;
+      const canShrinkTop = isShrinkingTop && allowShrink;
+      if (canExpandTop || canShrinkTop) {
+        newTop = minY;
+        newWorldHeight = oldBounds.bottom - minY;
+
+        const pixelsOnTheBottom = scrollYElement.max - scrollYElement.value;
+        scrollYElement.max = newWorldHeight - camera.displayHeight;
+        scrollYElement.value = scrollYElement.max - pixelsOnTheBottom;
+      }
+
+      let maxY = this.maxYSortedList.getHeadValue() + extraSpace;
+      maxY = Math.max(maxY, initialWorldHeight - cameraHeight);
+      maxY = Math.round(maxY);
+      const canExpandBottom = maxY > oldBounds.bottom;
+      const isShrinkingBottom = maxY < oldBounds.bottom;
+      const canShrinkBottom = isShrinkingBottom && allowShrink;
+      if (canExpandBottom || canShrinkBottom) {
+        newWorldHeight = maxY - oldBounds.top;
+
+        scrollYElement.max = newWorldHeight - camera.displayHeight;
+      }
+
+      camera.setBounds(newLeft, newTop, newWorldWidth, newWorldHeight);
     };
 
     this.events.on("shapeAdded", (shape) => {
@@ -521,7 +554,7 @@ class ShapeEditor extends Phaser.Scene {
       this.minYSortedList.insert(shape.internalId, boundingBox.top);
       this.maxXSortedList.insert(shape.internalId, boundingBox.right);
       this.maxYSortedList.insert(shape.internalId, boundingBox.bottom);
-      extendCameraBounds();
+      adjustCameraBounds();
     });
     this.events.on("shapeMoved", (shape) => {
       const boundingBox = calculateBoundingBox([shape], (shape) => {
@@ -532,7 +565,18 @@ class ShapeEditor extends Phaser.Scene {
       this.minYSortedList.update(shape.internalId, boundingBox.top);
       this.maxXSortedList.update(shape.internalId, boundingBox.right);
       this.maxYSortedList.update(shape.internalId, boundingBox.bottom);
-      extendCameraBounds();
+      adjustCameraBounds();
+    });
+    this.events.on("shapeMoveEnd", (shape) => {
+      const boundingBox = calculateBoundingBox([shape], (shape) => {
+        const points = Object.values(getShapePoints(shape));
+        return points;
+      });
+      this.minXSortedList.update(shape.internalId, boundingBox.left);
+      this.minYSortedList.update(shape.internalId, boundingBox.top);
+      this.maxXSortedList.update(shape.internalId, boundingBox.right);
+      this.maxYSortedList.update(shape.internalId, boundingBox.bottom);
+      adjustCameraBounds(0, true);
     });
     this.events.on("shapeResized", (shape) => {
       const boundingBox = calculateBoundingBox([shape], (shape) => {
@@ -543,7 +587,18 @@ class ShapeEditor extends Phaser.Scene {
       this.minYSortedList.update(shape.internalId, boundingBox.top);
       this.maxXSortedList.update(shape.internalId, boundingBox.right);
       this.maxYSortedList.update(shape.internalId, boundingBox.bottom);
-      extendCameraBounds();
+      adjustCameraBounds(40);
+    });
+    this.events.on("shapeResizeEnd", (shape) => {
+      const boundingBox = calculateBoundingBox([shape], (shape) => {
+        const points = Object.values(getShapePoints(shape));
+        return points;
+      });
+      this.minXSortedList.update(shape.internalId, boundingBox.left);
+      this.minYSortedList.update(shape.internalId, boundingBox.top);
+      this.maxXSortedList.update(shape.internalId, boundingBox.right);
+      this.maxYSortedList.update(shape.internalId, boundingBox.bottom);
+      adjustCameraBounds(0, true);
     });
     this.events.on("shapeRotated", (shape) => {
       const boundingBox = calculateBoundingBox([shape], (shape) => {
@@ -554,24 +609,21 @@ class ShapeEditor extends Phaser.Scene {
       this.minYSortedList.update(shape.internalId, boundingBox.top);
       this.maxXSortedList.update(shape.internalId, boundingBox.right);
       this.maxYSortedList.update(shape.internalId, boundingBox.bottom);
-      extendCameraBounds();
+      adjustCameraBounds();
     });
 
     this.events.on("cameraZoomChanged", (_newZoom) => {
       scrollXElement.max = camera.getBounds().width - camera.displayWidth;
-      console.log("Scroll X max updated:", scrollXElement.max);
-      console.log("Camera bounds:", camera.getBounds());
-      console.log("Camera display width:", camera.displayWidth);
-      console.log("Camera center X:", camera.centerX);
-      console.log("World view:", camera.worldView);
-      console.log("Camera width:", camera.width);
-      console.log("Camera world view center", camera.worldView.centerX);
+      scrollYElement.max = camera.getBounds().height - camera.displayHeight;
 
       scrollXElement.value =
         Math.abs(camera.getBounds().left) +
         camera.worldView.centerX -
         camera.displayWidth / 2;
-      console.log(scrollXElement.value);
+      scrollYElement.value =
+        Math.abs(camera.getBounds().top) +
+        camera.worldView.centerY -
+        camera.displayHeight / 2;
     });
 
     this.events.on("cameraPanned", (camera) => {
@@ -579,7 +631,10 @@ class ShapeEditor extends Phaser.Scene {
         Math.abs(camera.getBounds().left) +
         camera.worldView.centerX -
         camera.displayWidth / 2;
-      extendCameraBounds();
+      scrollYElement.value =
+        Math.abs(camera.getBounds().top) +
+        camera.worldView.centerY -
+        camera.displayHeight / 2;
     });
 
     //this.input.on("pointerdown", () => {
@@ -596,7 +651,6 @@ class ShapeEditor extends Phaser.Scene {
    */
   update() {
     if (this.#moveManager.isDragging && this.#panningManager.isPanning) {
-      console.log("updating move manager during panning");
       this.input.activePointer.updateWorldPoint(this.cameras.main);
       this.#moveManager.update(
         null,

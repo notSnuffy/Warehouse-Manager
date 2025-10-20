@@ -75,7 +75,9 @@ function removePointFieldHandler(element, pointsElement) {
  * @param {string} field.type - The type of the field (e.g., "text", "number", "color", "points", "group").
  * @param {Object} [field.attributes] - Additional attributes for the input element.
  * @param {Array} [field.classes] - Additional classes for the input element.
- * @param {Function} [field.onChange] - Change event handler for the input element.
+ * @param {Object} [field.validation] - Validation configuration for the input element.
+ * @param {string} field.validation.event - The event to listen for validation.
+ * @param {Function} field.validation.handler - The validation handler function.
  * @returns {HTMLElement} The created input field element.
  */
 function createInputField(field) {

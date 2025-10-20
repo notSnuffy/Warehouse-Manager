@@ -6,14 +6,12 @@ class PanningManager {
   /**
    * Flag to indicate if panning is active
    * @type {boolean}
-   * @private
    */
   #isPanning = false;
 
   /**
    * Starting point for panning
    * @type {object|null}
-   * @private
    */
   #panStart = null;
 
@@ -86,7 +84,10 @@ class PanningManager {
     const scrollSpeed = 3;
     const edgeSize = 40;
 
-    if (pointer.event?.target.closest("#scrollY, #scrollX")) {
+    if (
+      pointer.event?.target.closest &&
+      pointer.event?.target.closest("#scrollY, #scrollX")
+    ) {
       this.#isPanning = false;
       this.#panStart = null;
       return;
@@ -105,7 +106,6 @@ class PanningManager {
 
     if (pointer.leftButtonDown()) {
       if (pointer.x <= edgeSize) {
-        console.log("panning left");
         camera.scrollX -= scrollSpeed;
         this.#isPanning = true;
       } else if (pointer.x >= camera.width - edgeSize) {

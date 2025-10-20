@@ -4,6 +4,7 @@
  * @property {any} key - The key of the node.
  * @property {any} value - The value of the node.
  * @property {Node|null} next - The next node in the list.
+ * @property {Node|null} prev - The previous node in the list.
  */
 class Node {
   /**
@@ -15,6 +16,7 @@ class Node {
     this.key = key;
     this.value = value;
     this.next = null;
+    this.prev = null;
   }
 }
 
@@ -48,9 +50,9 @@ class SortedLinkedMapList {
    * Compares two keys using the comparator function.
    * @param {any} a - The first value.
    * @param {any} b - The second value.
-   * @return {boolean} - True if a is less than b, false otherwise.
+   * @return {boolean} - True if a comes before b, false otherwise.
    */
-  #isLessThan(a, b) {
+  #comesBefore(a, b) {
     return this.#comparator(a, b) < 0;
   }
 
@@ -66,32 +68,40 @@ class SortedLinkedMapList {
 
   /**
    * Inserts a new key-value pair into the sorted linked list.
-   * If the key already exists, it updates the value and repositions the node.
+   * If the key already exists, updates its value.
    * @param {any} key - The key to insert.
    * @param {any} value - The value to insert.
    * @return {void}
    */
   insert(key, value) {
     if (this.#map.has(key)) {
-      this.remove(key);
+      this.update(key, value);
+      return;
     }
 
     const newNode = new Node(key, value);
     this.#map.set(key, newNode);
 
-    if (!this.#head || this.#isLessThan(value, this.#head.value)) {
+    if (!this.#head || this.#comesBefore(value, this.#head.value)) {
       newNode.next = this.#head;
+      if (this.#head) {
+        this.#head.prev = newNode;
+      }
       this.#head = newNode;
       return;
     }
 
     let current = this.#head;
-    while (current.next && this.#isLessThan(current.next.value, value)) {
+    while (current.next && this.#comesBefore(current.next.value, value)) {
       current = current.next;
     }
 
     newNode.next = current.next;
+    if (current.next) {
+      current.next.prev = newNode;
+    }
     current.next = newNode;
+    newNode.prev = current;
   }
 
   /**
@@ -100,25 +110,21 @@ class SortedLinkedMapList {
    * @return {boolean} - True if the key was found and removed, false otherwise.
    */
   remove(key) {
-    if (!this.#map.has(key)) {
+    const nodeToRemove = this.#map.get(key);
+    if (!nodeToRemove) {
       return false;
     }
-
-    const nodeToRemove = this.#map.get(key);
     this.#map.delete(key);
 
-    if (this.#head === nodeToRemove) {
-      this.#head = this.#head.next;
-      return true;
+    if (nodeToRemove.prev) {
+      nodeToRemove.prev.next = nodeToRemove.next;
+    } else {
+      this.#head = nodeToRemove.next;
+    }
+    if (nodeToRemove.next) {
+      nodeToRemove.next.prev = nodeToRemove.prev;
     }
 
-    let current = this.#head;
-
-    while (current.next && current.next !== nodeToRemove) {
-      current = current.next;
-    }
-
-    current.next = nodeToRemove.next;
     return true;
   }
 
@@ -129,16 +135,30 @@ class SortedLinkedMapList {
    * @return {boolean} - True if the key was found and updated, false otherwise.
    */
   update(key, newValue) {
-    if (!this.#map.has(key)) {
+    const nodeToUpdate = this.#map.get(key);
+    if (!nodeToUpdate) {
       return false;
     }
 
-    if (this.#map.get(key).value === newValue) {
+    if (nodeToUpdate.value === newValue) {
+      return true;
+    }
+
+    const previousStillBefore =
+      !nodeToUpdate.prev ||
+      this.#comesBefore(nodeToUpdate.prev.value, newValue);
+    const nextStillAfter =
+      !nodeToUpdate.next ||
+      this.#comesBefore(newValue, nodeToUpdate.next.value);
+
+    if (previousStillBefore && nextStillAfter) {
+      nodeToUpdate.value = newValue;
       return true;
     }
 
     this.remove(key);
     this.insert(key, newValue);
+
     return true;
   }
 
