@@ -32,6 +32,7 @@ class RemoveShapeCommand extends BaseCommand {
     }
 
     this.#snapshot = shape.createSnapshot();
+    console.log(this.#snapshot);
     this.#shapeManager.removeShapeById(this.#shapeId);
   }
 

@@ -79,6 +79,7 @@ class ShapeFactory {
     shape.interactiveData = additionalData.interactive || null;
 
     if (additionalData.managers && Array.isArray(additionalData.managers)) {
+      shape.managers = additionalData.managers;
       additionalData.managers.forEach((managerId) => {
         const manager = this.#managers[managerId];
         if (manager) {
