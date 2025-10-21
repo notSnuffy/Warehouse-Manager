@@ -6,17 +6,14 @@ import MoveManager from "@managers/move/MoveManager";
 import OutlineManager from "@managers/outlines/OutlineManager";
 import SelectShapeManager from "@managers/select/SelectShapeManager";
 import ShapeManager from "@managers/ShapeManager";
+import CameraBoundsManager from "@managers/CameraBoundsManager";
+import ScrollbarManager from "@managers/ScrollbarManager";
 import ShapeEditorUIInitializer from "@lib/ShapeEditorUIInitializer";
 import * as Shapes from "@shapes";
-import {
-  getShapePoints,
-  calculateBoundingBox,
-  DefaultShapeInteractiveConfig,
-} from "@utils/shapes";
+import { DefaultShapeInteractiveConfig } from "@utils/shapes";
 import ShapeModalUserInterface from "@ui/ShapeModalUserInterface";
 import ShapeInstructionsHandler from "@instructions/ShapeInstructionsHandler";
 import InstructionCommands from "@instructions/InstructionCommands";
-import SortedLinkedMapList from "@collections/SortedLinkedMapList";
 
 /**
  * Default shapes
@@ -73,6 +70,20 @@ class ShapeEditor extends Phaser.Scene {
    * @default null
    */
   #shapeManager = null;
+
+  /**
+   * Camera bounds manager
+   * @type {CameraBoundsManager}
+   * @default null
+   */
+  #cameraBoundsManager = null;
+
+  /**
+   * Scrollbar manager
+   * @type {ScrollbarManager}
+   * @default null
+   */
+  #scrollbarManager = null;
 
   /**
    * Instruction handler
@@ -176,6 +187,48 @@ class ShapeEditor extends Phaser.Scene {
 
     const zoomManager = new ZoomManager(this);
     zoomManager.create();
+
+    const camera = this.cameras.main;
+
+    const scrollXElement = document.getElementById("scrollX");
+    const scrollYElement = document.getElementById("scrollY");
+
+    const cameraWidth = camera.width;
+    const cameraHeight = camera.height;
+
+    const initialWorldWidth = cameraWidth * 3;
+    const initialWorldHeight = cameraHeight * 3;
+
+    this.#cameraBoundsManager = new CameraBoundsManager(this, camera, {
+      worldWidth: initialWorldWidth,
+      worldHeight: initialWorldHeight,
+      eventConfig: {
+        shapeAdded: { extraPadding: 0, allowShrink: false },
+        shapeMoved: { extraPadding: 0, allowShrink: false },
+        shapeMoveEnd: { extraPadding: 0, allowShrink: true },
+        shapeResized: { extraPadding: 40, allowShrink: false },
+        shapeResizeEnd: { extraPadding: 0, allowShrink: true },
+        shapeRotated: { extraPadding: 0, allowShrink: false },
+      },
+    });
+    this.#cameraBoundsManager.create();
+
+    this.#scrollbarManager = new ScrollbarManager(
+      this,
+      camera,
+      scrollXElement,
+      scrollYElement,
+      {
+        worldWidth: initialWorldWidth,
+        worldHeight: initialWorldHeight,
+        eventNames: [
+          "cameraZoomChanged",
+          "cameraPanned",
+          "cameraBoundsChanged",
+        ],
+      },
+    );
+    this.#scrollbarManager.create();
 
     this.#shapeManager.registerShape(
       "rectangle",
@@ -316,6 +369,7 @@ class ShapeEditor extends Phaser.Scene {
               instructions,
               params.color,
             );
+          0;
           const reconstructedShape =
             await this.#shapeManager.addShapeFromSnapshot(
               reconstructedShapeSnapshot,
@@ -384,48 +438,6 @@ class ShapeEditor extends Phaser.Scene {
       }
     }
 
-    const camera = this.cameras.main;
-
-    const scrollXElement = document.getElementById("scrollX");
-    const scrollYElement = document.getElementById("scrollY");
-
-    const cameraWidth = camera.width;
-    const cameraHeight = camera.height;
-
-    const initialWorldWidth = cameraWidth * 3;
-    const initialWorldHeight = cameraHeight * 3;
-
-    scrollXElement.max = initialWorldWidth - cameraWidth;
-    scrollYElement.max = initialWorldHeight - cameraHeight;
-
-    scrollXElement.value = cameraWidth;
-    scrollYElement.value = cameraHeight;
-
-    camera.setBounds(
-      -cameraWidth,
-      -cameraHeight,
-      initialWorldWidth,
-      initialWorldHeight,
-    );
-
-    scrollXElement.addEventListener("input", (event) => {
-      const value = parseInt(event.target.value, 10);
-      camera.centerOnX(
-        camera.getBounds().left + value + camera.displayWidth / 2,
-      );
-    });
-    scrollYElement.addEventListener("input", (event) => {
-      const value = parseInt(event.target.value, 10);
-      camera.centerOnY(
-        camera.getBounds().top + value + camera.displayHeight / 2,
-      );
-    });
-
-    this.minXSortedList = new SortedLinkedMapList();
-    this.minYSortedList = new SortedLinkedMapList();
-    this.maxXSortedList = new SortedLinkedMapList((a, b) => b - a);
-    this.maxYSortedList = new SortedLinkedMapList((a, b) => b - a);
-
     /**
      * Handles the move button click event
      */
@@ -467,175 +479,6 @@ class ShapeEditor extends Phaser.Scene {
     //   this.#moveManager.create(shape);
     //   this.#selectManager.create(shape);
     // }
-
-    /**
-     * Adjusts the camera bounds based on the shapes' positions
-     * @param {number} [extraSpace=0] - Extra space to add to the bounds
-     * @param {boolean} [allowShrink=false] - Whether to allow shrinking the bounds
-     * @returns {void}
-     */
-    const adjustCameraBounds = (extraSpace = 0, allowShrink = false) => {
-      const camera = this.cameras.main;
-      const oldBounds = camera.getBounds();
-      // -1542, 3084 -> 4626
-
-      let newWorldWidth = oldBounds.width;
-      let newWorldHeight = oldBounds.height;
-      let newLeft = oldBounds.left;
-      let newTop = oldBounds.top;
-
-      let minX = this.minXSortedList.getHeadValue() - extraSpace;
-      minX = Math.min(minX, -cameraWidth);
-      minX = Math.round(minX);
-
-      const canExpandLeft = minX < oldBounds.left;
-      const isShrinkingLeft = minX > oldBounds.left;
-      const canShrinkLeft = isShrinkingLeft && allowShrink;
-
-      if (canExpandLeft || canShrinkLeft) {
-        newLeft = minX;
-        newWorldWidth = oldBounds.right - minX;
-
-        const pixelsOnTheRight = scrollXElement.max - scrollXElement.value;
-        scrollXElement.max = newWorldWidth - camera.displayWidth;
-        scrollXElement.value = scrollXElement.max - pixelsOnTheRight;
-      }
-
-      let maxX = this.maxXSortedList.getHeadValue() + extraSpace;
-      maxX = Math.max(maxX, initialWorldWidth - cameraWidth);
-      maxX = Math.round(maxX);
-      const canExpandRight = maxX > oldBounds.right;
-      const isShrinkingRight = maxX < oldBounds.right;
-      const canShrinkRight = isShrinkingRight && allowShrink;
-
-      if (canExpandRight || canShrinkRight) {
-        newWorldWidth = maxX - oldBounds.left;
-
-        scrollXElement.max = newWorldWidth - camera.displayWidth;
-      }
-
-      let minY = this.minYSortedList.getHeadValue() - extraSpace;
-      minY = Math.min(minY, -cameraHeight);
-      minY = Math.round(minY);
-
-      const canExpandTop = minY < oldBounds.top;
-      const isShrinkingTop = minY > oldBounds.top;
-      const canShrinkTop = isShrinkingTop && allowShrink;
-      if (canExpandTop || canShrinkTop) {
-        newTop = minY;
-        newWorldHeight = oldBounds.bottom - minY;
-
-        const pixelsOnTheBottom = scrollYElement.max - scrollYElement.value;
-        scrollYElement.max = newWorldHeight - camera.displayHeight;
-        scrollYElement.value = scrollYElement.max - pixelsOnTheBottom;
-      }
-
-      let maxY = this.maxYSortedList.getHeadValue() + extraSpace;
-      maxY = Math.max(maxY, initialWorldHeight - cameraHeight);
-      maxY = Math.round(maxY);
-      const canExpandBottom = maxY > oldBounds.bottom;
-      const isShrinkingBottom = maxY < oldBounds.bottom;
-      const canShrinkBottom = isShrinkingBottom && allowShrink;
-      if (canExpandBottom || canShrinkBottom) {
-        newWorldHeight = maxY - oldBounds.top;
-
-        scrollYElement.max = newWorldHeight - camera.displayHeight;
-      }
-
-      camera.setBounds(newLeft, newTop, newWorldWidth, newWorldHeight);
-    };
-
-    this.events.on("shapeAdded", (shape) => {
-      const boundingBox = calculateBoundingBox([shape], (shape) => {
-        const points = Object.values(getShapePoints(shape));
-        return points;
-      });
-      this.minXSortedList.insert(shape.internalId, boundingBox.left);
-      this.minYSortedList.insert(shape.internalId, boundingBox.top);
-      this.maxXSortedList.insert(shape.internalId, boundingBox.right);
-      this.maxYSortedList.insert(shape.internalId, boundingBox.bottom);
-      adjustCameraBounds();
-    });
-    this.events.on("shapeMoved", (shape) => {
-      const boundingBox = calculateBoundingBox([shape], (shape) => {
-        const points = Object.values(getShapePoints(shape));
-        return points;
-      });
-      this.minXSortedList.update(shape.internalId, boundingBox.left);
-      this.minYSortedList.update(shape.internalId, boundingBox.top);
-      this.maxXSortedList.update(shape.internalId, boundingBox.right);
-      this.maxYSortedList.update(shape.internalId, boundingBox.bottom);
-      adjustCameraBounds();
-    });
-    this.events.on("shapeMoveEnd", (shape) => {
-      const boundingBox = calculateBoundingBox([shape], (shape) => {
-        const points = Object.values(getShapePoints(shape));
-        return points;
-      });
-      this.minXSortedList.update(shape.internalId, boundingBox.left);
-      this.minYSortedList.update(shape.internalId, boundingBox.top);
-      this.maxXSortedList.update(shape.internalId, boundingBox.right);
-      this.maxYSortedList.update(shape.internalId, boundingBox.bottom);
-      adjustCameraBounds(0, true);
-    });
-    this.events.on("shapeResized", (shape) => {
-      const boundingBox = calculateBoundingBox([shape], (shape) => {
-        const points = Object.values(getShapePoints(shape));
-        return points;
-      });
-      this.minXSortedList.update(shape.internalId, boundingBox.left);
-      this.minYSortedList.update(shape.internalId, boundingBox.top);
-      this.maxXSortedList.update(shape.internalId, boundingBox.right);
-      this.maxYSortedList.update(shape.internalId, boundingBox.bottom);
-      adjustCameraBounds(40);
-    });
-    this.events.on("shapeResizeEnd", (shape) => {
-      const boundingBox = calculateBoundingBox([shape], (shape) => {
-        const points = Object.values(getShapePoints(shape));
-        return points;
-      });
-      this.minXSortedList.update(shape.internalId, boundingBox.left);
-      this.minYSortedList.update(shape.internalId, boundingBox.top);
-      this.maxXSortedList.update(shape.internalId, boundingBox.right);
-      this.maxYSortedList.update(shape.internalId, boundingBox.bottom);
-      adjustCameraBounds(0, true);
-    });
-    this.events.on("shapeRotated", (shape) => {
-      const boundingBox = calculateBoundingBox([shape], (shape) => {
-        const points = Object.values(getShapePoints(shape));
-        return points;
-      });
-      this.minXSortedList.update(shape.internalId, boundingBox.left);
-      this.minYSortedList.update(shape.internalId, boundingBox.top);
-      this.maxXSortedList.update(shape.internalId, boundingBox.right);
-      this.maxYSortedList.update(shape.internalId, boundingBox.bottom);
-      adjustCameraBounds();
-    });
-
-    this.events.on("cameraZoomChanged", (_newZoom) => {
-      scrollXElement.max = camera.getBounds().width - camera.displayWidth;
-      scrollYElement.max = camera.getBounds().height - camera.displayHeight;
-
-      scrollXElement.value =
-        Math.abs(camera.getBounds().left) +
-        camera.worldView.centerX -
-        camera.displayWidth / 2;
-      scrollYElement.value =
-        Math.abs(camera.getBounds().top) +
-        camera.worldView.centerY -
-        camera.displayHeight / 2;
-    });
-
-    this.events.on("cameraPanned", (camera) => {
-      scrollXElement.value =
-        Math.abs(camera.getBounds().left) +
-        camera.worldView.centerX -
-        camera.displayWidth / 2;
-      scrollYElement.value =
-        Math.abs(camera.getBounds().top) +
-        camera.worldView.centerY -
-        camera.displayHeight / 2;
-    });
 
     //this.input.on("pointerdown", () => {
     //  const shape = this.#shapeManager.getRootShapes()[0];
