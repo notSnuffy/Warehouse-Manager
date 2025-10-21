@@ -8,6 +8,7 @@ import SelectShapeManager from "@managers/select/SelectShapeManager";
 import ShapeManager from "@managers/ShapeManager";
 import CameraBoundsManager from "@managers/CameraBoundsManager";
 import ScrollbarManager from "@managers/ScrollbarManager";
+import UndoRedoManager from "@managers/UndoRedoManager";
 import ShapeEditorUIInitializer from "@lib/ShapeEditorUIInitializer";
 import * as Shapes from "@shapes";
 import { DefaultShapeInteractiveConfig } from "@utils/shapes";
@@ -84,6 +85,13 @@ class ShapeEditor extends Phaser.Scene {
    * @default null
    */
   #scrollbarManager = null;
+
+  /**
+   * Undo redo manager
+   * @type {UndoRedoManager}
+   * @default null
+   */
+  #undoRedoManager = null;
 
   /**
    * Instruction handler
@@ -177,10 +185,14 @@ class ShapeEditor extends Phaser.Scene {
    * @public
    */
   async create() {
-    this.#shapeManager = new ShapeManager(this);
-    this.#instructionHandler = new ShapeInstructionsHandler(this.#shapeManager);
     this.#selectManager = new SelectShapeManager(this);
     this.#moveManager = new MoveManager(this, new OutlineManager(this));
+    this.#undoRedoManager = new UndoRedoManager(this);
+    this.#shapeManager = new ShapeManager(this, this.#undoRedoManager, {
+      move: this.#moveManager,
+      select: this.#selectManager,
+    });
+    this.#instructionHandler = new ShapeInstructionsHandler(this.#shapeManager);
     this.#panningManager = new PanningManager(this);
 
     this.#panningManager.create();
@@ -409,8 +421,11 @@ class ShapeEditor extends Phaser.Scene {
               draggable: true,
             };
 
+            const managers = ["move", "select"];
+
             snapshot.additionalData = {
               interactive: interactiveConfig,
+              managers: managers,
             };
             //if (snapshot.children && snapshot.children.length > 0) {
             //  configureInteractive(snapshot.children);
@@ -422,18 +437,6 @@ class ShapeEditor extends Phaser.Scene {
           const shape =
             await this.#shapeManager.addShapeFromSnapshot(shapeSnapshot);
           this.events.emit("shapeAdded", shape);
-          this.#moveManager.create(shape);
-          this.#selectManager.create(shape);
-          //const addManagersToChildren = (parent) => {
-          //  if (parent.list && parent.list.length > 0) {
-          //    parent.list.forEach((child) => {
-          //      this.#moveManager.create(child);
-          //      this.#selectManager.create(child);
-          //      addManagersToChildren(child);
-          //    });
-          //  }
-          //};
-          //addManagersToChildren(shape);
         }
       }
     }
@@ -456,7 +459,7 @@ class ShapeEditor extends Phaser.Scene {
     this.#shapeModalUI = new ShapeModalUserInterface(
       this.#shapeManager,
       "newShapeModal",
-      [this.#moveManager, this.#selectManager],
+      ["move", "select"],
       this,
     );
 

@@ -32,7 +32,7 @@ class ShapeModalUserInterface {
   #modal;
 
   /**
-   * The list of managers to register new shapes with
+   * The list of manager IDs to register new shapes with
    * @type {Array}
    * @default []
    */
@@ -146,12 +146,10 @@ class ShapeModalUserInterface {
         {
           interactive:
             DefaultShapeInteractiveConfig[this.#currentShapeType.toUpperCase()],
+          managers: this.#managersToRegisterWith,
         },
       );
       this.#scene.events.emit("shapeAdded", shape);
-      for (const manager of this.#managersToRegisterWith) {
-        manager.create(shape);
-      }
     }
 
     this.#currentShapeType = null;

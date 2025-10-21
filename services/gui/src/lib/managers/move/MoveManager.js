@@ -40,6 +40,12 @@ class MoveManager extends Manager {
     super(scene);
     if (outlineManager) {
       this.#outlineManager = outlineManager;
+      this.scene.events.on("undoPerformed", () => {
+        this.#outlineManager.hideAll();
+      });
+      this.scene.events.on("redoPerformed", () => {
+        this.#outlineManager.hideAll();
+      });
     }
   }
 

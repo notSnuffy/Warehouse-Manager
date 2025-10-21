@@ -85,6 +85,7 @@ class Arc extends Phaser.GameObjects.Arc {
       additionalData: {
         id: this.internalId,
         interactive: this.input?.enabled ? this.interactiveData : null,
+        managers: this.managers || [],
       },
     };
   }

@@ -13,6 +13,12 @@ class ShapeManager {
   #scene;
 
   /**
+   * The undo/redo manager for managing history.
+   * @type {UndoRedoManager}
+   */
+  #undoRedoManager;
+
+  /**
    * The factory to create shapes.
    * @type {ShapeFactory}
    * @private
@@ -37,10 +43,26 @@ class ShapeManager {
   /**
    * Creates an instance of ShapeManager.
    * @param {Phaser.Scene} scene - The scene to which this manager belongs.
+   * @param {Object} undoRedoManager - The undo/redo manager for managing history.
+   * @param {Object} managers - Object where key represents manager ID and value represents the manager instance. Managers to register new shapes with.
    */
-  constructor(scene) {
+  constructor(scene, undoRedoManager, managers) {
     this.#scene = scene;
-    this.#factory = new ShapeFactory(this.#scene, this.#registry);
+    this.#undoRedoManager = undoRedoManager;
+    this.#factory = new ShapeFactory(this.#scene, this.#registry, managers);
+
+    this.#scene.events.on("shapeDeleteRequested", (shape) => {
+      this.removeShapeByIdHistoryManaged(shape.internalId);
+    });
+
+    this.#scene.events.on("undoPerformed", () => {
+      console.log("Undo performed");
+      console.log(this.#shapes);
+    });
+    this.#scene.events.on("redoPerformed", () => {
+      console.log("Redo performed");
+      console.log(this.#shapes);
+    });
   }
 
   /**
@@ -96,6 +118,7 @@ class ShapeManager {
    * @param {string} [additionalData.id] - An optional ID to assign to the shape.
    * @param {Phaser.Types.Input.InputConfiguration} [additionalData.interactive] - Optional interactive configuration for the shape.
    * @param {Object} [additionalData.metadata] - Optional metadata to attach to the shape.
+   * @param {String[]} [additionalData.managers] - Optional list of manager IDs the shape belongs to.
    * @throws {Error} If the shape type is not registered.
    * @returns {Promise<Phaser.GameObjects.Shape>} The added shape.
    */
@@ -107,7 +130,6 @@ class ShapeManager {
     }
 
     this.#shapes.set(shape.internalId, shape);
-    console.log(this.#shapes);
     return shape;
   }
 
@@ -126,6 +148,7 @@ class ShapeManager {
    * @param {Object} [snapshot.additionalData] - Additional data to attach to the shape.
    * @param {string} [snapshot.additionalData.id] - An optional ID to assign to the shape.
    * @param {Phaser.Types.Input.InputConfiguration} [snapshot.additionalData.interactive] - Optional interactive configuration for the shape.
+   * @param {String[]} [snapshot.additionalData.managers] - Optional list of manager IDs the shape belongs to.
    * @param {Object[]} [snapshot.children] - Optional child shapes.
    * @throws {Error} If the shape type is not registered.
    * @returns {Promise<Phaser.GameObjects.Shape>} The added shape.
@@ -141,6 +164,8 @@ class ShapeManager {
     return this.addShape(metadata.type, params, {
       metadata,
       interactive: additionalData?.interactive,
+      id: additionalData?.id,
+      managers: additionalData?.managers,
     });
   }
 
@@ -152,12 +177,14 @@ class ShapeManager {
    * @param {string} [additionalData.id] - An optional ID to assign to the shape.
    * @param {Phaser.Types.Input.InputConfiguration} [additionalData.interactive] - Optional interactive configuration for the shape.
    * @param {Object} [additionalData.metadata] - Optional metadata to attach to the shape.
+   * @param {String[]} [additionalData.managers] - Optional list of manager IDs the shape belongs to.
    * @throws {Error} If the shape type is not registered.
    * @returns {Promise<Phaser.GameObjects.Shape>} The added shape.
    */
   async addShapeHistoryManaged(type, params, additionalData = {}) {
     const command = new AddShapeCommand(this, type, params, additionalData);
     const shape = await command.execute();
+    this.#undoRedoManager.pushCommand(command);
     console.log(shape);
     return shape;
   }
@@ -195,6 +222,7 @@ class ShapeManager {
   async removeShapeByIdHistoryManaged(id) {
     const command = new RemoveShapeCommand(this, id);
     const result = await command.execute();
+    this.#undoRedoManager.pushCommand(command);
     return result;
   }
 

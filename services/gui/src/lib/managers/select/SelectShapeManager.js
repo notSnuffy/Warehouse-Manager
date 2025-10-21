@@ -52,6 +52,25 @@ class SelectShapeManager extends Manager {
         this.hide();
       }
     });
+
+    this.scene.input.keyboard.on("keydown-DELETE", () => {
+      if (this.#lastSelected) {
+        this.scene.events.emit("shapeDeleteRequested", this.#lastSelected);
+        this.#lastSelected = null;
+        this.hide();
+      }
+    });
+
+    this.scene.events.on("undoPerformed", () => {
+      if (this.#lastSelected) {
+        this.hide();
+      }
+    });
+    this.scene.events.on("redoPerformed", () => {
+      if (this.#lastSelected) {
+        this.hide();
+      }
+    });
   }
 
   /**

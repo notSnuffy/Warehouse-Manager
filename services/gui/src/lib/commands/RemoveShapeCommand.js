@@ -25,14 +25,14 @@ class RemoveShapeCommand extends BaseCommand {
    * @returns {Promise<void>}
    */
   async execute() {
-    const shape = this.#shapeManager.getShape(this.#shapeId);
+    const shape = this.#shapeManager.getShapeById(this.#shapeId);
     if (!shape) {
       console.warn(`Shape with ID '${this.#shapeId}' does not exist.`);
       return;
     }
 
     this.#snapshot = shape.createSnapshot();
-    this.#shapeManager.removeShape(this.#shapeId);
+    this.#shapeManager.removeShapeById(this.#shapeId);
   }
 
   /**
@@ -45,11 +45,8 @@ class RemoveShapeCommand extends BaseCommand {
       return;
     }
 
-    const { type, params, metadata, additionalData } = this.#snapshot;
-    await this.#shapeManager.addShape(type, params, {
-      metadata,
-      interactive: additionalData.interactive,
-    });
+    const shape = await this.#shapeManager.addShapeFromSnapshot(this.#snapshot);
+    this.#shapeId = shape.internalId;
   }
 }
 

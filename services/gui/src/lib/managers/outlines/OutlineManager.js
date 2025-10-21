@@ -88,6 +88,17 @@ class OutlineManager {
     outline.destroy();
     this.#outlines.delete(shape);
   }
+
+  /**
+   * Hide and remove all outlines
+   * @returns {void}
+   */
+  hideAll() {
+    this.#outlines.forEach((outline, _shape) => {
+      outline.destroy();
+    });
+    this.#outlines.clear();
+  }
 }
 
 export default OutlineManager;
