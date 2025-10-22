@@ -329,8 +329,10 @@ class ShapeEditor extends Phaser.Scene {
         const children = [];
         if (params.children && params.children.length > 0) {
           for (const childSnapshot of params.children) {
-            const childShape =
-              await this.#shapeManager.addShapeFromSnapshot(childSnapshot);
+            const childShape = await this.#shapeManager.addShapeFromSnapshot(
+              childSnapshot,
+              false,
+            );
 
             if (!childShape) {
               continue;
@@ -354,6 +356,7 @@ class ShapeEditor extends Phaser.Scene {
     this.#shapeManager.registerShape(
       "custom",
       async (_scene, params) => {
+        console.log("params", params);
         try {
           const response = await fetch(
             API_URL +
@@ -385,6 +388,7 @@ class ShapeEditor extends Phaser.Scene {
           const reconstructedShape =
             await this.#shapeManager.addShapeFromSnapshot(
               reconstructedShapeSnapshot,
+              false,
             );
 
           reconstructedShape.metadata = {};
@@ -412,7 +416,7 @@ class ShapeEditor extends Phaser.Scene {
             0xffffff,
           );
         const configureInteractive = (snapshots) => {
-          snapshots.forEach(async (snapshot) => {
+          snapshots.forEach((snapshot) => {
             const type = snapshot.metadata.type;
 
             const interactiveConfig = DefaultShapeInteractiveConfig[
@@ -434,9 +438,7 @@ class ShapeEditor extends Phaser.Scene {
         };
         configureInteractive(shapesSnapshots);
         for (const shapeSnapshot of shapesSnapshots) {
-          const shape =
-            await this.#shapeManager.addShapeFromSnapshot(shapeSnapshot);
-          this.events.emit("shapeAdded", shape);
+          this.#shapeManager.addShapeFromSnapshot(shapeSnapshot, true);
         }
       }
     }

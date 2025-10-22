@@ -41,18 +41,32 @@ class AddShapeCommand extends BaseCommand {
   #shapeId;
 
   /**
+   * Whether to emit events for this command.
+   * @type {boolean}
+   */
+  #emitEvent;
+
+  /**
    * Creates an instance of AddShapeCommand.
    * @param {Object} shapeManager - The shape manager to manage shapes in the scene.
    * @param {string} type - The type of shape to add.
    * @param {Object} params - The parameters for creating the shape.
    * @param {Object} [additionalData={}] - Additional data for the shape (e.g., id, interactive).
+   * @param {boolean} [emitEvent=true] - Whether to emit events for this command.
    */
-  constructor(shapeManager, type, params, additionalData = {}) {
+  constructor(
+    shapeManager,
+    type,
+    params,
+    additionalData = {},
+    emitEvent = true,
+  ) {
     super();
     this.#shapeManager = shapeManager;
     this.#type = type;
     this.#params = params;
     this.#additionalData = additionalData;
+    this.#emitEvent = emitEvent;
   }
 
   /**
@@ -60,10 +74,14 @@ class AddShapeCommand extends BaseCommand {
    * @returns {Promise<void>}
    */
   async execute() {
+    if (this.#shapeId) {
+      this.#additionalData.id = this.#shapeId;
+    }
     const shape = await this.#shapeManager.addShape(
       this.#type,
       this.#params,
       this.#additionalData,
+      this.#emitEvent,
     );
     this.#shapeId = shape.internalId;
     return shape;
@@ -79,8 +97,7 @@ class AddShapeCommand extends BaseCommand {
       return;
     }
 
-    this.#shapeManager.removeShapeById(this.#shapeId);
-    this.#shapeId = null;
+    this.#shapeManager.removeShapeById(this.#shapeId, this.#emitEvent);
   }
 }
 

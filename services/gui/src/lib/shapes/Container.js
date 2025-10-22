@@ -157,8 +157,8 @@ class Container extends Phaser.GameObjects.Container {
         })
         .filter((child) => child !== null),
       metadata: {
-        type: "container",
         ...this.metadata,
+        type: "container",
       },
       additionalData: {
         id: this.internalId,

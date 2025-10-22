@@ -39,26 +39,17 @@ class ShapeModalUserInterface {
   #managersToRegisterWith = [];
 
   /**
-   * The scene instance
-   * @type {Phaser.Scene}
-   * @default null
-   */
-  #scene;
-
-  /**
    * Creates an instance of ShapeModalUserInterface.
    * @param {ShapeManager} shapeManager - The shape manager instance
    * @param {string} modalId - The ID of the modal element
    * @param {Array} managersToRegisterWith - The list of managers to register new shapes with
-   * @param {Phaser.Scene} scene - The scene instance
    */
-  constructor(shapeManager, modalId, managersToRegisterWith, scene) {
+  constructor(shapeManager, modalId, managersToRegisterWith) {
     this.#shapeManager = shapeManager;
     this.#modal = document.getElementById(modalId);
     const confirmButton = this.#modal.querySelector("#confirmButton");
     confirmButton.addEventListener("click", () => this.onModalConfirmation());
     this.#managersToRegisterWith = managersToRegisterWith;
-    this.#scene = scene;
   }
 
   /**
@@ -140,7 +131,7 @@ class ShapeModalUserInterface {
 
     console.log(params);
     if (this.#currentShapeType) {
-      const shape = await this.#shapeManager.addShapeHistoryManaged(
+      await this.#shapeManager.addShapeHistoryManaged(
         this.#currentShapeType,
         params,
         {
@@ -148,8 +139,8 @@ class ShapeModalUserInterface {
             DefaultShapeInteractiveConfig[this.#currentShapeType.toUpperCase()],
           managers: this.#managersToRegisterWith,
         },
+        true,
       );
-      this.#scene.events.emit("shapeAdded", shape);
     }
 
     this.#currentShapeType = null;

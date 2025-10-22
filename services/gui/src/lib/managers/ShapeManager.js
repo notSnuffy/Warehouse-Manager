@@ -52,7 +52,7 @@ class ShapeManager {
     this.#factory = new ShapeFactory(this.#scene, this.#registry, managers);
 
     this.#scene.events.on("shapeDeleteRequested", (shape) => {
-      this.removeShapeByIdHistoryManaged(shape.internalId);
+      this.removeShapeByIdHistoryManaged(shape.internalId, true);
     });
 
     this.#scene.events.on("undoPerformed", () => {
@@ -119,10 +119,11 @@ class ShapeManager {
    * @param {Phaser.Types.Input.InputConfiguration} [additionalData.interactive] - Optional interactive configuration for the shape.
    * @param {Object} [additionalData.metadata] - Optional metadata to attach to the shape.
    * @param {String[]} [additionalData.managers] - Optional list of manager IDs the shape belongs to.
+   * @param {boolean} [emitEvent=true] - Whether to emit an event after adding the shape.
    * @throws {Error} If the shape type is not registered.
    * @returns {Promise<Phaser.GameObjects.Shape>} The added shape.
    */
-  async addShape(type, params, additionalData = {}) {
+  async addShape(type, params, additionalData = {}, emitEvent = true) {
     const shape = await this.#factory.create(type, params, additionalData);
 
     if (!this.#shapes.has(shape.internalId)) {
@@ -130,6 +131,9 @@ class ShapeManager {
     }
 
     this.#shapes.set(shape.internalId, shape);
+    if (emitEvent) {
+      this.#scene.events.emit("shapeAdded", shape);
+    }
     return shape;
   }
 
@@ -150,10 +154,11 @@ class ShapeManager {
    * @param {Phaser.Types.Input.InputConfiguration} [snapshot.additionalData.interactive] - Optional interactive configuration for the shape.
    * @param {String[]} [snapshot.additionalData.managers] - Optional list of manager IDs the shape belongs to.
    * @param {Object[]} [snapshot.children] - Optional child shapes.
+   * @param {boolean} [emitEvent=true] - Whether to emit an event after adding the shape.
    * @throws {Error} If the shape type is not registered.
    * @returns {Promise<Phaser.GameObjects.Shape>} The added shape.
    */
-  async addShapeFromSnapshot(snapshot) {
+  async addShapeFromSnapshot(snapshot, emitEvent = true) {
     const { transform, specific, metadata, additionalData, children } =
       snapshot;
     const params = {
@@ -161,12 +166,17 @@ class ShapeManager {
       ...specific,
       children: children || [],
     };
-    return this.addShape(metadata.type, params, {
-      metadata,
-      interactive: additionalData?.interactive,
-      id: additionalData?.id,
-      managers: additionalData?.managers,
-    });
+    return this.addShape(
+      metadata.type,
+      params,
+      {
+        metadata,
+        interactive: additionalData?.interactive,
+        id: additionalData?.id,
+        managers: additionalData?.managers,
+      },
+      emitEvent,
+    );
   }
 
   /**
@@ -178,11 +188,23 @@ class ShapeManager {
    * @param {Phaser.Types.Input.InputConfiguration} [additionalData.interactive] - Optional interactive configuration for the shape.
    * @param {Object} [additionalData.metadata] - Optional metadata to attach to the shape.
    * @param {String[]} [additionalData.managers] - Optional list of manager IDs the shape belongs to.
+   * @param {boolean} [emitEvent=true] - Whether to emit an event after adding the shape.
    * @throws {Error} If the shape type is not registered.
    * @returns {Promise<Phaser.GameObjects.Shape>} The added shape.
    */
-  async addShapeHistoryManaged(type, params, additionalData = {}) {
-    const command = new AddShapeCommand(this, type, params, additionalData);
+  async addShapeHistoryManaged(
+    type,
+    params,
+    additionalData = {},
+    emitEvent = true,
+  ) {
+    const command = new AddShapeCommand(
+      this,
+      type,
+      params,
+      additionalData,
+      emitEvent,
+    );
     const shape = await command.execute();
     this.#undoRedoManager.pushCommand(command);
     console.log(shape);
@@ -201,26 +223,40 @@ class ShapeManager {
   /**
    * Removes a shape by its ID.
    * @param {string} id - The ID of the shape to remove.
+   * @param {boolean} [emitEvent=true] - Whether to emit an event after removing the shape.
    * @returns {boolean} True if the shape was removed, otherwise false.
    */
-  removeShapeById(id) {
+  removeShapeById(id, emitEvent = true) {
     const shape = this.#shapes.get(id);
     if (!shape) {
       return false;
     }
+    console.log("Removing shape:", shape);
+
+    if (shape.list && shape.list.length > 0) {
+      const childrenIds = shape.list.map((child) => child.internalId);
+      childrenIds.forEach((childId) => {
+        this.removeShapeById(childId, false);
+      });
+    }
 
     shape.destroy();
     this.#shapes.delete(id);
+
+    if (emitEvent) {
+      this.#scene.events.emit("shapeRemoved", id);
+    }
     return true;
   }
 
   /**
    * Removes a shape by its ID and records the action in history.
    * @param {string} id - The ID of the shape to remove.
+   * @param {boolean} [emitEvent=true] - Whether to emit an event after removing the shape.
    * @returns {Promise<boolean>} True if the shape was removed, otherwise false.
    */
-  async removeShapeByIdHistoryManaged(id) {
-    const command = new RemoveShapeCommand(this, id);
+  async removeShapeByIdHistoryManaged(id, emitEvent = true) {
+    const command = new RemoveShapeCommand(this, id, emitEvent);
     const result = await command.execute();
     this.#undoRedoManager.pushCommand(command);
     return result;

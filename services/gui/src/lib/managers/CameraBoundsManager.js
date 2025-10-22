@@ -113,6 +113,14 @@ class CameraBoundsManager {
         this,
       );
     });
+    this.#scene.events.on(
+      "shapeRemoved",
+      (shapeId) => {
+        this.#removeFromLists(shapeId);
+        this.#adjustCameraBounds(0, true);
+      },
+      this,
+    );
   }
 
   /**
@@ -213,7 +221,7 @@ class CameraBoundsManager {
 
   /**
    * Updates the sorted lists with the shape's bounding box values
-   * @param {Object} shape - The shape to update the lists with
+   * @param {Phaser.GameObjects.Shape} shape - The shape to update the lists with
    * @returns {void}
    */
   #updateLists(shape) {
@@ -225,6 +233,18 @@ class CameraBoundsManager {
     this.#minYSortedList.insert(shape.internalId, boundingBox.top);
     this.#maxXSortedList.insert(shape.internalId, boundingBox.right);
     this.#maxYSortedList.insert(shape.internalId, boundingBox.bottom);
+  }
+
+  /**
+   * Removes the shape's bounding box values from the sorted lists
+   * @param {string} shapeId - The ID of the shape to remove from the lists
+   * @returns {void}
+   */
+  #removeFromLists(shapeId) {
+    this.#minXSortedList.remove(shapeId);
+    this.#minYSortedList.remove(shapeId);
+    this.#maxXSortedList.remove(shapeId);
+    this.#maxYSortedList.remove(shapeId);
   }
 }
 
