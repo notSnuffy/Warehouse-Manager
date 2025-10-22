@@ -91,6 +91,7 @@ class MoveManager extends Manager {
         shape.label.setToTop();
       }
       this.#outlineManager.create(shape, rectangleDottedOutline);
+      this.scene.events.emit("shapeMoveStart", shape);
     });
 
     shape.on("drag", (_, dragX, dragY) => {

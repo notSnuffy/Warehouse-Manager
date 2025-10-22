@@ -9,6 +9,7 @@ import ShapeManager from "@managers/ShapeManager";
 import CameraBoundsManager from "@managers/CameraBoundsManager";
 import ScrollbarManager from "@managers/ScrollbarManager";
 import UndoRedoManager from "@managers/UndoRedoManager";
+import CreateCommandEventHandler from "@managers/CreateCommandEventHandler";
 import ShapeEditorUIInitializer from "@lib/ShapeEditorUIInitializer";
 import * as Shapes from "@shapes";
 import { DefaultShapeInteractiveConfig } from "@utils/shapes";
@@ -192,6 +193,13 @@ class ShapeEditor extends Phaser.Scene {
       move: this.#moveManager,
       select: this.#selectManager,
     });
+
+    new CreateCommandEventHandler(
+      this,
+      this.#undoRedoManager,
+      this.#shapeManager,
+    );
+
     this.#instructionHandler = new ShapeInstructionsHandler(this.#shapeManager);
     this.#panningManager = new PanningManager(this);
 
@@ -462,7 +470,6 @@ class ShapeEditor extends Phaser.Scene {
       this.#shapeManager,
       "newShapeModal",
       ["move", "select"],
-      this,
     );
 
     ShapeEditorUIInitializer.initialize(

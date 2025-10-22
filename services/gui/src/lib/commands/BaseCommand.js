@@ -16,7 +16,7 @@ class BaseCommand {
   /**
    * Executes the command.
    * @abstract
-   * @returns {Promise<void>}
+   * @returns {Promise<any>}
    * @throws {Error} If the method is not implemented in the subclass.
    */
   async execute() {
@@ -26,7 +26,7 @@ class BaseCommand {
   /**
    * Undoes the command.
    * @abstract
-   * @returns {Promise<void>}
+   * @returns {Promise<any>}
    * @throws {Error} If the method is not implemented in the subclass.
    */
   async undo() {
