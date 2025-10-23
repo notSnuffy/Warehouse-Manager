@@ -127,12 +127,14 @@ class RotationManager extends Manager {
 
     this.#rotationKnob.on("dragstart", () => {
       this.#knobDragging = true;
+      this.scene.events.emit("shapeRotateStart", shape);
     });
 
     this.#rotationKnob.on("drag", this.#handleRotationDrag(shape));
 
     this.#rotationKnob.on("dragend", () => {
       this.#knobDragging = false;
+      this.scene.events.emit("shapeRotateEnd", shape);
     });
   }
 

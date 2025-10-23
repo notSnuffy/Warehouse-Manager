@@ -12,7 +12,6 @@ class SelectShapeManager extends Manager {
   /**
    * Last selected shape
    * @type {Phaser.GameObjects.Shape}
-   * @private
    * @default null
    */
   #lastSelected = null;
@@ -20,7 +19,6 @@ class SelectShapeManager extends Manager {
   /**
    * Rotation manager
    * @type {RotationManager}
-   * @private
    * @default null
    */
   #rotationManager = null;
@@ -28,7 +26,6 @@ class SelectShapeManager extends Manager {
   /**
    * Resize manager
    * @type {ResizeManager}
-   * @private
    * @default null
    */
   #resizeManager = null;
@@ -46,6 +43,10 @@ class SelectShapeManager extends Manager {
     this.#resizeManager.addManagerToUpdate(this.#rotationManager);
 
     this.scene.input.on("pointerdown", (pointer) => {
+      if (!pointer.leftButtonDown()) {
+        return;
+      }
+
       const hitShapes = this.scene.input.hitTestPointer(pointer);
 
       if (hitShapes.length === 0) {
@@ -56,19 +57,52 @@ class SelectShapeManager extends Manager {
     this.scene.input.keyboard.on("keydown-DELETE", () => {
       if (this.#lastSelected) {
         this.scene.events.emit("shapeDeleteRequested", this.#lastSelected);
-        this.#lastSelected = null;
-        this.hide();
       }
     });
 
     this.scene.events.on("undoPerformed", () => {
       if (this.#lastSelected) {
-        this.hide();
+        this.#rotationManager.update(this.#lastSelected);
+        this.#resizeManager.update(this.#lastSelected);
       }
     });
     this.scene.events.on("redoPerformed", () => {
       if (this.#lastSelected) {
+        this.#rotationManager.update(this.#lastSelected);
+        this.#resizeManager.update(this.#lastSelected);
+      }
+    });
+
+    this.scene.events.on("shapeRemoved", () => {
+      if (!this.#lastSelected) {
+        return;
+      }
+
+      this.#lastSelected = null;
+      this.hide();
+    });
+
+    this.scene.events.on("shapeAdded", (shape) => {
+      if (this.#lastSelected) {
         this.hide();
+      }
+
+      this.#lastSelected = shape;
+      this.#rotationManager.create(shape);
+      this.#resizeManager.create(shape);
+    });
+
+    this.scene.events.on("shapeMoved", (shape) => {
+      if (this.#lastSelected && this.#lastSelected === shape) {
+        this.#rotationManager.hide();
+        this.#resizeManager.hide();
+      }
+    });
+
+    this.scene.events.on("shapeMoveEnd", (shape) => {
+      if (this.#lastSelected && this.#lastSelected === shape) {
+        this.#rotationManager.create(shape);
+        this.#resizeManager.create(shape);
       }
     });
   }
@@ -105,17 +139,17 @@ class SelectShapeManager extends Manager {
    */
   create(shape) {
     shape.on("pointerdown", () => {
-      if (this.scene.activeTool === "select") {
-        this.hide();
+      //if (this.scene.activeTool === "select") {
+      this.hide();
 
-        //shape.setFillStyle(0xffffff);
-        this.#lastSelected = shape;
+      //shape.setFillStyle(0xffffff);
+      this.#lastSelected = shape;
 
-        this.scene.children.bringToTop(shape);
-        this.scene.events.emit("shapeSelected", shape);
-        this.#resizeManager.create(shape);
-        this.#rotationManager.create(shape);
-      }
+      this.scene.children.bringToTop(shape);
+      this.scene.events.emit("shapeSelected", shape);
+      this.#resizeManager.create(shape);
+      this.#rotationManager.create(shape);
+      //}
     });
   }
 

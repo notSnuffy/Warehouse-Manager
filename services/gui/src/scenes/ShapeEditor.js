@@ -225,9 +225,9 @@ class ShapeEditor extends Phaser.Scene {
       eventConfig: {
         shapeAdded: { extraPadding: 0, allowShrink: false },
         shapeMoved: { extraPadding: 0, allowShrink: false },
-        shapeMoveEnd: { extraPadding: 0, allowShrink: true },
+        //shapeMoveEnd: { extraPadding: 0, allowShrink: true },
         shapeResized: { extraPadding: 40, allowShrink: false },
-        shapeResizeEnd: { extraPadding: 0, allowShrink: true },
+        //shapeResizeEnd: { extraPadding: 0, allowShrink: true },
         shapeRotated: { extraPadding: 0, allowShrink: false },
       },
     });

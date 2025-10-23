@@ -117,7 +117,7 @@ class CameraBoundsManager {
       "shapeRemoved",
       (shapeId) => {
         this.#removeFromLists(shapeId);
-        this.#adjustCameraBounds(0, true);
+        //this.#adjustCameraBounds(0, true);
       },
       this,
     );

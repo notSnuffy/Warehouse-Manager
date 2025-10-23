@@ -8,37 +8,38 @@ class AddShapeCommand extends BaseCommand {
   /**
    * The shape manager to manage shapes in the scene.
    * @type {ShapeManager}
-   * @private
    */
   #shapeManager;
 
   /**
    * The type of shape to add.
    * @type {string}
-   * @private
    */
   #type;
 
   /**
    * The parameters for creating the shape.
    * @type {Object}
-   * @private
    */
   #params;
 
   /**
    * Additional data for the shape (e.g., id, interactive).
    * @type {Object}
-   * @private
    */
   #additionalData;
 
   /**
    * The ID of the added shape.
    * @type {string|null}
-   * @private
    */
   #shapeId;
+
+  /**
+   * The snapshot of the shape's state at the time of addition.
+   * @type {Object|null}
+   */
+  #snapshot;
 
   /**
    * Whether to emit events for this command.
@@ -74,9 +75,14 @@ class AddShapeCommand extends BaseCommand {
    * @returns {Promise<void>}
    */
   async execute() {
-    if (this.#shapeId) {
-      this.#additionalData.id = this.#shapeId;
+    if (this.#snapshot) {
+      await this.#shapeManager.addShapeFromSnapshot(
+        this.#snapshot,
+        this.#emitEvent,
+      );
+      return;
     }
+
     const shape = await this.#shapeManager.addShape(
       this.#type,
       this.#params,
@@ -84,6 +90,10 @@ class AddShapeCommand extends BaseCommand {
       this.#emitEvent,
     );
     this.#shapeId = shape.internalId;
+
+    if (!this.#snapshot) {
+      this.#snapshot = shape.createSnapshot();
+    }
     return shape;
   }
 

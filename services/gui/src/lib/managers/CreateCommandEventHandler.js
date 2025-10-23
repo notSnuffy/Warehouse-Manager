@@ -1,4 +1,6 @@
 import MoveShapeCommand from "@commands/MoveShapeCommand";
+import RotateShapeCommand from "@commands/RotateShapeCommand";
+import ResizeShapeCommand from "@commands/ResizeShapeCommand";
 
 /**
  * CreateCommandEventHandler class
@@ -35,6 +37,27 @@ class CreateCommandEventHandler {
   #moveStartData = null;
 
   /**
+   * Data about the shape's rotation at the start of a rotate action.
+   * @type {Object|null}
+   * @property {number} rotation - The rotation at the start of the rotate.
+   * @property {string} shapeId - The internal ID of the shape being rotated.
+   * @default null
+   */
+  #rotateStartData = null;
+
+  /**
+   * Data about the shape's transform at the start of a resize action.
+   * @type {Object|null}
+   * @property {number} x - The x position at the start of the resize.
+   * @property {number} y - The y position at the start of the resize.
+   * @property {number} width - The width at the start of the resize.
+   * @property {number} height - The height at the start of the resize.
+   * @property {string} shapeId - The internal ID of the shape being resized.
+   * @default null
+   */
+  #resizeStartData = null;
+
+  /**
    * Constructor
    * @param {Phaser.Scene} scene - The scene instance
    * @param {UndoRedoManager} undoRedoManager - The UndoRedoManager instance
@@ -45,14 +68,16 @@ class CreateCommandEventHandler {
     this.#undoRedoManager = undoRedoManager;
     this.#shapeManager = shapeManager;
 
-    this.#registerEvents();
+    this.#registerMoveEvents();
+    this.#registerRotateEvents();
+    this.#registerResizeEvents();
   }
 
   /**
-   * Registers event listeners for some events and creates corresponding commands.
+   * Register move events to create MoveShapeCommand instances
    * @returns {void}
    */
-  #registerEvents() {
+  #registerMoveEvents() {
     this.#scene.events.on("shapeMoveStart", (shape) => {
       this.#moveStartData = {
         x: shape.x,
@@ -87,6 +112,99 @@ class CreateCommandEventHandler {
       this.#undoRedoManager.pushCommand(moveCommand);
 
       this.#moveStartData = null;
+    });
+  }
+
+  /**
+   * Register rotate events to create RotateShapeCommand instances
+   * @returns {void}
+   */
+  #registerRotateEvents() {
+    this.#scene.events.on("shapeRotateStart", (shape) => {
+      this.#rotateStartData = {
+        rotation: shape.rotation,
+        shapeId: shape.internalId,
+      };
+    });
+    this.#scene.events.on("shapeRotateEnd", (shape) => {
+      if (
+        !this.#rotateStartData ||
+        this.#rotateStartData.shapeId !== shape.internalId
+      ) {
+        return;
+      }
+
+      const rotateEndRotation = shape.rotation;
+      if (this.#rotateStartData.rotation === rotateEndRotation) {
+        this.#rotateStartData = null;
+        return;
+      }
+
+      const rotateCommand = new RotateShapeCommand(
+        this.#shapeManager,
+        shape.internalId,
+        this.#rotateStartData.rotation,
+        rotateEndRotation,
+      );
+      this.#undoRedoManager.pushCommand(rotateCommand);
+
+      this.#rotateStartData = null;
+    });
+  }
+
+  /**
+   * Register resize events to create ResizeShapeCommand instances
+   * @returns {void}
+   */
+  #registerResizeEvents() {
+    this.#scene.events.on("shapeResizeStart", (shape) => {
+      this.#resizeStartData = {
+        x: shape.x,
+        y: shape.y,
+        width: shape.displayWidth,
+        height: shape.displayHeight,
+        shapeId: shape.internalId,
+      };
+    });
+    this.#scene.events.on("shapeResizeEnd", (shape) => {
+      if (
+        !this.#resizeStartData ||
+        this.#resizeStartData.shapeId !== shape.internalId
+      ) {
+        return;
+      }
+
+      const resizeEndTransform = {
+        x: shape.x,
+        y: shape.y,
+        width: shape.displayWidth,
+        height: shape.displayHeight,
+      };
+
+      if (
+        this.#resizeStartData.x === resizeEndTransform.x &&
+        this.#resizeStartData.y === resizeEndTransform.y &&
+        this.#resizeStartData.width === resizeEndTransform.width &&
+        this.#resizeStartData.height === resizeEndTransform.height
+      ) {
+        this.#resizeStartData = null;
+        return;
+      }
+
+      const resizeCommand = new ResizeShapeCommand(
+        this.#shapeManager,
+        shape.internalId,
+        {
+          x: this.#resizeStartData.x,
+          y: this.#resizeStartData.y,
+          width: this.#resizeStartData.width,
+          height: this.#resizeStartData.height,
+        },
+        resizeEndTransform,
+      );
+      this.#undoRedoManager.pushCommand(resizeCommand);
+
+      this.#resizeStartData = null;
     });
   }
 }

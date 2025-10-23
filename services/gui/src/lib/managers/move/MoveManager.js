@@ -23,6 +23,13 @@ class MoveManager extends Manager {
   #currentlyMoving = null;
 
   /**
+   * Flag to indicate if the shape has moved
+   * @type {boolean}
+   * @default false
+   */
+  #hasMoved = false;
+
+  /**
    * Outline manager
    * @type {OutlineManager}
    * @default new OutlineManager(this.scene)
@@ -81,22 +88,28 @@ class MoveManager extends Manager {
    */
   create(shape) {
     shape.on("dragstart", () => {
-      if (this.scene.activeTool !== "move") {
-        return;
-      }
+      //if (this.scene.activeTool !== "move") {
+      //  return;
+      //}
       this.#isDragging = true;
       this.#currentlyMoving = shape;
       this.scene.children.bringToTop(shape);
+      this.#hasMoved = false;
       if (shape.label) {
         shape.label.setToTop();
       }
-      this.#outlineManager.create(shape, rectangleDottedOutline);
+      //this.#outlineManager.create(shape, rectangleDottedOutline);
       this.scene.events.emit("shapeMoveStart", shape);
     });
 
     shape.on("drag", (_, dragX, dragY) => {
       if (!this.#isDragging) {
         return;
+      }
+
+      if (!this.#hasMoved) {
+        this.#outlineManager.create(shape, rectangleDottedOutline);
+        this.#hasMoved = true;
       }
 
       shape.setPosition(dragX, dragY);
@@ -111,7 +124,11 @@ class MoveManager extends Manager {
       this.#isDragging = false;
       this.#currentlyMoving = null;
       this.#outlineManager.hide(shape);
-      this.scene.events.emit("shapeMoveEnd", shape);
+
+      if (this.#hasMoved) {
+        this.scene.events.emit("shapeMoveEnd", shape);
+      }
+      this.#hasMoved = false;
     });
   }
 

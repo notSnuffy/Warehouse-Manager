@@ -128,6 +128,10 @@ class ShapeManager {
 
     if (!this.#shapes.has(shape.internalId)) {
       shape.internalId = additionalData.id || Phaser.Utils.String.UUID();
+    } else if (additionalData.id && shape.internalId !== additionalData.id) {
+      // If the shape already exists but a different ID is provided, update the ID
+      this.#shapes.delete(shape.internalId);
+      shape.internalId = additionalData.id;
     }
 
     this.#shapes.set(shape.internalId, shape);
