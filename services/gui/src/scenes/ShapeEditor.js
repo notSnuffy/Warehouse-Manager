@@ -14,6 +14,7 @@ import ShapeEditorUIInitializer from "@lib/ShapeEditorUIInitializer";
 import * as Shapes from "@shapes";
 import { DefaultShapeInteractiveConfig } from "@utils/shapes";
 import ShapeModalUserInterface from "@ui/ShapeModalUserInterface";
+import UndoRedoUserInterface from "@ui/UndoRedoUserInterface";
 import ShapeInstructionsHandler from "@instructions/ShapeInstructionsHandler";
 import InstructionCommands from "@instructions/InstructionCommands";
 
@@ -102,11 +103,16 @@ class ShapeEditor extends Phaser.Scene {
   #instructionHandler = null;
 
   /**
-   * Shape modal UI
-   * @type {ShapeModalUserInterface}
-   * @default null
+   * Object containing references to UI elements
+   * @type {Object}
+   * @property {ShapeModalUserInterface|null} shapeModal - The shape modal UI
+   * @property {UndoRedoUserInterface|null} undoRedoUI - The undo/redo UI
+   * @default { shapeModal: null, undoRedoUI: null }
    */
-  #shapeModalUI = null;
+  #UIElements = {
+    shapeModal: null,
+    undoRedoUI: null,
+  };
 
   /**
    * Loads a shape by its ID
@@ -188,7 +194,7 @@ class ShapeEditor extends Phaser.Scene {
   async create() {
     this.#selectManager = new SelectShapeManager(this);
     this.#moveManager = new MoveManager(this, new OutlineManager(this));
-    this.#undoRedoManager = new UndoRedoManager(this);
+    this.#undoRedoManager = new UndoRedoManager(this, 100);
     this.#shapeManager = new ShapeManager(this, this.#undoRedoManager, {
       move: this.#moveManager,
       select: this.#selectManager,
@@ -451,36 +457,25 @@ class ShapeEditor extends Phaser.Scene {
       }
     }
 
-    /**
-     * Handles the move button click event
-     */
-    const handleMoveButtonClick = function () {
-      this.#currentTool = "move";
-      this.#selectManager.hide();
-    }.bind(this);
-
-    /**
-     * Handles the select button click event
-     */
-    const handleSelectButtonClick = function () {
-      this.#currentTool = "select";
-    }.bind(this);
-
-    this.#shapeModalUI = new ShapeModalUserInterface(
+    this.#UIElements.shapeModal = new ShapeModalUserInterface(
       this.#shapeManager,
       "newShapeModal",
       ["move", "select"],
     );
+    this.#UIElements.undoRedoUI = new UndoRedoUserInterface(
+      this,
+      this.#undoRedoManager,
+      "undoButton",
+      "redoButton",
+    );
 
     ShapeEditorUIInitializer.initialize(
-      handleMoveButtonClick,
-      handleSelectButtonClick,
       () => this.#currentTool,
       //addShape,
       this.#selectManager.hide.bind(this.#selectManager),
       // () => this.#shapes,
       () => this.#shapeManager.getRootShapes(),
-      this.#shapeModalUI,
+      this.#UIElements.shapeModal,
       this.#instructionHandler,
     );
 

@@ -10,8 +10,40 @@
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark" id="menuBar">
       <div class="container-fluid">
         <div class="navbar-nav d-flex align-items-center gap-1">
-          <button id="moveButton" class="btn btn-primary mr-2">Move</button>
-          <button id="selectButton" class="btn btn-primary mr-2">Select</button>
+          <ul class="navbar-nav">
+            <li class="nav-item dropdown">
+              <button
+                class="btn btn-primary dropdown-toggle mr-2"
+                type="button"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+              >
+                Edit
+              </button>
+              <ul class="dropdown-menu">
+                <li>
+                  <button
+                    class="dropdown-item d-flex justify-content-between align-items-center"
+                    id="undoButton"
+                    type="button"
+                  >
+                    Undo
+                    <span class="text-secondary">Ctrl+Z</span>
+                  </button>
+                </li>
+                <li>
+                  <button
+                    class="dropdown-item d-flex justify-content-between align-items-center"
+                    id="redoButton"
+                    type="button"
+                  >
+                    Redo
+                    <span class="text-secondary">Ctrl+Y</span>
+                  </button>
+                </li>
+              </ul>
+            </li>
+          </ul>
         </div>
         <form class="d-flex mx-auto" style="width: 50%">
           <input type="hidden" id="currentShapeId" />

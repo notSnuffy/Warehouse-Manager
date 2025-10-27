@@ -2,7 +2,6 @@ import { DEFAULT_SHAPES } from "@scenes/ShapeEditor";
 import { API_URL } from "@/config";
 import { createContainerSnapshotFromShapes } from "@utils/shapes";
 import {
-  addButtonHandler,
   populateShapeList,
   addItemButtonIntoList,
 } from "@utils/UIHelperFunctions";
@@ -32,8 +31,6 @@ class ShapeEditorUIInitializer {
    * @static
    */
   static initialize(
-    handleMoveButtonClick,
-    handleSelectButtonClick,
     addShape,
     selectHide,
     getEditorShapes,
@@ -45,14 +42,6 @@ class ShapeEditorUIInitializer {
     }
 
     ShapeEditorUIInitializer.#initialized = true;
-
-    const menuBar = document.getElementById("menuBar");
-    menuBar.hidden = false;
-    const itemsMenu = document.getElementById("itemsMenu");
-    itemsMenu.hidden = false;
-
-    addButtonHandler("moveButton", "click", handleMoveButtonClick);
-    addButtonHandler("selectButton", "click", handleSelectButtonClick);
 
     //initializeAddShapeModal(addShape);
     populateShapeList(shapeModalUI);
