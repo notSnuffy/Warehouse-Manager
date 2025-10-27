@@ -15,6 +15,7 @@ import * as Shapes from "@shapes";
 import { DefaultShapeInteractiveConfig } from "@utils/shapes";
 import ShapeModalUserInterface from "@ui/ShapeModalUserInterface";
 import UndoRedoUserInterface from "@ui/UndoRedoUserInterface";
+import ShapeListUserInterface from "@ui/ShapeListUserInterface";
 import ShapeInstructionsHandler from "@instructions/ShapeInstructionsHandler";
 import InstructionCommands from "@instructions/InstructionCommands";
 
@@ -107,11 +108,13 @@ class ShapeEditor extends Phaser.Scene {
    * @type {Object}
    * @property {ShapeModalUserInterface|null} shapeModal - The shape modal UI
    * @property {UndoRedoUserInterface|null} undoRedoUI - The undo/redo UI
-   * @default { shapeModal: null, undoRedoUI: null }
+   * @property {ShapeListUserInterface|null} shapeListUI - The shape list UI
+   * @default { shapeModal: null, undoRedoUI: null, shapeListUI: null }
    */
   #UIElements = {
     shapeModal: null,
     undoRedoUI: null,
+    shapeListUI: null,
   };
 
   /**
@@ -467,6 +470,14 @@ class ShapeEditor extends Phaser.Scene {
       this.#undoRedoManager,
       "undoButton",
       "redoButton",
+    );
+    this.#UIElements.shapeListUI = new ShapeListUserInterface(
+      "itemsMenuButtons",
+      this.#UIElements.shapeModal.openShapeModal.bind(
+        this.#UIElements.shapeModal,
+      ),
+      DEFAULT_SHAPES,
+      API_URL + "/shape-management/shapes",
     );
 
     ShapeEditorUIInitializer.initialize(

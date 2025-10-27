@@ -1,10 +1,7 @@
 import { DEFAULT_SHAPES } from "@scenes/ShapeEditor";
 import { API_URL } from "@/config";
 import { createContainerSnapshotFromShapes } from "@utils/shapes";
-import {
-  populateShapeList,
-  addItemButtonIntoList,
-} from "@utils/UIHelperFunctions";
+import { addItemButtonIntoList } from "@utils/UIHelperFunctions";
 
 /**
  * @class ShapeEditorUIInitializer
@@ -44,7 +41,7 @@ class ShapeEditorUIInitializer {
     ShapeEditorUIInitializer.#initialized = true;
 
     //initializeAddShapeModal(addShape);
-    populateShapeList(shapeModalUI);
+    //populateShapeList(shapeModalUI);
 
     const saveButton = document.getElementById("saveButton");
     saveButton.addEventListener("click", async function () {
