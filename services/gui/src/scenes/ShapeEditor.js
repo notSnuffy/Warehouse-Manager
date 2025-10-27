@@ -10,13 +10,13 @@ import CameraBoundsManager from "@managers/CameraBoundsManager";
 import ScrollbarManager from "@managers/ScrollbarManager";
 import UndoRedoManager from "@managers/UndoRedoManager";
 import CreateCommandEventHandler from "@managers/CreateCommandEventHandler";
-import ShapeEditorUIInitializer from "@lib/ShapeEditorUIInitializer";
 import * as Shapes from "@shapes";
 import { DefaultShapeInteractiveConfig } from "@utils/shapes";
 import ShapeModalUserInterface from "@ui/ShapeModalUserInterface";
 import UndoRedoUserInterface from "@ui/UndoRedoUserInterface";
 import ShapeListUserInterface from "@ui/ShapeListUserInterface";
 import ShapeInstructionsHandler from "@instructions/ShapeInstructionsHandler";
+import ShapeSaveButton from "@ui/ShapeSaveButton";
 import InstructionCommands from "@instructions/InstructionCommands";
 
 /**
@@ -109,12 +109,14 @@ class ShapeEditor extends Phaser.Scene {
    * @property {ShapeModalUserInterface|null} shapeModal - The shape modal UI
    * @property {UndoRedoUserInterface|null} undoRedoUI - The undo/redo UI
    * @property {ShapeListUserInterface|null} shapeListUI - The shape list UI
-   * @default { shapeModal: null, undoRedoUI: null, shapeListUI: null }
+   * @property {ShapeSaveButton|null} saveButton - The shape save button UI
+   * @default { shapeModal: null, undoRedoUI: null, shapeListUI: null, saveButton: null}
    */
   #UIElements = {
     shapeModal: null,
     undoRedoUI: null,
     shapeListUI: null,
+    saveButton: null,
   };
 
   /**
@@ -476,18 +478,16 @@ class ShapeEditor extends Phaser.Scene {
       this.#UIElements.shapeModal.openShapeModal.bind(
         this.#UIElements.shapeModal,
       ),
-      DEFAULT_SHAPES,
       API_URL + "/shape-management/shapes",
     );
 
-    ShapeEditorUIInitializer.initialize(
-      () => this.#currentTool,
-      //addShape,
-      this.#selectManager.hide.bind(this.#selectManager),
-      // () => this.#shapes,
+    this.#UIElements.saveButton = new ShapeSaveButton(
+      "saveButton",
+      "shapeName",
       () => this.#shapeManager.getRootShapes(),
-      this.#UIElements.shapeModal,
       this.#instructionHandler,
+      API_URL + "/shape-management/shapes",
+      this.#UIElements.shapeListUI,
     );
 
     // for (let i = 0; i < this.#shapes.length; i++) {
