@@ -39,17 +39,31 @@ class ShapeModalUserInterface {
   #managersToRegisterWith = [];
 
   /**
+   * The shape fields schemas
+   * @type {Object}
+   * @default {}
+   */
+  #shapeFieldsSchemas = {};
+
+  /**
    * Creates an instance of ShapeModalUserInterface.
    * @param {ShapeManager} shapeManager - The shape manager instance
    * @param {string} modalId - The ID of the modal element
    * @param {Array} managersToRegisterWith - The list of managers to register new shapes with
+   * @param {Object} shapeFieldsSchemas - The shape fields schemas
    */
-  constructor(shapeManager, modalId, managersToRegisterWith) {
+  constructor(
+    shapeManager,
+    modalId,
+    managersToRegisterWith,
+    shapeFieldsSchemas,
+  ) {
     this.#shapeManager = shapeManager;
     this.#modal = document.getElementById(modalId);
     const confirmButton = this.#modal.querySelector("#confirmButton");
     confirmButton.addEventListener("click", () => this.onModalConfirmation());
     this.#managersToRegisterWith = managersToRegisterWith;
+    this.#shapeFieldsSchemas = shapeFieldsSchemas;
   }
 
   /**
@@ -71,7 +85,11 @@ class ShapeModalUserInterface {
       "#dynamicFieldsContainer",
     );
 
-    renderDynamicModalFields(dynamicFieldsContainer, shapeType);
+    renderDynamicModalFields(
+      dynamicFieldsContainer,
+      this.#shapeFieldsSchemas,
+      shapeType.toUpperCase(),
+    );
 
     const bootstrapModal = new Modal(this.#modal);
     bootstrapModal.show();
@@ -83,10 +101,15 @@ class ShapeModalUserInterface {
    * @private
    */
   async onModalConfirmation() {
+    console.log(this.#modal);
     const form = this.#modal.querySelector("#shapeForm");
-    console.log(form);
+    const isValid = form.checkValidity();
+    if (!isValid) {
+      form.reportValidity();
+      return;
+    }
+
     const formData = new FormData(form);
-    console.log(formData);
     const params = Object.fromEntries(formData);
 
     if (this.#currentShapeId) {
@@ -129,7 +152,6 @@ class ShapeModalUserInterface {
       delete params["pointY[]"];
     }
 
-    console.log(params);
     if (this.#currentShapeType) {
       await this.#shapeManager.addShapeHistoryManaged(
         this.#currentShapeType,

@@ -14,14 +14,14 @@ const PositionSchema = {
       name: "shapeX",
       label: "X Position",
       attributes: { required: true, value: 0, name: "x" },
-      validation: { event: "change", handler: validatePosition },
+      validation: [{ event: "change", handler: validatePosition }],
     },
     {
       type: "number",
       name: "shapeY",
       label: "Y Position",
       attributes: { required: true, value: 0, name: "y" },
-      validation: { event: "change", handler: validatePosition },
+      validation: [{ event: "change", handler: validatePosition }],
     },
   ],
 };
@@ -30,7 +30,7 @@ const RotationSchema = {
   name: "shapeRotation",
   label: "Rotation (Degrees)",
   attributes: { required: true, value: 0, min: 0, max: 360, name: "rotation" },
-  validation: { event: "change", handler: validateAngle },
+  validation: [{ event: "change", handler: validateAngle }],
 };
 const DimensionsSchema = {
   type: "group",
@@ -41,14 +41,14 @@ const DimensionsSchema = {
       name: "shapeWidth",
       label: "Width",
       attributes: { required: true, value: 100, min: 10, name: "width" },
-      validation: { event: "change", handler: validateSize },
+      validation: [{ event: "change", handler: validateSize }],
     },
     {
       type: "number",
       name: "shapeHeight",
       label: "Height",
       attributes: { required: true, value: 100, min: 10, name: "height" },
-      validation: { event: "change", handler: validateSize },
+      validation: [{ event: "change", handler: validateSize }],
     },
   ],
 };
@@ -69,7 +69,7 @@ const RadiusSchema = {
   name: "shapeRadius",
   label: "Radius",
   attributes: { required: true, value: 50, min: 5, name: "radius" },
-  validation: { event: "change", handler: validateRadius },
+  validation: [{ event: "change", handler: validateRadius }],
 };
 const ArcAngleSchema = {
   type: "group",
@@ -86,7 +86,7 @@ const ArcAngleSchema = {
         max: 360,
         name: "startAngle",
       },
-      validation: { event: "change", handler: validateAngle },
+      validation: [{ event: "change", handler: validateAngle }],
     },
     {
       type: "number",
@@ -99,7 +99,7 @@ const ArcAngleSchema = {
         max: 360,
         name: "endAngle",
       },
-      validation: { event: "change", handler: validateAngle },
+      validation: [{ event: "change", handler: validateAngle }],
     },
   ],
 };
@@ -130,4 +130,13 @@ const ShapeFieldSchemas = {
   CUSTOM: [PositionSchema, RotationSchema, DimensionsSchema, ColorSchema],
 };
 
-export default ShapeFieldSchemas;
+export {
+  ShapeFieldSchemas,
+  PositionSchema,
+  RotationSchema,
+  DimensionsSchema,
+  ColorSchema,
+  RadiusSchema,
+  ArcAngleSchema,
+  PolygonPointsSchema,
+};

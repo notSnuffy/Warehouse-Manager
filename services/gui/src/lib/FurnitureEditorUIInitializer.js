@@ -1,5 +1,4 @@
 import {
-  addButtonHandler,
   initializeAddShapeModal,
   populateShapeList,
 } from "@utils/UIHelperFunctions";
@@ -91,8 +90,6 @@ class FurnitureEditorUIInitializer {
    * @static
    */
   static async initialize(
-    handleMoveButtonClick,
-    handleSelectButtonClick,
     addShape,
     selectHide,
     getEditorShapes,
@@ -103,14 +100,6 @@ class FurnitureEditorUIInitializer {
     }
 
     FurnitureEditorUIInitializer.#initialized = true;
-
-    const menuBar = document.getElementById("menuBar");
-    menuBar.hidden = false;
-    const itemsMenu = document.getElementById("itemsMenu");
-    itemsMenu.hidden = false;
-
-    addButtonHandler("moveButton", "click", handleMoveButtonClick);
-    addButtonHandler("selectButton", "click", handleSelectButtonClick);
 
     initializeAddShapeModal(addShape);
     const newShapeModalElement = document.getElementById("newShapeModal");

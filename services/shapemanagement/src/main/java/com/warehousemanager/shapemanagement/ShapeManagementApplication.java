@@ -43,7 +43,7 @@ public class ShapeManagementApplication {
       rectangleParameters.width = 100.0;
       rectangleParameters.height = 100.0;
 
-      Instruction rectangleInstruction = new Instruction("createRectangle", rectangleParameters);
+      Instruction rectangleInstruction = new Instruction("CREATE_RECTANGLE", rectangleParameters);
 
       ShapeInstance rectangleInstance =
           new ShapeInstance(
@@ -61,7 +61,7 @@ public class ShapeManagementApplication {
       ellipseParameters.width = 100.0;
       ellipseParameters.height = 100.0;
 
-      Instruction ellipseInstruction = new Instruction("createEllipse", ellipseParameters);
+      Instruction ellipseInstruction = new Instruction("CREATE_ELLIPSE", ellipseParameters);
 
       ShapeInstance ellipseInstance =
           new ShapeInstance(
@@ -82,7 +82,7 @@ public class ShapeManagementApplication {
       arcParameters.arcStartAngle = 0.0;
       arcParameters.arcEndAngle = 180.0;
 
-      Instruction arcInstruction = new Instruction("createArc", arcParameters);
+      Instruction arcInstruction = new Instruction("CREATE_ARC", arcParameters);
 
       ShapeInstance arcInstance =
           new ShapeInstance(arc.getId(), arc.getVersion(), Arrays.asList(arcInstruction));
@@ -100,7 +100,7 @@ public class ShapeManagementApplication {
       polygonParameters.width = 50.0;
       polygonParameters.height = 50.0;
 
-      Instruction polygonInstruction = new Instruction("createPolygon", polygonParameters);
+      Instruction polygonInstruction = new Instruction("CREATE_POLYGON", polygonParameters);
 
       ShapeInstance polygonInstance =
           new ShapeInstance(

@@ -4,7 +4,6 @@ import { API_URL } from "@/config";
 import { DEFAULT_SHAPES } from "@scenes/ShapeEditor";
 import { ShapeTypes } from "@utils/shapes";
 import { convertDegreesToRadiansSigned } from "@utils/math";
-import ShapeFieldSchemas from "@ui/ShapeFieldSchemas";
 
 /**
  * Adds a handler to add point fields.
@@ -182,11 +181,12 @@ function createInputField(field) {
     });
   }
 
-  if (field.validation && field.validation.event && field.validation.handler) {
-    inputElement.addEventListener(
-      field.validation.event,
-      field.validation.handler,
-    );
+  if (field.validation && Array.isArray(field.validation)) {
+    field.validation.forEach((validation) => {
+      if (validation.event && validation.handler) {
+        inputElement.addEventListener(validation.event, validation.handler);
+      }
+    });
   }
 
   container.appendChild(labelElement);
@@ -197,17 +197,14 @@ function createInputField(field) {
 /**
  * Renders dynamic modal fields based on the selected shape type.
  * @param {HTMLElement} fieldsElement - The container element for the fields.
- * @param {string} shapeType - The type of the shape.
+ * @param {Object} fieldSchemas - The field schemas for different shape types.
+ * @param {string} shapeType - The selected shape type.
  * @returns {void}
  */
-function renderDynamicModalFields(fieldsElement, shapeType) {
+function renderDynamicModalFields(fieldsElement, fieldSchemas, shapeType) {
   fieldsElement.innerHTML = "";
 
-  const fields = ShapeFieldSchemas[shapeType.toUpperCase()];
-  if (!fields) {
-    fieldsElement.innerHTML = "<p>No fields available for this shape type.</p>";
-    return;
-  }
+  const fields = fieldSchemas[shapeType] || [];
 
   fields.forEach((field) => {
     const fieldElement = createInputField(field);

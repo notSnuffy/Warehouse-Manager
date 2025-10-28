@@ -74,11 +74,31 @@ class CreateCommandEventHandler {
   }
 
   /**
+   * Check if a shape is managed by the ShapeManager
+   * @param {Phaser.GameObjects.Shape} shape - The shape to check
+   * @returns {boolean} - True if the shape is managed, false otherwise
+   */
+  #checkIfShapeManaged(shape) {
+    const managedShape = this.#shapeManager.getShapeById(shape.internalId);
+    if (!managedShape) {
+      return false;
+    }
+    if (managedShape !== shape) {
+      return false;
+    }
+    return true;
+  }
+
+  /**
    * Register move events to create MoveShapeCommand instances
    * @returns {void}
    */
   #registerMoveEvents() {
     this.#scene.events.on("shapeMoveStart", (shape) => {
+      if (!this.#checkIfShapeManaged(shape)) {
+        return;
+      }
+
       this.#moveStartData = {
         x: shape.x,
         y: shape.y,
@@ -86,6 +106,10 @@ class CreateCommandEventHandler {
       };
     });
     this.#scene.events.on("shapeMoveEnd", (shape) => {
+      if (!this.#checkIfShapeManaged(shape)) {
+        return;
+      }
+
       if (
         !this.#moveStartData ||
         this.#moveStartData.shapeId !== shape.internalId
@@ -121,12 +145,20 @@ class CreateCommandEventHandler {
    */
   #registerRotateEvents() {
     this.#scene.events.on("shapeRotateStart", (shape) => {
+      if (!this.#checkIfShapeManaged(shape)) {
+        return;
+      }
+
       this.#rotateStartData = {
         rotation: shape.rotation,
         shapeId: shape.internalId,
       };
     });
     this.#scene.events.on("shapeRotateEnd", (shape) => {
+      if (!this.#checkIfShapeManaged(shape)) {
+        return;
+      }
+
       if (
         !this.#rotateStartData ||
         this.#rotateStartData.shapeId !== shape.internalId
@@ -158,6 +190,10 @@ class CreateCommandEventHandler {
    */
   #registerResizeEvents() {
     this.#scene.events.on("shapeResizeStart", (shape) => {
+      if (!this.#checkIfShapeManaged(shape)) {
+        return;
+      }
+
       this.#resizeStartData = {
         x: shape.x,
         y: shape.y,
@@ -167,6 +203,10 @@ class CreateCommandEventHandler {
       };
     });
     this.#scene.events.on("shapeResizeEnd", (shape) => {
+      if (!this.#checkIfShapeManaged(shape)) {
+        return;
+      }
+
       if (
         !this.#resizeStartData ||
         this.#resizeStartData.shapeId !== shape.internalId

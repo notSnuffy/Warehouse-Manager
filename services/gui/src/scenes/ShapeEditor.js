@@ -18,6 +18,7 @@ import ShapeListUserInterface from "@ui/ShapeListUserInterface";
 import ShapeInstructionsHandler from "@instructions/ShapeInstructionsHandler";
 import ShapeSaveButton from "@ui/ShapeSaveButton";
 import InstructionCommands from "@instructions/InstructionCommands";
+import { ShapeFieldSchemas } from "@ui/ShapeFieldSchemas";
 
 /**
  * Default shapes
@@ -466,6 +467,7 @@ class ShapeEditor extends Phaser.Scene {
       this.#shapeManager,
       "newShapeModal",
       ["move", "select"],
+      ShapeFieldSchemas,
     );
     this.#UIElements.undoRedoUI = new UndoRedoUserInterface(
       this,
