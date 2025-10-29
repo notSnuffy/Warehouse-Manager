@@ -75,6 +75,7 @@ class AddShapeCommand extends BaseCommand {
    * @returns {Promise<void>}
    */
   async execute() {
+    // We require to keep the same ID for other commands (like MoveCommand) to work properly
     if (this.#snapshot) {
       await this.#shapeManager.addShapeFromSnapshot(
         this.#snapshot,

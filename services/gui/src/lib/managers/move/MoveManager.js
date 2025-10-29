@@ -95,9 +95,6 @@ class MoveManager extends Manager {
       this.#currentlyMoving = shape;
       this.scene.children.bringToTop(shape);
       this.#hasMoved = false;
-      if (shape.label) {
-        shape.label.setToTop();
-      }
       //this.#outlineManager.create(shape, rectangleDottedOutline);
       this.scene.events.emit("shapeMoveStart", shape);
     });

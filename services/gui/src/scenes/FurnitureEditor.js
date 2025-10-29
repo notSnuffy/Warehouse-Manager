@@ -11,6 +11,7 @@ import OutlineManager from "@managers/outlines/OutlineManager";
 import ZoomManager from "@managers/ZoomManager";
 import CreateCommandEventHandler from "@managers/CreateCommandEventHandler";
 import ShapeInstructionsHandler from "@instructions/ShapeInstructionsHandler";
+import ShapeLabler from "@managers/ShapeLabler";
 import * as Shapes from "@shapes";
 import InstructionCommands from "@instructions/InstructionCommands.js";
 import ShapeModalUserInterface from "@ui/ShapeModalUserInterface";
@@ -108,6 +109,13 @@ class FurnitureEditor extends Phaser.Scene {
    * @default null
    */
   #zoneInstructionHandler = null;
+
+  /**
+   * Shape labler
+   * @type {ShapeLabler}
+   * @default null
+   */
+  #labler = null;
 
   /**
    * Object containing references to UI elements
@@ -284,6 +292,7 @@ class FurnitureEditor extends Phaser.Scene {
       },
     );
     this.#scrollbarManager.create();
+    this.#labler = new ShapeLabler(this);
 
     this.#shapeManager.registerShape(
       "rectangle",
@@ -462,6 +471,18 @@ class FurnitureEditor extends Phaser.Scene {
         rectangle.setRotation(params.rotation);
         rectangle.metadata = {};
         rectangle.metadata.zoneName = params.zoneName;
+
+        if (params.zoneName) {
+          this.#labler.addLabel(
+            rectangle,
+            params.zoneName,
+            params.labelColor || "#ffffff",
+            (shape, newLabelText) => {
+              shape.metadata.zoneName = newLabelText;
+            },
+          );
+        }
+
         return rectangle;
       },
       { command: InstructionCommands.CREATE_RECTANGLE },
@@ -480,6 +501,17 @@ class FurnitureEditor extends Phaser.Scene {
         ellipse.setRotation(params.rotation);
         ellipse.metadata = {};
         ellipse.metadata.zoneName = params.zoneName;
+
+        if (params.zoneName) {
+          this.#labler.addLabel(
+            ellipse,
+            params.zoneName,
+            params.labelColor || "#ffffff",
+            (shape, newLabelText) => {
+              shape.metadata.zoneName = newLabelText;
+            },
+          );
+        }
         return ellipse;
       },
       { command: InstructionCommands.CREATE_ELLIPSE },
@@ -505,6 +537,17 @@ class FurnitureEditor extends Phaser.Scene {
 
         arc.metadata = {};
         arc.metadata.zoneName = params.zoneName;
+
+        if (params.zoneName) {
+          this.#labler.addLabel(
+            arc,
+            params.zoneName,
+            params.labelColor || "#ffffff",
+            (shape, newLabelText) => {
+              shape.metadata.zoneName = newLabelText;
+            },
+          );
+        }
         return arc;
       },
       {
@@ -533,6 +576,17 @@ class FurnitureEditor extends Phaser.Scene {
 
         polygon.metadata = {};
         polygon.metadata.zoneName = params.zoneName;
+
+        if (params.zoneName) {
+          this.#labler.addLabel(
+            polygon,
+            params.zoneName,
+            params.labelColor || "#fffffff",
+            (shape, newLabelText) => {
+              shape.metadata.zoneName = newLabelText;
+            },
+          );
+        }
         return polygon;
       },
       {
@@ -566,6 +620,7 @@ class FurnitureEditor extends Phaser.Scene {
         );
         container.setRotation(params.rotation);
         container.setSize(params.width, params.height);
+
         return container;
       },
       { command: InstructionCommands.BEGIN_CONTAINER, priority: 1 },
@@ -612,9 +667,22 @@ class FurnitureEditor extends Phaser.Scene {
           reconstructedShape.metadata.id = params.templateId;
           reconstructedShape.metadata.version = shapeData.shape.version;
           reconstructedShape.metadata.zoneName = params.zoneName;
+          reconstructedShape.metadata.labelColor = params.labelColor;
           reconstructedShape.setPosition(params.x, params.y);
           reconstructedShape.setDisplaySize(params.width, params.height);
           reconstructedShape.setRotation(params.rotation);
+
+          if (params.zoneName) {
+            this.#labler.addLabel(
+              reconstructedShape,
+              params.zoneName,
+              params.labelColor || "#ffffff",
+              (shape, newLabelText) => {
+                shape.metadata.zoneName = newLabelText;
+              },
+            );
+          }
+          console.log(this.#labler);
           return reconstructedShape;
         } catch (error) {
           console.error("Error fetching shape template:", error);
