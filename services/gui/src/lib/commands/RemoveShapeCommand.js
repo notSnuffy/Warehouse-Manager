@@ -30,6 +30,14 @@ class RemoveShapeCommand extends BaseCommand {
   #emitEvent;
 
   /**
+   * Sets whether to emit events for this command.
+   * @param {boolean} value - True to emit events, false otherwise.
+   */
+  set emitEvent(value) {
+    this.#emitEvent = value;
+  }
+
+  /**
    * Creates an instance of RemoveShapeCommand.
    * @param {Object} shapeManager - The shape manager to manage shapes in the scene.
    * @param {string} shapeId - The ID of the shape to remove.

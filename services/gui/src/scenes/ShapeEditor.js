@@ -465,6 +465,7 @@ class ShapeEditor extends Phaser.Scene {
 
     this.#UIElements.shapeModal = new ShapeModalUserInterface(
       this.#shapeManager,
+      this.#undoRedoManager,
       "newShapeModal",
       ["move", "select"],
       ShapeFieldSchemas,

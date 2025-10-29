@@ -13,12 +13,6 @@ class ShapeManager {
   #scene;
 
   /**
-   * The undo/redo manager for managing history.
-   * @type {UndoRedoManager}
-   */
-  #undoRedoManager;
-
-  /**
    * The factory to create shapes.
    * @type {ShapeFactory}
    * @private
@@ -43,16 +37,29 @@ class ShapeManager {
   /**
    * Creates an instance of ShapeManager.
    * @param {Phaser.Scene} scene - The scene to which this manager belongs.
-   * @param {Object} undoRedoManager - The undo/redo manager for managing history.
    * @param {Object} managers - Object where key represents manager ID and value represents the manager instance. Managers to register new shapes with.
    */
-  constructor(scene, undoRedoManager, managers) {
+  constructor(scene, managers, name) {
     this.#scene = scene;
-    this.#undoRedoManager = undoRedoManager;
     this.#factory = new ShapeFactory(this.#scene, this.#registry, managers);
+    this.name = name;
 
-    this.#scene.events.on("shapeDeleteRequested", (shape) => {
-      this.removeShapeByIdHistoryManaged(shape.internalId, true);
+    this.#scene.events.on("shapeDeleteRequested", async (shape) => {
+      const id = shape.internalId;
+      if (!this.getShapeById(id)) {
+        return;
+      }
+
+      const { result, command } = await this.removeShapeByIdWithCommand(
+        id,
+        false,
+      );
+      if (!result) {
+        return;
+      }
+      command.emitEvent = true;
+      console.log(this.name, " emitted shapeRemoved for id:", id);
+      this.#scene.events.emit("shapeRemoved", id, command, this);
     });
 
     this.#scene.events.on("undoPerformed", () => {
@@ -184,7 +191,7 @@ class ShapeManager {
   }
 
   /**
-   * Adds a shape to the manager using the factory and records the action in history.
+   * Adds a shape to the manager using a command for undo/redo support.
    * @param {string} type - The type of shape to add.
    * @param {Object} params - The parameters to pass to the shape factory.
    * @param {Object} [additionalData={}] - Additional data to attach to the shape.
@@ -194,9 +201,9 @@ class ShapeManager {
    * @param {String[]} [additionalData.managers] - Optional list of manager IDs the shape belongs to.
    * @param {boolean} [emitEvent=true] - Whether to emit an event after adding the shape.
    * @throws {Error} If the shape type is not registered.
-   * @returns {Promise<Phaser.GameObjects.Shape>} The added shape.
+   * @returns {Promise<{shape: Phaser.GameObjects.Shape, command: AddShapeCommand}>} The added shape and the command used to add it.
    */
-  async addShapeHistoryManaged(
+  async addShapeWithCommand(
     type,
     params,
     additionalData = {},
@@ -210,9 +217,8 @@ class ShapeManager {
       emitEvent,
     );
     const shape = await command.execute();
-    this.#undoRedoManager.pushCommand(command);
-    console.log(shape);
-    return shape;
+    console.log("Added shape with command:", shape);
+    return { shape, command };
   }
 
   /**
@@ -221,6 +227,7 @@ class ShapeManager {
    * @returns {Phaser.GameObjects.Shape|null} The shape if found, otherwise null.
    */
   getShapeById(id) {
+    console.log("Getting shape by ID:", id, this.#shapes);
     return this.#shapes.get(id) || null;
   }
 
@@ -248,22 +255,27 @@ class ShapeManager {
     this.#shapes.delete(id);
 
     if (emitEvent) {
+      console.log(
+        this.name,
+        " emitted shapeRemoved for id:",
+        id,
+        " from removeShapeById",
+      );
       this.#scene.events.emit("shapeRemoved", id);
     }
     return true;
   }
 
   /**
-   * Removes a shape by its ID and records the action in history.
+   * Removes a shape by its ID using a command for undo/redo support.
    * @param {string} id - The ID of the shape to remove.
    * @param {boolean} [emitEvent=true] - Whether to emit an event after removing the shape.
-   * @returns {Promise<boolean>} True if the shape was removed, otherwise false.
+   * @returns {Promise<{result: boolean, command: RemoveShapeCommand}>} The result of the removal and the command used to remove it.
    */
-  async removeShapeByIdHistoryManaged(id, emitEvent = true) {
+  async removeShapeByIdWithCommand(id, emitEvent = true) {
     const command = new RemoveShapeCommand(this, id, emitEvent);
     const result = await command.execute();
-    this.#undoRedoManager.pushCommand(command);
-    return result;
+    return { result, command };
   }
 
   /**

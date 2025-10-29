@@ -18,7 +18,7 @@ class CreateCommandEventHandler {
    * The UndoRedoManager instance.
    * @type {UndoRedoManager}
    */
-  #undoRedoManager;
+  undoRedoManager;
 
   /**
    * The ShapeManager instance.
@@ -65,12 +65,13 @@ class CreateCommandEventHandler {
    */
   constructor(scene, undoRedoManager, shapeManager) {
     this.#scene = scene;
-    this.#undoRedoManager = undoRedoManager;
+    this.undoRedoManager = undoRedoManager;
     this.#shapeManager = shapeManager;
 
     this.#registerMoveEvents();
     this.#registerRotateEvents();
     this.#registerResizeEvents();
+    this.#catchShapeRemoved();
   }
 
   /**
@@ -89,6 +90,19 @@ class CreateCommandEventHandler {
     return true;
   }
 
+  /**
+   * Handle a move command by pushing it to the UndoRedoManager
+   * Additionally, this method can be overridden to provide custom behavior.
+   * @param {MoveShapeCommand} command - The move command to handle
+   * @param {Phaser.GameObjects.Shape} _shape - The shape being moved
+   * @param {Object} _oldPosition - The old position of the shape
+   * @param {Object} _newPosition - The new position of the shape
+   * @returns {void}
+   * @virtual
+   */
+  handleMoveCommand(command, _shape, _oldPosition, _newPosition) {
+    this.undoRedoManager.pushCommand(command);
+  }
   /**
    * Register move events to create MoveShapeCommand instances
    * @returns {void}
@@ -133,10 +147,30 @@ class CreateCommandEventHandler {
         { x: this.#moveStartData.x, y: this.#moveStartData.y },
         moveEndPosition,
       );
-      this.#undoRedoManager.pushCommand(moveCommand);
+
+      this.handleMoveCommand(
+        moveCommand,
+        shape,
+        { x: this.#moveStartData.x, y: this.#moveStartData.y },
+        moveEndPosition,
+      );
 
       this.#moveStartData = null;
     });
+  }
+
+  /**
+   * Handle a rotate command by pushing it to the UndoRedoManager
+   * Additionally, this method can be overridden to provide custom behavior.
+   * @param {RotateShapeCommand} command - The rotate command to handle
+   * @param {Phaser.GameObjects.Shape} _shape - The shape being rotated
+   * @param {number} _oldRotation - The old rotation of the shape
+   * @param {number} _newRotation - The new rotation of the shape
+   * @returns {void}
+   * @virtual
+   */
+  handleRotateCommand(command, _shape, _oldRotation, _newRotation) {
+    this.undoRedoManager.pushCommand(command);
   }
 
   /**
@@ -178,10 +212,30 @@ class CreateCommandEventHandler {
         this.#rotateStartData.rotation,
         rotateEndRotation,
       );
-      this.#undoRedoManager.pushCommand(rotateCommand);
+
+      this.handleRotateCommand(
+        rotateCommand,
+        shape,
+        this.#rotateStartData.rotation,
+        rotateEndRotation,
+      );
 
       this.#rotateStartData = null;
     });
+  }
+
+  /**
+   * Handle a resize command by pushing it to the UndoRedoManager
+   * Additionally, this method can be overridden to provide custom behavior.
+   * @param {ResizeShapeCommand} command - The resize command to handle
+   * @param {Phaser.GameObjects.Shape} _shape - The shape being resized
+   * @param {Object} _oldTransform - The old transform of the shape
+   * @param {Object} _newTransform - The new transform of the shape
+   * @returns {void}
+   * @virtual
+   */
+  handleResizeCommand(command, _shape, _oldTransform, _newTransform) {
+    this.undoRedoManager.pushCommand(command);
   }
 
   /**
@@ -242,9 +296,46 @@ class CreateCommandEventHandler {
         },
         resizeEndTransform,
       );
-      this.#undoRedoManager.pushCommand(resizeCommand);
+
+      this.handleResizeCommand(
+        resizeCommand,
+        shape,
+        {
+          x: this.#resizeStartData.x,
+          y: this.#resizeStartData.y,
+          width: this.#resizeStartData.width,
+          height: this.#resizeStartData.height,
+        },
+        resizeEndTransform,
+      );
 
       this.#resizeStartData = null;
+    });
+  }
+
+  /**
+   * Handle a shape removed command by pushing it to the UndoRedoManager
+   * Additionally, this method can be overridden to provide custom behavior.
+   *   * @param {Object} command - The command to handle
+   * @param {string} _shapeId - The ID of the shape being removed
+   * @returns {void}
+   * @virtual
+   */
+  handleShapeRemoved(command, _shapeId) {
+    this.undoRedoManager.pushCommand(command);
+  }
+
+  #catchShapeRemoved() {
+    this.#scene.events.on("shapeRemoved", (_shapeId, command, manager) => {
+      console.log(manager, this.#shapeManager);
+      if (manager !== this.#shapeManager) {
+        return;
+      }
+      if (!command) {
+        return;
+      }
+
+      this.handleShapeRemoved(command, _shapeId);
     });
   }
 }

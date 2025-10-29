@@ -8,7 +8,13 @@ class ShapeModalUserInterface {
    * The shape manager instance
    * @type {ShapeManager}
    */
-  #shapeManager;
+  shapeManager;
+
+  /**
+   * The UndoRedoManager instance
+   * @type {UndoRedoManager}
+   */
+  undoRedoManager;
 
   /**
    * The current shape type being added or edited
@@ -36,7 +42,7 @@ class ShapeModalUserInterface {
    * @type {Array}
    * @default []
    */
-  #managersToRegisterWith = [];
+  managersToRegisterWith = [];
 
   /**
    * The shape fields schemas
@@ -48,21 +54,24 @@ class ShapeModalUserInterface {
   /**
    * Creates an instance of ShapeModalUserInterface.
    * @param {ShapeManager} shapeManager - The shape manager instance
+   * @param {UndoRedoManager} undoRedoManager - The UndoRedoManager instance
    * @param {string} modalId - The ID of the modal element
    * @param {Array} managersToRegisterWith - The list of managers to register new shapes with
    * @param {Object} shapeFieldsSchemas - The shape fields schemas
    */
   constructor(
     shapeManager,
+    undoRedoManager,
     modalId,
     managersToRegisterWith,
     shapeFieldsSchemas,
   ) {
-    this.#shapeManager = shapeManager;
+    this.shapeManager = shapeManager;
+    this.undoRedoManager = undoRedoManager;
     this.#modal = document.getElementById(modalId);
     const confirmButton = this.#modal.querySelector("#confirmButton");
     confirmButton.addEventListener("click", () => this.onModalConfirmation());
-    this.#managersToRegisterWith = managersToRegisterWith;
+    this.managersToRegisterWith = managersToRegisterWith;
     this.#shapeFieldsSchemas = shapeFieldsSchemas;
   }
 
@@ -153,21 +162,33 @@ class ShapeModalUserInterface {
     }
 
     if (this.#currentShapeType) {
-      await this.#shapeManager.addShapeHistoryManaged(
-        this.#currentShapeType,
-        params,
-        {
-          interactive:
-            DefaultShapeInteractiveConfig[this.#currentShapeType.toUpperCase()],
-          managers: this.#managersToRegisterWith,
-        },
-        true,
-      );
+      await this.handleAddShape(this.#currentShapeType, params);
     }
 
     this.#currentShapeType = null;
     const bootstrapModal = Modal.getInstance(this.#modal);
     bootstrapModal.hide();
+  }
+
+  /**
+   * Handles adding a shape to the scene.
+   * Intended to be overridden by subclasses for custom behavior.
+   * @param {string} shapeType - The type of shape to add.
+   * @param {Object} params - The parameters for creating the shape.
+   * @returns {Promise<void>}
+   * @virtual
+   */
+  async handleAddShape(shapeType, params) {
+    const result = await this.shapeManager.addShapeWithCommand(
+      shapeType,
+      params,
+      {
+        interactive: DefaultShapeInteractiveConfig[shapeType.toUpperCase()],
+        managers: this.managersToRegisterWith,
+      },
+      true,
+    );
+    this.undoRedoManager.pushCommand(result.command);
   }
 }
 

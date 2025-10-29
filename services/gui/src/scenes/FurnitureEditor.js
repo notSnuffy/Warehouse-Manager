@@ -10,11 +10,13 @@ import UndoRedoManager from "@managers/UndoRedoManager";
 import OutlineManager from "@managers/outlines/OutlineManager";
 import ZoomManager from "@managers/ZoomManager";
 import CreateCommandEventHandler from "@managers/CreateCommandEventHandler";
+import LabeledCreateCommandEventHandler from "@managers/LabeledCreateCommandEventHandler";
 import ShapeInstructionsHandler from "@instructions/ShapeInstructionsHandler";
-import ShapeLabler from "@managers/ShapeLabler";
+import ShapeLabeler from "@managers/ShapeLabeler";
 import * as Shapes from "@shapes";
 import InstructionCommands from "@instructions/InstructionCommands.js";
 import ShapeModalUserInterface from "@ui/ShapeModalUserInterface";
+import LabeledShapeModalUserInterface from "@ui/LabeledShapeModalUserInterface";
 import UndoRedoUserInterface from "@ui/UndoRedoUserInterface";
 import ShapeListUserInterface from "@ui/ShapeListUserInterface";
 import { ShapeFieldSchemas } from "@ui/ShapeFieldSchemas";
@@ -111,11 +113,11 @@ class FurnitureEditor extends Phaser.Scene {
   #zoneInstructionHandler = null;
 
   /**
-   * Shape labler
-   * @type {ShapeLabler}
+   * Shape labeler
+   * @type {ShapeLabeler}
    * @default null
    */
-  #labler = null;
+  #labeler = null;
 
   /**
    * Object containing references to UI elements
@@ -217,14 +219,25 @@ class FurnitureEditor extends Phaser.Scene {
     this.#selectManager = new SelectShapeManager(this);
     this.#moveManager = new MoveManager(this, new OutlineManager(this));
     this.#undoRedoManager = new UndoRedoManager(this, 100);
-    this.#shapeManager = new ShapeManager(this, this.#undoRedoManager, {
-      move: this.#moveManager,
-      select: this.#selectManager,
-    });
-    this.#zoneManager = new ShapeManager(this, this.#undoRedoManager, {
-      move: this.#moveManager,
-      select: this.#selectManager,
-    });
+    this.#shapeManager = new ShapeManager(
+      this,
+      this.#undoRedoManager,
+      {
+        move: this.#moveManager,
+        select: this.#selectManager,
+      },
+      "shapeManager",
+    );
+    this.#zoneManager = new ShapeManager(
+      this,
+      this.#undoRedoManager,
+      {
+        move: this.#moveManager,
+        select: this.#selectManager,
+      },
+      "zoneManager",
+    );
+    this.#labeler = new ShapeLabeler(this, this.#zoneManager);
 
     new CreateCommandEventHandler(
       this,
@@ -232,10 +245,11 @@ class FurnitureEditor extends Phaser.Scene {
       this.#shapeManager,
     );
 
-    new CreateCommandEventHandler(
+    new LabeledCreateCommandEventHandler(
       this,
       this.#undoRedoManager,
       this.#zoneManager,
+      this.#labeler,
     );
 
     this.#shapeInstructionHandler = new ShapeInstructionsHandler(
@@ -292,7 +306,6 @@ class FurnitureEditor extends Phaser.Scene {
       },
     );
     this.#scrollbarManager.create();
-    this.#labler = new ShapeLabler(this);
 
     this.#shapeManager.registerShape(
       "rectangle",
@@ -472,17 +485,6 @@ class FurnitureEditor extends Phaser.Scene {
         rectangle.metadata = {};
         rectangle.metadata.zoneName = params.zoneName;
 
-        if (params.zoneName) {
-          this.#labler.addLabel(
-            rectangle,
-            params.zoneName,
-            params.labelColor || "#ffffff",
-            (shape, newLabelText) => {
-              shape.metadata.zoneName = newLabelText;
-            },
-          );
-        }
-
         return rectangle;
       },
       { command: InstructionCommands.CREATE_RECTANGLE },
@@ -502,16 +504,6 @@ class FurnitureEditor extends Phaser.Scene {
         ellipse.metadata = {};
         ellipse.metadata.zoneName = params.zoneName;
 
-        if (params.zoneName) {
-          this.#labler.addLabel(
-            ellipse,
-            params.zoneName,
-            params.labelColor || "#ffffff",
-            (shape, newLabelText) => {
-              shape.metadata.zoneName = newLabelText;
-            },
-          );
-        }
         return ellipse;
       },
       { command: InstructionCommands.CREATE_ELLIPSE },
@@ -538,16 +530,6 @@ class FurnitureEditor extends Phaser.Scene {
         arc.metadata = {};
         arc.metadata.zoneName = params.zoneName;
 
-        if (params.zoneName) {
-          this.#labler.addLabel(
-            arc,
-            params.zoneName,
-            params.labelColor || "#ffffff",
-            (shape, newLabelText) => {
-              shape.metadata.zoneName = newLabelText;
-            },
-          );
-        }
         return arc;
       },
       {
@@ -577,16 +559,6 @@ class FurnitureEditor extends Phaser.Scene {
         polygon.metadata = {};
         polygon.metadata.zoneName = params.zoneName;
 
-        if (params.zoneName) {
-          this.#labler.addLabel(
-            polygon,
-            params.zoneName,
-            params.labelColor || "#fffffff",
-            (shape, newLabelText) => {
-              shape.metadata.zoneName = newLabelText;
-            },
-          );
-        }
         return polygon;
       },
       {
@@ -667,22 +639,10 @@ class FurnitureEditor extends Phaser.Scene {
           reconstructedShape.metadata.id = params.templateId;
           reconstructedShape.metadata.version = shapeData.shape.version;
           reconstructedShape.metadata.zoneName = params.zoneName;
-          reconstructedShape.metadata.labelColor = params.labelColor;
           reconstructedShape.setPosition(params.x, params.y);
           reconstructedShape.setDisplaySize(params.width, params.height);
           reconstructedShape.setRotation(params.rotation);
 
-          if (params.zoneName) {
-            this.#labler.addLabel(
-              reconstructedShape,
-              params.zoneName,
-              params.labelColor || "#ffffff",
-              (shape, newLabelText) => {
-                shape.metadata.zoneName = newLabelText;
-              },
-            );
-          }
-          console.log(this.#labler);
           return reconstructedShape;
         } catch (error) {
           console.error("Error fetching shape template:", error);
@@ -693,6 +653,7 @@ class FurnitureEditor extends Phaser.Scene {
 
     this.#UIElements.shapeModal = new ShapeModalUserInterface(
       this.#shapeManager,
+      this.#undoRedoManager,
       "newShapeModal",
       ["move", "select"],
       ShapeFieldSchemas,
@@ -728,15 +689,17 @@ class FurnitureEditor extends Phaser.Scene {
       label: "Label Color",
       attributes: {
         required: true,
-        value: "#000000",
+        value: "#ffffff",
         title: "Choose your label color",
         name: "labelColor",
       },
       classes: ["form-control-color"],
     };
 
-    this.#UIElements.zoneModal = new ShapeModalUserInterface(
+    this.#UIElements.zoneModal = new LabeledShapeModalUserInterface(
       this.#zoneManager,
+      this.#labeler,
+      this.#undoRedoManager,
       "newZoneModal",
       ["move", "select"],
       {

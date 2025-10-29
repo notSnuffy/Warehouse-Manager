@@ -72,7 +72,7 @@ class AddShapeCommand extends BaseCommand {
 
   /**
    * Executes the command to add the shape to the scene.
-   * @returns {Promise<void>}
+   * @returns {Promise<Phaser.GameObjects.Shape>}
    */
   async execute() {
     // We require to keep the same ID for other commands (like MoveCommand) to work properly
