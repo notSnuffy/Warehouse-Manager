@@ -8,21 +8,18 @@ class ShapeManager {
   /**
    * The scene to which this manager belongs.
    * @type {Phaser.Scene}
-   * @private
    */
   #scene;
 
   /**
    * The factory to create shapes.
    * @type {ShapeFactory}
-   * @private
    */
   #factory = null;
 
   /**
    * A map to store shapes by their IDs.
    * @type {Map<string, Phaser.GameObjects.Shape>}
-   * @private
    */
   #shapes = new Map();
 
@@ -30,7 +27,6 @@ class ShapeManager {
    * A registry for shapes registered in the manager.
    * Contains a factory function and additional metadata for each shape type.
    * @type {Map<string, { factory: Function, metadata: Object }>}
-   * @private
    */
   #registry = new Map();
 
@@ -39,10 +35,9 @@ class ShapeManager {
    * @param {Phaser.Scene} scene - The scene to which this manager belongs.
    * @param {Object} managers - Object where key represents manager ID and value represents the manager instance. Managers to register new shapes with.
    */
-  constructor(scene, managers, name) {
+  constructor(scene, managers) {
     this.#scene = scene;
     this.#factory = new ShapeFactory(this.#scene, this.#registry, managers);
-    this.name = name;
 
     this.#scene.events.on("shapeDeleteRequested", async (shape) => {
       const id = shape.internalId;
@@ -58,7 +53,6 @@ class ShapeManager {
         return;
       }
       command.emitEvent = true;
-      console.log(this.name, " emitted shapeRemoved for id:", id);
       this.#scene.events.emit("shapeRemoved", id, command, this);
     });
 
@@ -255,12 +249,6 @@ class ShapeManager {
     this.#shapes.delete(id);
 
     if (emitEvent) {
-      console.log(
-        this.name,
-        " emitted shapeRemoved for id:",
-        id,
-        " from removeShapeById",
-      );
       this.#scene.events.emit("shapeRemoved", id);
     }
     return true;

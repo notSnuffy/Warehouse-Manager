@@ -62,7 +62,6 @@ class LabeledShapeModalUserInterface extends ShapeModalUserInterface {
 
     const compositeCommand = new CompositeCommand();
     compositeCommand.addCommand(command);
-    console.log("shape added:", shape);
     const addLabelCommand = new AddLabelCommand(
       this.#labeler,
       shape.internalId,

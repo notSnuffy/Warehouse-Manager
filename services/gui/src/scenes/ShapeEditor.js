@@ -201,7 +201,7 @@ class ShapeEditor extends Phaser.Scene {
     this.#selectManager = new SelectShapeManager(this);
     this.#moveManager = new MoveManager(this, new OutlineManager(this));
     this.#undoRedoManager = new UndoRedoManager(this, 100);
-    this.#shapeManager = new ShapeManager(this, this.#undoRedoManager, {
+    this.#shapeManager = new ShapeManager(this, {
       move: this.#moveManager,
       select: this.#selectManager,
     });

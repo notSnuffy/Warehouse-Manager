@@ -20,6 +20,7 @@ import LabeledShapeModalUserInterface from "@ui/LabeledShapeModalUserInterface";
 import UndoRedoUserInterface from "@ui/UndoRedoUserInterface";
 import ShapeListUserInterface from "@ui/ShapeListUserInterface";
 import { ShapeFieldSchemas } from "@ui/ShapeFieldSchemas";
+import { DefaultShapeInteractiveConfig } from "@utils/shapes";
 
 /**
  * Represents the editor scene
@@ -219,24 +220,14 @@ class FurnitureEditor extends Phaser.Scene {
     this.#selectManager = new SelectShapeManager(this);
     this.#moveManager = new MoveManager(this, new OutlineManager(this));
     this.#undoRedoManager = new UndoRedoManager(this, 100);
-    this.#shapeManager = new ShapeManager(
-      this,
-      this.#undoRedoManager,
-      {
-        move: this.#moveManager,
-        select: this.#selectManager,
-      },
-      "shapeManager",
-    );
-    this.#zoneManager = new ShapeManager(
-      this,
-      this.#undoRedoManager,
-      {
-        move: this.#moveManager,
-        select: this.#selectManager,
-      },
-      "zoneManager",
-    );
+    this.#shapeManager = new ShapeManager(this, {
+      move: this.#moveManager,
+      select: this.#selectManager,
+    });
+    this.#zoneManager = new ShapeManager(this, {
+      move: this.#moveManager,
+      select: this.#selectManager,
+    });
     this.#labeler = new ShapeLabeler(this, this.#zoneManager);
 
     new CreateCommandEventHandler(
@@ -754,7 +745,66 @@ class FurnitureEditor extends Phaser.Scene {
     const urlParams = new URLSearchParams(window.location.search);
     const furnitureId = urlParams.get("furnitureId");
     if (furnitureId) {
-      await this.#loadFurniture(furnitureId);
+      const { shapeInstructions, zoneParameters } =
+        await this.#loadFurniture(furnitureId);
+
+      const configureInteractive = (snapshots) => {
+        snapshots.forEach((snapshot) => {
+          const type = snapshot.metadata.type;
+
+          const interactiveConfig = DefaultShapeInteractiveConfig[
+            type.toUpperCase()
+          ] || {
+            draggable: true,
+          };
+
+          const managers = ["move", "select"];
+
+          snapshot.additionalData = {
+            interactive: interactiveConfig,
+            managers: managers,
+          };
+        });
+      };
+
+      if (shapeInstructions && shapeInstructions.length > 0) {
+        shapeInstructions.forEach(async (instructions) => {
+          // Singular shape expected, even though method returns array for generality
+          const shapeSnapshot =
+            await this.#shapeInstructionHandler.convertFromInstructions(
+              instructions,
+              0xffffff,
+            )[0];
+          configureInteractive(shapeSnapshot);
+          this.#shapeManager.addShapeFromSnapshot(shapeSnapshot, true);
+        });
+      }
+
+      if (zoneParameters && zoneParameters.length > 0) {
+        zoneParameters.forEach(async (zoneParameter) => {
+          const { instructions, name } = zoneParameter;
+          // Singular shape expected, even though method returns array for generality
+          const zoneSnapshot =
+            await this.#zoneInstructionHandler.convertFromInstructions(
+              instructions,
+              0x00ff00,
+            )[0];
+          zoneSnapshot.metadata.zoneName = name;
+          configureInteractive(zoneSnapshot);
+          const zone = await this.#zoneManager.addShapeFromSnapshot(
+            zoneSnapshot,
+            true,
+          );
+          this.#labeler.addLabel(
+            zone.internalId,
+            name,
+            "#ffffff",
+            (shape, newLabelText) => {
+              shape.metadata.zoneName = newLabelText;
+            },
+          );
+        });
+      }
     }
   }
 
