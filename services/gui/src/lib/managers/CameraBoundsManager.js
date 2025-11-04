@@ -115,8 +115,8 @@ class CameraBoundsManager {
     });
     this.#scene.events.on(
       "shapeRemoved",
-      (shapeId) => {
-        this.#removeFromLists(shapeId);
+      (shape) => {
+        this.#removeFromLists(shape);
         //this.#adjustCameraBounds(0, true);
       },
       this,
@@ -125,7 +125,7 @@ class CameraBoundsManager {
 
   /**
    * Handles shape-related events and updates camera bounds
-   *  @param {Object} shape - The shape involved in the event
+   *  @param {Phaser.GameObjects.Shape} shape - The shape involved in the event
    *  @param {Object} config - Configuration for handling the event
    *  @param {number} [config.extraPadding=0] - Extra padding to add to the bounds
    *  @param {boolean} [config.allowShrink=false] - Whether to allow shrinking the bounds
@@ -229,22 +229,22 @@ class CameraBoundsManager {
       const points = Object.values(getShapePoints(shape));
       return points;
     });
-    this.#minXSortedList.insert(shape.internalId, boundingBox.left);
-    this.#minYSortedList.insert(shape.internalId, boundingBox.top);
-    this.#maxXSortedList.insert(shape.internalId, boundingBox.right);
-    this.#maxYSortedList.insert(shape.internalId, boundingBox.bottom);
+    this.#minXSortedList.insert(shape, boundingBox.left);
+    this.#minYSortedList.insert(shape, boundingBox.top);
+    this.#maxXSortedList.insert(shape, boundingBox.right);
+    this.#maxYSortedList.insert(shape, boundingBox.bottom);
   }
 
   /**
    * Removes the shape's bounding box values from the sorted lists
-   * @param {string} shapeId - The ID of the shape to remove from the lists
+   * @param {Phaser.GameObjects.Shape} shape - The shape to remove from the lists
    * @returns {void}
    */
-  #removeFromLists(shapeId) {
-    this.#minXSortedList.remove(shapeId);
-    this.#minYSortedList.remove(shapeId);
-    this.#maxXSortedList.remove(shapeId);
-    this.#maxYSortedList.remove(shapeId);
+  #removeFromLists(shape) {
+    this.#minXSortedList.remove(shape);
+    this.#minYSortedList.remove(shape);
+    this.#maxXSortedList.remove(shape);
+    this.#maxYSortedList.remove(shape);
   }
 }
 

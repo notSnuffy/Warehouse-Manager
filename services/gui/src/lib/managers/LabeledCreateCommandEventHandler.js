@@ -45,7 +45,7 @@ class LabeledCreateCommandEventHandler extends CreateCommandEventHandler {
 
     const labelCommand = new MoveLabelCommand(
       this.#shapeLabeler,
-      shape.internalId,
+      shape,
       oldPosition,
       newPosition,
     );
@@ -75,7 +75,7 @@ class LabeledCreateCommandEventHandler extends CreateCommandEventHandler {
 
     const labelCommand = new MoveLabelCommand(
       this.#shapeLabeler,
-      shape.internalId,
+      shape,
       { x: oldDimensions.x, y: oldDimensions.y },
       { x: newDimensions.x, y: newDimensions.y },
     );
@@ -86,12 +86,12 @@ class LabeledCreateCommandEventHandler extends CreateCommandEventHandler {
   /**
    * Handles shape removal by adding a RemoveLabelCommand to the composite command.
    * @param {RemoveShapeCommand} command - The original remove command
-   * @param {string} shapeId - The ID of the shape being removed
+   * @param {Phaser.GameObjects.Shape} shape - The shape being removed
    * @return {void}
    */
-  handleShapeRemoved(command, shapeId) {
+  handleShapeRemoved(command, shape) {
     const compositeCommand = new CompositeCommand();
-    const labelCommand = new RemoveLabelCommand(this.#shapeLabeler, shapeId);
+    const labelCommand = new RemoveLabelCommand(this.#shapeLabeler, shape);
     labelCommand.execute();
     compositeCommand.addCommand(labelCommand);
     compositeCommand.addCommand(command);

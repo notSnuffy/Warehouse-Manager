@@ -6,16 +6,10 @@ import BaseCommand from "@commands/BaseCommand";
  */
 class MoveShapeCommand extends BaseCommand {
   /**
-   * The shape manager to manage shapes in the scene.
-   * @type {ShapeManager}
+   * The shape to be moved.
+   * @type {Phaser.GameObjects.Shape}
    */
-  #shapeManager;
-
-  /**
-   * The ID of the shape to move.
-   * @type {string}
-   */
-  #shapeId;
+  #shape;
 
   /**
    * The old position of the shape.
@@ -31,8 +25,7 @@ class MoveShapeCommand extends BaseCommand {
 
   /**
    * Creates an instance of MoveShapeCommand.
-   * @param {ShapeManager} shapeManager - The shape manager to manage shapes in the scene.
-   * @param {string} shapeId - The ID of the shape to move.
+   * @param {Phaser.GameObjects.Shape} shape - The shape to be moved.
    * @param {Object} oldPosition - The old position of the shape.
    * @param {number} oldPosition.x - The old x position.
    * @param {number} oldPosition.y - The old y position.
@@ -40,10 +33,9 @@ class MoveShapeCommand extends BaseCommand {
    * @param {number} newPosition.x - The new x position.
    * @param {number} newPosition.y - The new y position.
    */
-  constructor(shapeManager, shapeId, oldPosition, newPosition) {
+  constructor(shape, oldPosition, newPosition) {
     super();
-    this.#shapeManager = shapeManager;
-    this.#shapeId = shapeId;
+    this.#shape = shape;
     this.#oldPosition = oldPosition;
     this.#newPosition = newPosition;
   }
@@ -53,12 +45,7 @@ class MoveShapeCommand extends BaseCommand {
    * @returns {Promise<void>}
    */
   async execute() {
-    const shape = this.#shapeManager.getShapeById(this.#shapeId);
-    if (!shape) {
-      console.warn(`Shape with ID '${this.#shapeId}' does not exist.`);
-      return;
-    }
-    shape.setPosition(this.#newPosition.x, this.#newPosition.y);
+    this.#shape.setPosition(this.#newPosition.x, this.#newPosition.y);
   }
 
   /**
@@ -66,12 +53,7 @@ class MoveShapeCommand extends BaseCommand {
    * @returns {Promise<void>}
    */
   async undo() {
-    const shape = this.#shapeManager.getShapeById(this.#shapeId);
-    if (!shape) {
-      console.warn(`Shape with ID '${this.#shapeId}' does not exist.`);
-      return;
-    }
-    shape.setPosition(this.#oldPosition.x, this.#oldPosition.y);
+    this.#shape.setPosition(this.#oldPosition.x, this.#oldPosition.y);
   }
 }
 

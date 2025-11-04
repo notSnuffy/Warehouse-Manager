@@ -12,16 +12,10 @@ class RemoveShapeCommand extends BaseCommand {
   #shapeManager;
 
   /**
-   * The ID of the shape to remove.
-   * @type {string}
+   * The shape to be removed.
+   * @type {Phaser.GameObjects.Shape}
    */
-  #shapeId;
-
-  /**
-   * The snapshot of the removed shape for undoing the removal.
-   * @type {Object|null}
-   */
-  #snapshot;
+  #shape;
 
   /**
    * Whether to emit events for this command.
@@ -40,13 +34,13 @@ class RemoveShapeCommand extends BaseCommand {
   /**
    * Creates an instance of RemoveShapeCommand.
    * @param {Object} shapeManager - The shape manager to manage shapes in the scene.
-   * @param {string} shapeId - The ID of the shape to remove.
+   * @param {Phaser.GameObjects.Shape} shape - The shape to be removed.
    * @param {boolean} [emitEvent=true] - Whether to emit events for this command.
    */
-  constructor(shapeManager, shapeId, emitEvent = true) {
+  constructor(shapeManager, shape, emitEvent = true) {
     super();
     this.#shapeManager = shapeManager;
-    this.#shapeId = shapeId;
+    this.#shape = shape;
     this.#emitEvent = emitEvent;
   }
 
@@ -55,14 +49,7 @@ class RemoveShapeCommand extends BaseCommand {
    * @returns {Promise<boolean>}
    */
   async execute() {
-    const shape = this.#shapeManager.getShapeById(this.#shapeId);
-    if (!shape) {
-      console.warn(`Shape with ID '${this.#shapeId}' does not exist.`);
-      return;
-    }
-
-    this.#snapshot = shape.createSnapshot();
-    return this.#shapeManager.removeShapeById(this.#shapeId, this.#emitEvent);
+    return this.#shapeManager.removeShape(this.#shape, this.#emitEvent);
   }
 
   /**
@@ -70,17 +57,7 @@ class RemoveShapeCommand extends BaseCommand {
    * @returns {Promise<void>}
    */
   async undo() {
-    if (!this.#snapshot) {
-      console.warn("No shape to re-add.");
-      return;
-    }
-
-    console.log("Restoring shape from snapshot:", this.#snapshot);
-    const shape = await this.#shapeManager.addShapeFromSnapshot(
-      this.#snapshot,
-      this.#emitEvent,
-    );
-    this.#shapeId = shape.internalId;
+    await this.#shapeManager.addExistingShape(this.#shape, this.#emitEvent);
   }
 }
 

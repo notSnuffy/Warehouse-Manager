@@ -228,7 +228,7 @@ class FurnitureEditor extends Phaser.Scene {
       move: this.#moveManager,
       select: this.#selectManager,
     });
-    this.#labeler = new ShapeLabeler(this, this.#zoneManager);
+    this.#labeler = new ShapeLabeler(this);
 
     new CreateCommandEventHandler(
       this,
@@ -796,7 +796,7 @@ class FurnitureEditor extends Phaser.Scene {
             true,
           );
           this.#labeler.addLabel(
-            zone.internalId,
+            zone,
             name,
             "#ffffff",
             (shape, newLabelText) => {

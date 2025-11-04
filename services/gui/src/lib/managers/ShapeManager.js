@@ -1,7 +1,6 @@
 import ShapeFactory from "@factories/ShapeFactory";
 import AddShapeCommand from "@commands/AddShapeCommand";
 import RemoveShapeCommand from "@commands/RemoveShapeCommand";
-import Phaser from "phaser";
 
 /** Class for managing shapes in an editor. */
 class ShapeManager {
@@ -18,10 +17,10 @@ class ShapeManager {
   #factory = null;
 
   /**
-   * A map to store shapes by their IDs.
-   * @type {Map<string, Phaser.GameObjects.Shape>}
+   * A set storing all the references to shapes managed by this manager.
+   * @type {Set<Phaser.GameObjects.Shape>}
    */
-  #shapes = new Map();
+  #shapes = new Set();
 
   /**
    * A registry for shapes registered in the manager.
@@ -40,20 +39,19 @@ class ShapeManager {
     this.#factory = new ShapeFactory(this.#scene, this.#registry, managers);
 
     this.#scene.events.on("shapeDeleteRequested", async (shape) => {
-      const id = shape.internalId;
-      if (!this.getShapeById(id)) {
+      if (!this.hasShape(shape)) {
         return;
       }
 
-      const { result, command } = await this.removeShapeByIdWithCommand(
-        id,
+      const { result, command } = await this.removeShapeWithCommand(
+        shape,
         false,
       );
       if (!result) {
         return;
       }
       command.emitEvent = true;
-      this.#scene.events.emit("shapeRemoved", id, command, this);
+      this.#scene.events.emit("shapeRemoved", shape, command);
     });
 
     this.#scene.events.on("undoPerformed", () => {
@@ -116,7 +114,6 @@ class ShapeManager {
    * @param {string} type - The type of shape to add.
    * @param {Object} params - The parameters to pass to the shape factory.
    * @param {Object} [additionalData={}] - Additional data to attach to the shape.
-   * @param {string} [additionalData.id] - An optional ID to assign to the shape.
    * @param {Phaser.Types.Input.InputConfiguration} [additionalData.interactive] - Optional interactive configuration for the shape.
    * @param {Object} [additionalData.metadata] - Optional metadata to attach to the shape.
    * @param {String[]} [additionalData.managers] - Optional list of manager IDs the shape belongs to.
@@ -126,16 +123,10 @@ class ShapeManager {
    */
   async addShape(type, params, additionalData = {}, emitEvent = true) {
     const shape = await this.#factory.create(type, params, additionalData);
+    shape.deleted = false;
+    shape.manager = this;
 
-    if (!this.#shapes.has(shape.internalId)) {
-      shape.internalId = additionalData.id || Phaser.Utils.String.UUID();
-    } else if (additionalData.id && shape.internalId !== additionalData.id) {
-      // If the shape already exists but a different ID is provided, update the ID
-      this.#shapes.delete(shape.internalId);
-      shape.internalId = additionalData.id;
-    }
-
-    this.#shapes.set(shape.internalId, shape);
+    this.#shapes.add(shape);
     if (emitEvent) {
       this.#scene.events.emit("shapeAdded", shape);
     }
@@ -155,7 +146,6 @@ class ShapeManager {
    * @param {Object} snapshot.metadata - The metadata of the shape, including its type.
    * @param {string} snapshot.metadata.type - The type of the shape.
    * @param {Object} [snapshot.additionalData] - Additional data to attach to the shape.
-   * @param {string} [snapshot.additionalData.id] - An optional ID to assign to the shape.
    * @param {Phaser.Types.Input.InputConfiguration} [snapshot.additionalData.interactive] - Optional interactive configuration for the shape.
    * @param {String[]} [snapshot.additionalData.managers] - Optional list of manager IDs the shape belongs to.
    * @param {Object[]} [snapshot.children] - Optional child shapes.
@@ -177,7 +167,6 @@ class ShapeManager {
       {
         metadata,
         interactive: additionalData?.interactive,
-        id: additionalData?.id,
         managers: additionalData?.managers,
       },
       emitEvent,
@@ -189,7 +178,6 @@ class ShapeManager {
    * @param {string} type - The type of shape to add.
    * @param {Object} params - The parameters to pass to the shape factory.
    * @param {Object} [additionalData={}] - Additional data to attach to the shape.
-   * @param {string} [additionalData.id] - An optional ID to assign to the shape.
    * @param {Phaser.Types.Input.InputConfiguration} [additionalData.interactive] - Optional interactive configuration for the shape.
    * @param {Object} [additionalData.metadata] - Optional metadata to attach to the shape.
    * @param {String[]} [additionalData.managers] - Optional list of manager IDs the shape belongs to.
@@ -211,57 +199,115 @@ class ShapeManager {
       emitEvent,
     );
     const shape = await command.execute();
-    console.log("Added shape with command:", shape);
     return { shape, command };
   }
 
   /**
-   * Retrieves a shape by its ID.
-   * @param {string} id - The ID of the shape to retrieve.
-   * @returns {Phaser.GameObjects.Shape|null} The shape if found, otherwise null.
+   * Restores a shape that was previously marked as deleted.
+   * @param {Phaser.GameObjects.Shape} shape - The shape to restore.
+   * @returns {void}
    */
-  getShapeById(id) {
-    console.log("Getting shape by ID:", id, this.#shapes);
-    return this.#shapes.get(id) || null;
+  #restoreShape(shape) {
+    shape.deleted = false;
+    shape.setVisible(true);
+    shape.setActive(true);
+    if (shape.input) {
+      shape.input.enabled = true;
+    }
+
+    if (shape.list && shape.list.length > 0) {
+      shape.list.forEach((child) => this.#restoreShape(child));
+    }
   }
 
   /**
-   * Removes a shape by its ID.
-   * @param {string} id - The ID of the shape to remove.
+   * Adds an existing shape to the manager.
+   * If the shape is already managed and marked as deleted, it restores the shape.
+   * @param {Phaser.GameObjects.Shape} shape - The shape to add.
+   * @param {boolean} [emitEvent=true] - Whether to emit an event after adding the shape.
+   * @returns {Phaser.GameObjects.Shape} The added or restored shape.
+   */
+  addExistingShape(shape, emitEvent = true) {
+    if (this.hasShape(shape)) {
+      if (shape.deleted) {
+        this.#restoreShape(shape);
+        if (emitEvent) {
+          this.#scene.events.emit("shapeAdded", shape);
+        }
+      }
+      return shape;
+    }
+
+    if (shape.manager) {
+      throw new Error(
+        "Shape is already managed by another ShapeManager. Cannot add existing shape.",
+      );
+    }
+
+    this.#shapes.add(shape);
+    shape.deleted = false;
+    shape.manager = this;
+
+    if (emitEvent) {
+      this.#scene.events.emit("shapeAdded", shape);
+    }
+    return shape;
+  }
+
+  /**
+   * Checks if a shape is managed by this manager.
+   * @param {Phaser.GameObjects.Shape} shape - The shape to check.
+   * @returns {boolean} True if the shape is managed by this manager, otherwise false.
+   */
+  hasShape(shape) {
+    return this.#shapes.has(shape);
+  }
+
+  /**
+   * Marks a shape as deleted (soft delete).
+   * @param {Phaser.GameObjects.Shape} shape - The shape to mark as deleted.
+   * @returns {void}
+   */
+  #setDeleted(shape) {
+    shape.deleted = true;
+    shape.setVisible(false);
+    shape.setActive(false);
+    if (shape.input && shape.input.enabled) {
+      shape.input.enabled = false;
+    }
+  }
+
+  /**
+   * Removes a shape from the manager (soft delete).
+   * @param {Phaser.GameObjects.Shape} shape - The shape to remove.
    * @param {boolean} [emitEvent=true] - Whether to emit an event after removing the shape.
    * @returns {boolean} True if the shape was removed, otherwise false.
    */
-  removeShapeById(id, emitEvent = true) {
-    const shape = this.#shapes.get(id);
-    if (!shape) {
+  removeShape(shape, emitEvent = true) {
+    if (!this.hasShape(shape) || shape.deleted) {
       return false;
     }
-    console.log("Removing shape:", shape);
 
     if (shape.list && shape.list.length > 0) {
-      const childrenIds = shape.list.map((child) => child.internalId);
-      childrenIds.forEach((childId) => {
-        this.removeShapeById(childId, false);
-      });
+      shape.list.forEach((child) => this.removeShape(child, false));
     }
 
-    shape.destroy();
-    this.#shapes.delete(id);
+    this.#setDeleted(shape);
 
     if (emitEvent) {
-      this.#scene.events.emit("shapeRemoved", id);
+      this.#scene.events.emit("shapeRemoved", shape);
     }
     return true;
   }
 
   /**
-   * Removes a shape by its ID using a command for undo/redo support.
-   * @param {string} id - The ID of the shape to remove.
+   * Removes a shape from the manager using a command for undo/redo support.
+   * @param {Phaser.GameObjects.Shape} shape - The shape to remove.
    * @param {boolean} [emitEvent=true] - Whether to emit an event after removing the shape.
    * @returns {Promise<{result: boolean, command: RemoveShapeCommand}>} The result of the removal and the command used to remove it.
    */
-  async removeShapeByIdWithCommand(id, emitEvent = true) {
-    const command = new RemoveShapeCommand(this, id, emitEvent);
+  async removeShapeWithCommand(shape, emitEvent = true) {
+    const command = new RemoveShapeCommand(this, shape, emitEvent);
     const result = await command.execute();
     return { result, command };
   }
@@ -272,7 +318,7 @@ class ShapeManager {
    */
   getAllShapes() {
     console.log(this.#shapes);
-    return Array.from(this.#shapes.values());
+    return Array.from(this.#shapes).filter((shape) => !shape.deleted);
   }
 
   /**
@@ -280,9 +326,19 @@ class ShapeManager {
    * @returns {Phaser.GameObjects.Shape[]} An array of all root shapes.
    */
   getRootShapes() {
-    return Array.from(this.#shapes.values()).filter(
-      (shape) => !shape.parentContainer,
+    return Array.from(this.#shapes).filter(
+      (shape) => !shape.parentContainer && !shape.deleted,
     );
+  }
+
+  /**
+   * Removes all shapes from the manager (soft delete).
+   * @returns {void}
+   */
+  removeAllShapes() {
+    this.#shapes.forEach((shape) => {
+      this.removeShape(shape, false);
+    });
   }
 
   /**
@@ -290,7 +346,9 @@ class ShapeManager {
    * @returns {void}
    */
   clearAllShapes() {
-    this.#shapes.forEach((shape) => shape.destroy());
+    this.#shapes.forEach((shape) => {
+      shape.destroy();
+    });
     this.#shapes.clear();
   }
 }

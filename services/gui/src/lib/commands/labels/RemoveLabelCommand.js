@@ -12,10 +12,10 @@ class RemoveLabelCommand extends BaseCommand {
   #labler;
 
   /**
-   * The ID of the shape whose label is to be removed.
-   * @type {string}
+   * The shape whose label is to be removed.
+   * @type {Phaser.GameObjects.Shape}
    */
-  #shapeId;
+  #shape;
 
   /**
    * The snapshot of the removed label for undoing the removal.
@@ -26,12 +26,12 @@ class RemoveLabelCommand extends BaseCommand {
   /**
    * Creates an instance of RemoveLabelCommand.
    * @param {ShapeLabeler} labler - The labeler to manage labels in the scene.
-   * @param {string} shapeId - The ID of the shape whose label is to be removed.
+   * @param {Phaser.GameObjects.Shape} shape - The shape whose label is to be removed.
    */
-  constructor(labler, shapeId) {
+  constructor(labler, shape) {
     super();
     this.#labler = labler;
-    this.#shapeId = shapeId;
+    this.#shape = shape;
   }
 
   /**
@@ -39,15 +39,13 @@ class RemoveLabelCommand extends BaseCommand {
    * @returns {Promise<void>}
    */
   async execute() {
-    const label = this.#labler.getLabel(this.#shapeId);
+    const label = this.#labler.getLabel(this.#shape);
     if (!label) {
-      console.warn(
-        `Label for shape with ID '${this.#shapeId}' does not exist.`,
-      );
+      console.warn(`Label for shape '${this.#shape}' does not exist.`);
       return;
     }
     this.#snapshot = label.createSnapshot();
-    this.#labler.removeLabel(this.#shapeId);
+    this.#labler.removeLabel(this.#shape);
   }
 
   /**
@@ -60,7 +58,7 @@ class RemoveLabelCommand extends BaseCommand {
       return;
     }
 
-    this.#labler.addLabelFromSnapshot(this.#shapeId, this.#snapshot);
+    this.#labler.addLabelFromSnapshot(this.#shape, this.#snapshot);
   }
 }
 

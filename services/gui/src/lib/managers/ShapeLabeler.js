@@ -10,25 +10,17 @@ class ShapeLabeler {
   #scene;
 
   /**
-   * The ShapeManager instance.
-   * @type {ShapeManager}
-   */
-  #shapeManager;
-
-  /**
    * Map of shape IDs to their corresponding labels.
-   * @type {Map<string, Phaser.GameObjects.Text>}
+   * @type {Map<Phaser.GameObjects.Shape, Phaser.GameObjects.Text>}
    */
   #labels = new Map();
 
   /**
    * Constructor
    * @param {Phaser.Scene} scene - The Phaser scene instance
-   * @param {ShapeManager} shapeManager - The ShapeManager instance
    */
-  constructor(scene, shapeManager) {
+  constructor(scene) {
     this.#scene = scene;
-    this.#shapeManager = shapeManager;
 
     this.#initializeLabelEvents();
   }
@@ -39,40 +31,40 @@ class ShapeLabeler {
    */
   #initializeLabelEvents() {
     this.#scene.events.on("shapeMoveStart", (shape) => {
-      const label = this.#labels.get(shape.internalId);
+      const label = this.#labels.get(shape);
       if (label) {
         label.setToTop();
       }
     });
     this.#scene.events.on("shapeMoved", (shape) => {
-      const label = this.#labels.get(shape.internalId);
+      const label = this.#labels.get(shape);
       if (label) {
         label.setPosition(shape.x, shape.y);
         label.setToTop();
       }
     });
     this.#scene.events.on("shapeSelected", (shape) => {
-      const label = this.#labels.get(shape.internalId);
+      const label = this.#labels.get(shape);
       if (label) {
         label.setToTop();
       }
     });
     this.#scene.events.on("shapeResized", (shape) => {
-      const label = this.#labels.get(shape.internalId);
+      const label = this.#labels.get(shape);
       if (label) {
         label.setPosition(shape.x, shape.y);
         label.setToTop();
       }
     });
-    this.#scene.events.on("shapeRemoved", (shapeId, command, manager) => {
-      if (command || manager) {
+    this.#scene.events.on("shapeRemoved", (shape, command) => {
+      if (command) {
         return;
       }
 
-      const label = this.#labels.get(shapeId);
+      const label = this.#labels.get(shape);
       if (label) {
         label.destroy();
-        this.#labels.delete(shapeId);
+        this.#labels.delete(shape);
       }
     });
   }
@@ -104,17 +96,14 @@ class ShapeLabeler {
 
   /**
    * Adds a label to a shape.
-   * @param {string} shapeId - The ID of the shape
+   * @param {Phaser.GameObjects.Shape} shape - The shape to add the label to
    * @param {string} labelText - The text of the label
    * @param {string} labelColor - The color of the label text
    * @param {Function} updateCallback - Callback function to call after updating the label
    * @return {void}
    */
-  addLabel(shapeId, labelText, labelColor, updateCallback) {
-    this.removeLabel(shapeId);
-
-    console.log(this.#shapeManager);
-    const shape = this.#shapeManager.getShapeById(shapeId);
+  addLabel(shape, labelText, labelColor, updateCallback) {
+    this.removeLabel(shape);
 
     const label = this.#scene.add.text(shape.x, shape.y, labelText, {
       fontSize: "16px",
@@ -134,8 +123,6 @@ class ShapeLabeler {
       const clickDelay = this.#scene.time.now - lastTapTime;
       label._lastTapTime = this.#scene.time.now;
       if (clickDelay < 300) {
-        const shape = this.#shapeManager.getShapeById(shapeId);
-
         this.#promptLabelEdit(shape, label, updateCallback);
       }
     });
@@ -150,11 +137,22 @@ class ShapeLabeler {
       };
     };
 
-    this.#labels.set(shapeId, label);
+    this.#labels.set(shape, label);
   }
 
-  addLabelFromSnapshot(shapeId, snapshot) {
-    this.removeLabel(shapeId);
+  /**
+   * Adds a label to a shape from a snapshot.
+   * @param {Phaser.GameObjects.Shape} shape - The shape to add the label to
+   * @param {Object} snapshot - The snapshot object containing label properties
+   * @param {string} snapshot.text - The text of the label
+   * @param {number} snapshot.x - The x position of the label
+   * @param {number} snapshot.y - The y position of the label
+   * @param {Object} snapshot.style - The style object for the label
+   * @param {Function} snapshot.updateCallback - Callback function to call after updating the label
+   * @return {void}
+   */
+  addLabelFromSnapshot(shape, snapshot) {
+    this.removeLabel(shape);
 
     const label = this.#scene.add.text(
       snapshot.x,
@@ -175,8 +173,6 @@ class ShapeLabeler {
       const clickDelay = this.#scene.time.now - lastTapTime;
       label._lastTapTime = this.#scene.time.now;
       if (clickDelay < 300) {
-        const shape = this.#shapeManager.getShapeById(shapeId);
-
         this.#promptLabelEdit(shape, label, snapshot.updateCallback);
       }
     });
@@ -191,29 +187,29 @@ class ShapeLabeler {
       };
     };
 
-    this.#labels.set(shapeId, label);
+    this.#labels.set(shape, label);
   }
 
   /**
    * Removes the label associated with a shape.
-   * @param {string} shapeId - The ID of the shape
+   * @param {Phaser.GameObjects.Shape} shape - The shape whose label is to be removed
    * @return {void}
    */
-  removeLabel(shapeId) {
-    const label = this.#labels.get(shapeId);
+  removeLabel(shape) {
+    const label = this.#labels.get(shape);
     if (label) {
       label.destroy();
-      this.#labels.delete(shapeId);
+      this.#labels.delete(shape);
     }
   }
 
   /**
    * Gets the label associated with a shape.
-   * @param {string} shapeId - The ID of the shape
+   * @param {Phaser.GameObjects.Shape} shape - The shape whose label is to be retrieved
    * @return {Phaser.GameObjects.Text|undefined} The label associated with the shape, or undefined if none exists
    */
-  getLabel(shapeId) {
-    return this.#labels.get(shapeId);
+  getLabel(shape) {
+    return this.#labels.get(shape);
   }
 }
 

@@ -65,7 +65,6 @@ class Polygon extends Phaser.GameObjects.Polygon {
         ...this.metadata,
       },
       additionalData: {
-        id: this.internalId,
         interactive: this.input?.enabled ? this.interactiveData : null,
         managers: this.managers || [],
       },

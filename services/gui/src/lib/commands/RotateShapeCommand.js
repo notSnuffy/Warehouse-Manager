@@ -6,16 +6,10 @@ import BaseCommand from "@commands/BaseCommand";
  */
 class RotateShapeCommand extends BaseCommand {
   /**
-   * The shape manager to manage shapes in the scene.
-   * @type {ShapeManager}
+   * The shape to rotate.
+   * @type {Phaser.GameObjects.Shape}
    */
-  #shapeManager;
-
-  /**
-   * The ID of the shape to rotate.
-   * @type {string}
-   */
-  #shapeId;
+  #shape;
 
   /**
    * The old rotation of the shape.
@@ -31,15 +25,13 @@ class RotateShapeCommand extends BaseCommand {
 
   /**
    * Creates an instance of RotateShapeCommand.
-   * @param {ShapeManager} shapeManager - The shape manager to manage shapes in the scene.
-   * @param {string} shapeId - The ID of the shape to rotate.
+   * @param {Phaser.GameObjects.Shape} shape - The shape to rotate.
    * @param {number} oldRotation - The old rotation of the shape.
    * @param {number} newRotation - The new rotation of the shape.
    */
-  constructor(shapeManager, shapeId, oldRotation, newRotation) {
+  constructor(shape, oldRotation, newRotation) {
     super();
-    this.#shapeManager = shapeManager;
-    this.#shapeId = shapeId;
+    this.#shape = shape;
     this.#oldRotation = oldRotation;
     this.#newRotation = newRotation;
   }
@@ -49,12 +41,7 @@ class RotateShapeCommand extends BaseCommand {
    * @returns {Promise<void>}
    */
   async execute() {
-    const shape = this.#shapeManager.getShapeById(this.#shapeId);
-    if (!shape) {
-      console.warn(`Shape with ID '${this.#shapeId}' does not exist.`);
-      return;
-    }
-    shape.setRotation(this.#newRotation);
+    this.#shape.setRotation(this.#newRotation);
   }
 
   /**
@@ -62,12 +49,7 @@ class RotateShapeCommand extends BaseCommand {
    * @returns {Promise<void>}
    */
   async undo() {
-    const shape = this.#shapeManager.getShapeById(this.#shapeId);
-    if (!shape) {
-      console.warn(`Shape with ID '${this.#shapeId}' does not exist.`);
-      return;
-    }
-    shape.setRotation(this.#oldRotation);
+    this.#shape.setRotation(this.#oldRotation);
   }
 }
 

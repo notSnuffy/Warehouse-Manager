@@ -30,16 +30,10 @@ class AddShapeCommand extends BaseCommand {
   #additionalData;
 
   /**
-   * The ID of the added shape.
-   * @type {string|null}
+   * The created shape
+   * @type {Phaser.GameObjects.Shape}
    */
-  #shapeId;
-
-  /**
-   * The snapshot of the shape's state at the time of addition.
-   * @type {Object|null}
-   */
-  #snapshot;
+  #shape;
 
   /**
    * Whether to emit events for this command.
@@ -75,12 +69,8 @@ class AddShapeCommand extends BaseCommand {
    * @returns {Promise<Phaser.GameObjects.Shape>}
    */
   async execute() {
-    // We require to keep the same ID for other commands (like MoveCommand) to work properly
-    if (this.#snapshot) {
-      await this.#shapeManager.addShapeFromSnapshot(
-        this.#snapshot,
-        this.#emitEvent,
-      );
+    if (this.#shape) {
+      this.#shapeManager.addExistingShape(this.#shape, this.#emitEvent);
       return;
     }
 
@@ -90,11 +80,8 @@ class AddShapeCommand extends BaseCommand {
       this.#additionalData,
       this.#emitEvent,
     );
-    this.#shapeId = shape.internalId;
+    this.#shape = shape;
 
-    if (!this.#snapshot) {
-      this.#snapshot = shape.createSnapshot();
-    }
     return shape;
   }
 
@@ -103,12 +90,12 @@ class AddShapeCommand extends BaseCommand {
    * @returns {Promise<void>}
    */
   async undo() {
-    if (!this.#shapeId) {
+    if (!this.#shape) {
       console.warn("No shape to remove.");
       return;
     }
 
-    this.#shapeManager.removeShapeById(this.#shapeId, this.#emitEvent);
+    this.#shapeManager.removeShape(this.#shape, this.#emitEvent);
   }
 }
 

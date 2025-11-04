@@ -6,16 +6,10 @@ import BaseCommand from "@commands/BaseCommand";
  */
 class ResizeShapeCommand extends BaseCommand {
   /**
-   * The shape manager to manage shapes in the scene.
-   * @type {ShapeManager}
+   * The shape to be resized.
+   * @type {Phaser.GameObjects.Shape}
    */
-  #shapeManager;
-
-  /**
-   * The ID of the shape to resize.
-   * @type {string}
-   */
-  #shapeId;
+  #shape;
 
   /**
    * The old transform of the shape.
@@ -40,8 +34,7 @@ class ResizeShapeCommand extends BaseCommand {
 
   /**
    * Creates an instance of ResizeShapeCommand.
-   * @param {ShapeManager} shapeManager - The shape manager to manage shapes in the scene.
-   * @param {string} shapeId - The ID of the shape to resize.
+   * @param {Phaser.GameObjects.Shape} shape - The shape to resize.
    * @param {Object} oldTransform - The old position of the shape.
    * @param {number} oldTransform.x - The old x position.
    * @param {number} oldTransform.y - The old y position.
@@ -53,10 +46,9 @@ class ResizeShapeCommand extends BaseCommand {
    * @param {number} newTransform.width - The new width.
    * @param {number} newTransform.height - The new height.
    */
-  constructor(shapeManager, shapeId, oldTransform, newTransform) {
+  constructor(shape, oldTransform, newTransform) {
     super();
-    this.#shapeManager = shapeManager;
-    this.#shapeId = shapeId;
+    this.#shape = shape;
     this.#oldTransform = oldTransform;
     this.#newTransform = newTransform;
   }
@@ -66,13 +58,11 @@ class ResizeShapeCommand extends BaseCommand {
    * @returns {Promise<void>}
    */
   async execute() {
-    const shape = this.#shapeManager.getShapeById(this.#shapeId);
-    if (!shape) {
-      console.warn(`Shape with ID '${this.#shapeId}' does not exist.`);
-      return;
-    }
-    shape.setPosition(this.#newTransform.x, this.#newTransform.y);
-    shape.setDisplaySize(this.#newTransform.width, this.#newTransform.height);
+    this.#shape.setPosition(this.#newTransform.x, this.#newTransform.y);
+    this.#shape.setDisplaySize(
+      this.#newTransform.width,
+      this.#newTransform.height,
+    );
   }
 
   /**
@@ -80,13 +70,11 @@ class ResizeShapeCommand extends BaseCommand {
    * @returns {Promise<void>}
    */
   async undo() {
-    const shape = this.#shapeManager.getShapeById(this.#shapeId);
-    if (!shape) {
-      console.warn(`Shape with ID '${this.#shapeId}' does not exist.`);
-      return;
-    }
-    shape.setPosition(this.#oldTransform.x, this.#oldTransform.y);
-    shape.setDisplaySize(this.#oldTransform.width, this.#oldTransform.height);
+    this.#shape.setPosition(this.#oldTransform.x, this.#oldTransform.y);
+    this.#shape.setDisplaySize(
+      this.#oldTransform.width,
+      this.#oldTransform.height,
+    );
   }
 }
 

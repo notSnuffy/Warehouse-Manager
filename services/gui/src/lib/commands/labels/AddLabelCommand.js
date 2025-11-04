@@ -12,10 +12,10 @@ class AddLabelCommand extends BaseCommand {
   #labler;
 
   /**
-   * The ID of the shape to which the label is added.
-   * @type {string}
+   * The shape to which the label is added.
+   * @type {Phaser.GameObjects.Shape}
    */
-  #shapeId;
+  #shape;
 
   /**
    * The text of the label.
@@ -38,21 +38,21 @@ class AddLabelCommand extends BaseCommand {
   /**
    * Creates an instance of AddLabelCommand.
    * @param {ShapeLabeler} labler - The labeler to manage labels in the scene.
-   * @param {string} shapeId - The ID of the shape to which the label is added.
+   * @param {Phaser.GameObjects.Shape} shape - The shape to which the label is added.
    * @param {string} labelText - The text of the label.
    * @param {string} [labelColor="#ffffff"] - The color of the label.
    * @param {Function} [updateCallback=()=>{}] - Callback function to call after updating the label.
    */
   constructor(
     labler,
-    shapeId,
+    shape,
     labelText,
     labelColor = "#ffffff",
     updateCallback = () => {},
   ) {
     super();
     this.#labler = labler;
-    this.#shapeId = shapeId;
+    this.#shape = shape;
     this.#labelText = labelText;
     this.#labelColor = labelColor;
     this.#updateCallback = updateCallback;
@@ -64,7 +64,7 @@ class AddLabelCommand extends BaseCommand {
    */
   async execute() {
     this.#labler.addLabel(
-      this.#shapeId,
+      this.#shape,
       this.#labelText,
       this.#labelColor,
       this.#updateCallback,
@@ -76,7 +76,7 @@ class AddLabelCommand extends BaseCommand {
    * @returns {Promise<void>}
    */
   async undo() {
-    this.#labler.removeLabel(this.#shapeId);
+    this.#labler.removeLabel(this.#shape);
   }
 }
 

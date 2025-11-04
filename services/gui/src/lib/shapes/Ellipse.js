@@ -65,7 +65,6 @@ class Ellipse extends Phaser.GameObjects.Ellipse {
         ...this.metadata,
       },
       additionalData: {
-        id: this.internalId,
         interactive: this.input?.enabled ? this.interactiveData : null,
         managers: this.managers || [],
       },

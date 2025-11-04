@@ -31,7 +31,7 @@ class CreateCommandEventHandler {
    * @type {Object|null}
    * @property {number} x - The x position at the start of the move.
    * @property {number} y - The y position at the start of the move.
-   * @property {string} shapeId - The internal ID of the shape being moved.
+   * @property {Phaser.GameObjects.Shape} shape - The shape being moved.
    * @default null
    */
   #moveStartData = null;
@@ -40,7 +40,7 @@ class CreateCommandEventHandler {
    * Data about the shape's rotation at the start of a rotate action.
    * @type {Object|null}
    * @property {number} rotation - The rotation at the start of the rotate.
-   * @property {string} shapeId - The internal ID of the shape being rotated.
+   * @property {Phaser.GameObjects.Shape} shape - The shape being rotated.
    * @default null
    */
   #rotateStartData = null;
@@ -52,7 +52,7 @@ class CreateCommandEventHandler {
    * @property {number} y - The y position at the start of the resize.
    * @property {number} width - The width at the start of the resize.
    * @property {number} height - The height at the start of the resize.
-   * @property {string} shapeId - The internal ID of the shape being resized.
+   * @property {Phaser.GameObjects.Shape} shape - The shape being resized.
    * @default null
    */
   #resizeStartData = null;
@@ -80,14 +80,7 @@ class CreateCommandEventHandler {
    * @returns {boolean} - True if the shape is managed, false otherwise
    */
   #checkIfShapeManaged(shape) {
-    const managedShape = this.#shapeManager.getShapeById(shape.internalId);
-    if (!managedShape) {
-      return false;
-    }
-    if (managedShape !== shape) {
-      return false;
-    }
-    return true;
+    return shape.manager === this.#shapeManager;
   }
 
   /**
@@ -116,7 +109,7 @@ class CreateCommandEventHandler {
       this.#moveStartData = {
         x: shape.x,
         y: shape.y,
-        shapeId: shape.internalId,
+        shape: shape,
       };
     });
     this.#scene.events.on("shapeMoveEnd", (shape) => {
@@ -124,10 +117,7 @@ class CreateCommandEventHandler {
         return;
       }
 
-      if (
-        !this.#moveStartData ||
-        this.#moveStartData.shapeId !== shape.internalId
-      ) {
+      if (!this.#moveStartData || this.#moveStartData.shape !== shape) {
         return;
       }
 
@@ -142,8 +132,7 @@ class CreateCommandEventHandler {
       }
 
       const moveCommand = new MoveShapeCommand(
-        this.#shapeManager,
-        shape.internalId,
+        shape,
         { x: this.#moveStartData.x, y: this.#moveStartData.y },
         moveEndPosition,
       );
@@ -185,7 +174,7 @@ class CreateCommandEventHandler {
 
       this.#rotateStartData = {
         rotation: shape.rotation,
-        shapeId: shape.internalId,
+        shape: shape,
       };
     });
     this.#scene.events.on("shapeRotateEnd", (shape) => {
@@ -193,10 +182,7 @@ class CreateCommandEventHandler {
         return;
       }
 
-      if (
-        !this.#rotateStartData ||
-        this.#rotateStartData.shapeId !== shape.internalId
-      ) {
+      if (!this.#rotateStartData || this.#rotateStartData.shape !== shape) {
         return;
       }
 
@@ -207,8 +193,7 @@ class CreateCommandEventHandler {
       }
 
       const rotateCommand = new RotateShapeCommand(
-        this.#shapeManager,
-        shape.internalId,
+        shape,
         this.#rotateStartData.rotation,
         rotateEndRotation,
       );
@@ -253,18 +238,16 @@ class CreateCommandEventHandler {
         y: shape.y,
         width: shape.displayWidth,
         height: shape.displayHeight,
-        shapeId: shape.internalId,
+        shape: shape,
       };
     });
     this.#scene.events.on("shapeResizeEnd", (shape) => {
+      console.log("shapeResizeEnd event caught");
       if (!this.#checkIfShapeManaged(shape)) {
         return;
       }
 
-      if (
-        !this.#resizeStartData ||
-        this.#resizeStartData.shapeId !== shape.internalId
-      ) {
+      if (!this.#resizeStartData || this.#resizeStartData.shape !== shape) {
         return;
       }
 
@@ -285,9 +268,13 @@ class CreateCommandEventHandler {
         return;
       }
 
+      console.log(
+        "Creating ResizeShapeCommand",
+        this.#resizeStartData,
+        resizeEndTransform,
+      );
       const resizeCommand = new ResizeShapeCommand(
-        this.#shapeManager,
-        shape.internalId,
+        shape,
         {
           x: this.#resizeStartData.x,
           y: this.#resizeStartData.y,
@@ -316,26 +303,25 @@ class CreateCommandEventHandler {
   /**
    * Handle a shape removed command by pushing it to the UndoRedoManager
    * Additionally, this method can be overridden to provide custom behavior.
-   *   * @param {Object} command - The command to handle
-   * @param {string} _shapeId - The ID of the shape being removed
+   * @param {Object} command - The command to handle
+   * @param {Phaser.GameObjects.Shape} _shape - The shape being removed
    * @returns {void}
    * @virtual
    */
-  handleShapeRemoved(command, _shapeId) {
+  handleShapeRemoved(command, _shape) {
     this.undoRedoManager.pushCommand(command);
   }
 
   #catchShapeRemoved() {
-    this.#scene.events.on("shapeRemoved", (_shapeId, command, manager) => {
-      console.log(manager, this.#shapeManager);
-      if (manager !== this.#shapeManager) {
+    this.#scene.events.on("shapeRemoved", (_shape, command) => {
+      if (!this.#checkIfShapeManaged(_shape)) {
         return;
       }
       if (!command) {
         return;
       }
 
-      this.handleShapeRemoved(command, _shapeId);
+      this.handleShapeRemoved(command, _shape);
     });
   }
 }

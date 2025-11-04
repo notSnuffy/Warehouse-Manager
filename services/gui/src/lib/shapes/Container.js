@@ -161,7 +161,6 @@ class Container extends Phaser.GameObjects.Container {
         type: "container",
       },
       additionalData: {
-        id: this.internalId,
         interactive: this.input?.enabled ? this.interactiveData : null,
         managers: this.managers || [],
       },

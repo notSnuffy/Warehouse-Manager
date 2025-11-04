@@ -13,9 +13,9 @@ class MoveLabelCommand extends BaseCommand {
 
   /**
    * The ID of the shape whose label is to be moved.
-   * @type {string}
+   * @type {Phaser.GameObjects.Shape}
    */
-  #shapeId;
+  #shape;
 
   /**
    * The old position of the label.
@@ -36,7 +36,7 @@ class MoveLabelCommand extends BaseCommand {
   /**
    * Creates an instance of MoveLabelCommand.
    * @param {ShapeLabeler} labler - The labeler to manage labels in the scene.
-   * @param {string} shapeId - The ID of the shape whose label is to be moved.
+   * @param {Phaser.GameObjects.Shape} shape - The shape whose label is to be moved.
    * @param {Object} oldPosition - The old position of the label.
    * @property {number} oldPosition.x - The old x position.
    * @property {number} oldPosition.y - The old y position.
@@ -44,10 +44,10 @@ class MoveLabelCommand extends BaseCommand {
    * @property {number} newPosition.x - The new x position.
    * @property {number} newPosition.y - The new y position.
    */
-  constructor(labler, shapeId, oldPosition, newPosition) {
+  constructor(labler, shape, oldPosition, newPosition) {
     super();
     this.#labler = labler;
-    this.#shapeId = shapeId;
+    this.#shape = shape;
     this.#oldPosition = oldPosition;
     this.#newPosition = newPosition;
   }
@@ -57,9 +57,9 @@ class MoveLabelCommand extends BaseCommand {
    * @returns {Promise<void>}
    */
   async execute() {
-    const label = this.#labler.getLabel(this.#shapeId);
+    const label = this.#labler.getLabel(this.#shape);
     if (!label) {
-      console.warn(`Label for shape ID '${this.#shapeId}' does not exist.`);
+      console.warn(`Label for shape ID '${this.#shape}' does not exist.`);
       return;
     }
 
@@ -71,9 +71,9 @@ class MoveLabelCommand extends BaseCommand {
    * @returns {Promise<void>}
    */
   async undo() {
-    const label = this.#labler.getLabel(this.#shapeId);
+    const label = this.#labler.getLabel(this.#shape);
     if (!label) {
-      console.warn(`Label for shape ID '${this.#shapeId}' does not exist.`);
+      console.warn(`Label for shape ID '${this.#shape}' does not exist.`);
       return;
     }
 

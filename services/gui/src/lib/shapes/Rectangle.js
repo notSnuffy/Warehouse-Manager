@@ -65,7 +65,6 @@ class Rectangle extends Phaser.GameObjects.Rectangle {
         ...this.metadata,
       },
       additionalData: {
-        id: this.internalId,
         interactive: this.input?.enabled ? this.interactiveData : null,
         managers: this.managers || [],
       },
