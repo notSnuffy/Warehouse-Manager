@@ -2,13 +2,56 @@ import { capitalizeFirstLetter } from "@utils/string";
 import { createContainerSnapshotFromShapes } from "@utils/shapes";
 import { DEFAULT_SHAPES } from "@scenes/ShapeEditor";
 
+/**
+ * Class representing the save button for shapes.
+ * @class ShapeSaveButton
+ */
 class ShapeSaveButton {
+  /**
+   * The save button HTML element.
+   * @type {HTMLElement}
+   */
   #saveButton;
+
+  /**
+   * The shape name input HTML element.
+   * @type {HTMLElement}
+   */
   #shapeNameInput;
+
+  /**
+   * Function to get shapes.
+   * @type {Function}
+   */
   #getShapes;
+
+  /**
+   * Handler for shape instructions.
+   * @type {ShapeInstructionsHandler}
+   */
   #instructionsHandler;
+
+  /**
+   * URL for shape management.
+   * @type {string}
+   */
   #shapeManagementURL;
+
+  /**
+   * The shape list user interface.
+   * @type {ShapeListUserInterface}
+   */
   #shapeListUI;
+
+  /**
+   * Creates an instance of ShapeSaveButton.
+   * @param {string} saveButtonId - The ID of the save button element.
+   * @param {string} shapeNameInputId - The ID of the shape name input element.
+   * @param {Function} getShapes - Function to get shapes.
+   * @param {ShapeInstructionsHandler} instructionsHandler - Handler for shape instructions.
+   * @param {string} shapeManagementURL - URL for shape management.
+   * @param {ShapeListUserInterface} shapeListUI - The shape list user interface.
+   */
   constructor(
     saveButtonId,
     shapeNameInputId,
@@ -27,6 +70,9 @@ class ShapeSaveButton {
     this.#initializeButtonHandler();
   }
 
+  /**
+   * Initializes the button click handler.
+   */
   #initializeButtonHandler() {
     this.#saveButton.addEventListener("click", async () => {
       const shapeName = this.#shapeNameInput.value;

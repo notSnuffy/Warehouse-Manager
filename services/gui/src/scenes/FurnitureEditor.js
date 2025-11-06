@@ -19,6 +19,7 @@ import ShapeModalUserInterface from "@ui/ShapeModalUserInterface";
 import LabeledShapeModalUserInterface from "@ui/LabeledShapeModalUserInterface";
 import UndoRedoUserInterface from "@ui/UndoRedoUserInterface";
 import ShapeListUserInterface from "@ui/ShapeListUserInterface";
+import FurnitureSaveButtonBuilder from "@ui/furniture/FurnitureSaveButtonBuilder";
 import { ShapeFieldSchemas } from "@ui/ShapeFieldSchemas";
 import { DefaultShapeInteractiveConfig } from "@utils/shapes";
 
@@ -127,7 +128,7 @@ class FurnitureEditor extends Phaser.Scene {
    * @property {ShapeModalUserInterface|null} zoneModal - The zone modal UI
    * @property {UndoRedoUserInterface|null} undoRedoUI - The undo/redo UI
    * @property {ShapeListUserInterface|null} shapeListUI - The shape list UI
-   * @property {ShapeSaveButton|null} saveButton - The shape save button UI
+   * @property {FurnitureSaveButtonUserInterface|null} saveButton - The furniture save button UI
    * @default { shapeModal: null, undoRedoUI: null, shapeListUI: null, saveButton: null}
    */
   #UIElements = {
@@ -165,6 +166,7 @@ class FurnitureEditor extends Phaser.Scene {
         console.error("Failed to load furniture:", furnitureData);
         return;
       }
+      console.log("Furniture data loaded:", furnitureData);
 
       const furnitureNameElement = document.getElementById("furnitureName");
       furnitureNameElement.value = furnitureData.name;
@@ -194,7 +196,7 @@ class FurnitureEditor extends Phaser.Scene {
 
       if (furnitureData.zones) {
         furnitureData.zones.forEach((zoneData) => {
-          const instructions = zoneData.instructions;
+          const instructions = zoneData.shape.instructions;
           instructions[0].parameters.shapeId = zoneData.shape.shape.id;
           instructions[0].parameters.shapeVersion = zoneData.shape.shapeVersion;
           zoneParameters.push({ instructions, name: zoneData.name });
@@ -310,6 +312,9 @@ class FurnitureEditor extends Phaser.Scene {
           params.color,
         );
         rectangle.setRotation(params.rotation);
+
+        rectangle.metadata = {};
+        rectangle.metadata.id = params.templateId;
         return rectangle;
       },
       { command: InstructionCommands.CREATE_RECTANGLE },
@@ -326,6 +331,8 @@ class FurnitureEditor extends Phaser.Scene {
           params.color,
         );
         ellipse.setRotation(params.rotation);
+        ellipse.metadata = {};
+        ellipse.metadata.id = params.templateId;
         return ellipse;
       },
       { command: InstructionCommands.CREATE_ELLIPSE },
@@ -347,6 +354,8 @@ class FurnitureEditor extends Phaser.Scene {
         if (params.width && params.height) {
           arc.setDisplaySize(params.width, params.height);
         }
+        arc.metadata = {};
+        arc.metadata.id = params.templateId;
         return arc;
       },
       {
@@ -372,6 +381,8 @@ class FurnitureEditor extends Phaser.Scene {
         if (params.width && params.height) {
           polygon.setDisplaySize(params.width, params.height);
         }
+        polygon.metadata = {};
+        polygon.metadata.id = params.templateId;
         return polygon;
       },
       {
@@ -474,6 +485,7 @@ class FurnitureEditor extends Phaser.Scene {
         );
         rectangle.setRotation(params.rotation);
         rectangle.metadata = {};
+        rectangle.metadata.id = params.templateId;
         rectangle.metadata.zoneName = params.zoneName;
 
         return rectangle;
@@ -493,6 +505,7 @@ class FurnitureEditor extends Phaser.Scene {
         );
         ellipse.setRotation(params.rotation);
         ellipse.metadata = {};
+        ellipse.metadata.id = params.templateId;
         ellipse.metadata.zoneName = params.zoneName;
 
         return ellipse;
@@ -519,6 +532,7 @@ class FurnitureEditor extends Phaser.Scene {
         }
 
         arc.metadata = {};
+        arc.metadata.id = params.templateId;
         arc.metadata.zoneName = params.zoneName;
 
         return arc;
@@ -548,6 +562,7 @@ class FurnitureEditor extends Phaser.Scene {
         }
 
         polygon.metadata = {};
+        polygon.metadata.id = params.templateId;
         polygon.metadata.zoneName = params.zoneName;
 
         return polygon;
@@ -742,6 +757,21 @@ class FurnitureEditor extends Phaser.Scene {
       API_URL + "/shape-management/shapes",
     );
 
+    this.#UIElements.saveButton = new FurnitureSaveButtonBuilder()
+      .setGetZones(() => this.#zoneManager.getRootShapes())
+      .setGetShapes(() => this.#shapeManager.getRootShapes())
+      .setShapeInstructionsHandler(this.#shapeInstructionHandler)
+      .setZoneInstructionsHandler(this.#zoneInstructionHandler)
+      .setFurnitureManagementURL(API_URL + "/furniture-management/furniture")
+      .setSaveButtonId("saveButton")
+      .setFurnitureNameInputId("furnitureName")
+      .setCurrentlyEditingFurnitureId("currentFurnitureId")
+      .setAdditionalDataModalId("additionalDataModal")
+      .setTopDownViewDataListId("topDownViewOptions")
+      .setTopDownViewInputId("topDownView")
+      .setShapeListElementId("itemsMenuButtons")
+      .build();
+
     const urlParams = new URLSearchParams(window.location.search);
     const furnitureId = urlParams.get("furnitureId");
     if (furnitureId) {
@@ -768,15 +798,16 @@ class FurnitureEditor extends Phaser.Scene {
       };
 
       if (shapeInstructions && shapeInstructions.length > 0) {
+        console.log("shapeInstructions", shapeInstructions);
         shapeInstructions.forEach(async (instructions) => {
           // Singular shape expected, even though method returns array for generality
           const shapeSnapshot =
             await this.#shapeInstructionHandler.convertFromInstructions(
               instructions,
               0xffffff,
-            )[0];
+            );
           configureInteractive(shapeSnapshot);
-          this.#shapeManager.addShapeFromSnapshot(shapeSnapshot, true);
+          this.#shapeManager.addShapeFromSnapshot(shapeSnapshot[0], true);
         });
       }
 
@@ -788,11 +819,11 @@ class FurnitureEditor extends Phaser.Scene {
             await this.#zoneInstructionHandler.convertFromInstructions(
               instructions,
               0x00ff00,
-            )[0];
-          zoneSnapshot.metadata.zoneName = name;
+            );
           configureInteractive(zoneSnapshot);
+          zoneSnapshot[0].metadata.zoneName = name;
           const zone = await this.#zoneManager.addShapeFromSnapshot(
-            zoneSnapshot,
+            zoneSnapshot[0],
             true,
           );
           this.#labeler.addLabel(
