@@ -79,7 +79,7 @@ class CreateCommandEventHandler {
    * @param {Phaser.GameObjects.Shape} shape - The shape to check
    * @returns {boolean} - True if the shape is managed, false otherwise
    */
-  #checkIfShapeManaged(shape) {
+  checkIfShapeManaged(shape) {
     return shape.manager === this.#shapeManager;
   }
 
@@ -102,7 +102,7 @@ class CreateCommandEventHandler {
    */
   #registerMoveEvents() {
     this.#scene.events.on("shapeMoveStart", (shape) => {
-      if (!this.#checkIfShapeManaged(shape)) {
+      if (!this.checkIfShapeManaged(shape)) {
         return;
       }
 
@@ -113,7 +113,7 @@ class CreateCommandEventHandler {
       };
     });
     this.#scene.events.on("shapeMoveEnd", (shape) => {
-      if (!this.#checkIfShapeManaged(shape)) {
+      if (!this.checkIfShapeManaged(shape)) {
         return;
       }
 
@@ -168,7 +168,7 @@ class CreateCommandEventHandler {
    */
   #registerRotateEvents() {
     this.#scene.events.on("shapeRotateStart", (shape) => {
-      if (!this.#checkIfShapeManaged(shape)) {
+      if (!this.checkIfShapeManaged(shape)) {
         return;
       }
 
@@ -178,7 +178,7 @@ class CreateCommandEventHandler {
       };
     });
     this.#scene.events.on("shapeRotateEnd", (shape) => {
-      if (!this.#checkIfShapeManaged(shape)) {
+      if (!this.checkIfShapeManaged(shape)) {
         return;
       }
 
@@ -229,7 +229,7 @@ class CreateCommandEventHandler {
    */
   #registerResizeEvents() {
     this.#scene.events.on("shapeResizeStart", (shape) => {
-      if (!this.#checkIfShapeManaged(shape)) {
+      if (!this.checkIfShapeManaged(shape)) {
         return;
       }
 
@@ -243,7 +243,7 @@ class CreateCommandEventHandler {
     });
     this.#scene.events.on("shapeResizeEnd", (shape) => {
       console.log("shapeResizeEnd event caught");
-      if (!this.#checkIfShapeManaged(shape)) {
+      if (!this.checkIfShapeManaged(shape)) {
         return;
       }
 
@@ -314,7 +314,7 @@ class CreateCommandEventHandler {
 
   #catchShapeRemoved() {
     this.#scene.events.on("shapeRemoved", (_shape, command) => {
-      if (!this.#checkIfShapeManaged(_shape)) {
+      if (!this.checkIfShapeManaged(_shape)) {
         return;
       }
       if (!command) {

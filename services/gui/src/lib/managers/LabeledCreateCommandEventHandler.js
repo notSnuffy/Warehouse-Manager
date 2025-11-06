@@ -2,6 +2,7 @@ import CreateCommandEventHandler from "@managers/CreateCommandEventHandler";
 import CompositeCommand from "@commands/CompositeCommand";
 import MoveLabelCommand from "@commands/labels/MoveLabelCommand";
 import RemoveLabelCommand from "@commands/labels/RemoveLabelCommand";
+import EditLabelCommand from "@commands/labels/EditLabelCommand";
 
 /**
  * LabeledCreateCommandEventHandler class
@@ -25,6 +26,28 @@ class LabeledCreateCommandEventHandler extends CreateCommandEventHandler {
   constructor(scene, undoRedoManager, shapeManager, shapeLabeler) {
     super(scene, undoRedoManager, shapeManager);
     this.#shapeLabeler = shapeLabeler;
+
+    this.#registerLabelEditEvents();
+  }
+
+  /**
+   * Registers event listeners for label editing events.
+   * @return {void}
+   */
+  #registerLabelEditEvents() {
+    this.#shapeLabeler.on(
+      "labelTextChanged",
+      (shape, oldText, newText, updateCallback) => {
+        const command = new EditLabelCommand(
+          this.#shapeLabeler,
+          shape,
+          oldText,
+          newText,
+          updateCallback,
+        );
+        this.undoRedoManager.pushCommand(command);
+      },
+    );
   }
 
   /**

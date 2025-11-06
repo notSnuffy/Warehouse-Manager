@@ -1,3 +1,5 @@
+import Phaser from "phaser";
+
 /**
  * ShapeLabeler class manages labels for shapes within a Phaser scene.
  * @class ShapeLabeler
@@ -16,13 +18,53 @@ class ShapeLabeler {
   #labels = new Map();
 
   /**
+   * The event emitter instance.
+   * @type {Phaser.Events.EventEmitter}
+   */
+  #eventEmitter;
+
+  /**
    * Constructor
    * @param {Phaser.Scene} scene - The Phaser scene instance
    */
   constructor(scene) {
     this.#scene = scene;
+    this.#eventEmitter = new Phaser.Events.EventEmitter();
 
     this.#initializeLabelEvents();
+  }
+
+  /**
+   * Adds an event listener.
+   * @param {string} event - The event name
+   * @param {Function} listener - The event listener function
+   * @param {Object} [context=this] - The context to bind the listener to
+   * @return {void}
+   */
+  on(event, listener, context = this) {
+    this.#eventEmitter.on(event, listener, context);
+  }
+
+  /**
+   * Removes an event listener.
+   * @param {string} event - The event name
+   * @param {Function} [listener=null] - Only remove listeners that match this function
+   * @param {Object} [context=null] - Only remove listeners that match this context
+   * @param {boolean} [once=null] - If true, only remove once listeners
+   * @return {void}
+   */
+  off(event, listener = null, context = null, once = null) {
+    this.#eventEmitter.off(event, listener, context, once);
+  }
+
+  /**
+   * Emits an event.
+   * @param {string} event - The event name
+   * @param {any[]} args - Arguments to pass to the event listeners
+   * @return {void}
+   */
+  emit(event, ...args) {
+    this.#eventEmitter.emit(event, ...args);
   }
 
   /**
@@ -89,9 +131,17 @@ class ShapeLabeler {
       return;
     }
 
+    const oldLabelText = label.text;
+
     label.setText(newLabelText);
     updateCallback(shape, newLabelText);
-    console.log(shape.metadata.zoneName, newLabelText);
+    this.emit(
+      "labelTextChanged",
+      shape,
+      oldLabelText,
+      newLabelText,
+      updateCallback,
+    );
   }
 
   /**

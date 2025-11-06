@@ -9,7 +9,7 @@ class MoveLabelCommand extends BaseCommand {
    * The labeler to manage labels in the scene.
    * @type {ShapeLabeler}
    */
-  #labler;
+  #labeler;
 
   /**
    * The ID of the shape whose label is to be moved.
@@ -46,7 +46,7 @@ class MoveLabelCommand extends BaseCommand {
    */
   constructor(labler, shape, oldPosition, newPosition) {
     super();
-    this.#labler = labler;
+    this.#labeler = labler;
     this.#shape = shape;
     this.#oldPosition = oldPosition;
     this.#newPosition = newPosition;
@@ -57,7 +57,7 @@ class MoveLabelCommand extends BaseCommand {
    * @returns {Promise<void>}
    */
   async execute() {
-    const label = this.#labler.getLabel(this.#shape);
+    const label = this.#labeler.getLabel(this.#shape);
     if (!label) {
       console.warn(`Label for shape ID '${this.#shape}' does not exist.`);
       return;
@@ -71,7 +71,7 @@ class MoveLabelCommand extends BaseCommand {
    * @returns {Promise<void>}
    */
   async undo() {
-    const label = this.#labler.getLabel(this.#shape);
+    const label = this.#labeler.getLabel(this.#shape);
     if (!label) {
       console.warn(`Label for shape ID '${this.#shape}' does not exist.`);
       return;
