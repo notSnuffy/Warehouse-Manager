@@ -451,7 +451,7 @@ class FurnitureEditor extends Phaser.Scene {
               instructions,
               params.color,
             );
-          0;
+
           const reconstructedShape =
             await this.#shapeManager.addShapeFromSnapshot(
               reconstructedShapeSnapshot,
@@ -634,7 +634,7 @@ class FurnitureEditor extends Phaser.Scene {
               instructions,
               params.color,
             );
-          0;
+
           const reconstructedShape =
             await this.#zoneManager.addShapeFromSnapshot(
               reconstructedShapeSnapshot,
@@ -726,6 +726,9 @@ class FurnitureEditor extends Phaser.Scene {
           LabelColorSchema,
         ],
         CUSTOM: [ZoneNameSchema, ...ShapeFieldSchemas.CUSTOM, LabelColorSchema],
+      },
+      (shape, newLabelText) => {
+        shape.metadata.zoneName = newLabelText;
       },
     );
     this.#UIElements.undoRedoUI = new UndoRedoUserInterface(

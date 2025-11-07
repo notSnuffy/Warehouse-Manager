@@ -16,6 +16,12 @@ class LabeledShapeModalUserInterface extends ShapeModalUserInterface {
   #labeler;
 
   /**
+   * Callback function to call after label updates
+   * @type {Function}
+   */
+  #labelUpdateCallback;
+
+  /**
    * Creates an instance of LabeledShapeModalUserInterface.
    * @param {ShapeManager} shapeManager - The shape manager instance
    * @param {ShapeLabeler} shapeLabeler - The shape labeler instance
@@ -23,6 +29,7 @@ class LabeledShapeModalUserInterface extends ShapeModalUserInterface {
    * @param {string} modalId - The ID of the modal element
    * @param {Array} managersToRegisterWith - The list of managers to register new shapes with
    * @param {Object} shapeFieldsSchemas - The shape fields schemas
+   * @param {Function} labelUpdateCallback - Callback function to call after label updates
    */
   constructor(
     shapeManager,
@@ -31,6 +38,7 @@ class LabeledShapeModalUserInterface extends ShapeModalUserInterface {
     modalId,
     managersToRegisterWith,
     shapeFieldsSchemas,
+    labelUpdateCallback = () => {},
   ) {
     super(
       shapeManager,
@@ -40,6 +48,7 @@ class LabeledShapeModalUserInterface extends ShapeModalUserInterface {
       shapeFieldsSchemas,
     );
     this.#labeler = shapeLabeler;
+    this.#labelUpdateCallback = labelUpdateCallback;
   }
 
   /**
@@ -67,9 +76,7 @@ class LabeledShapeModalUserInterface extends ShapeModalUserInterface {
       shape,
       params.zoneName,
       params.labelColor,
-      (shape, newLabelText) => {
-        shape.metadata.zoneName = newLabelText;
-      },
+      this.#labelUpdateCallback,
     );
     compositeCommand.addCommand(addLabelCommand);
     addLabelCommand.execute();

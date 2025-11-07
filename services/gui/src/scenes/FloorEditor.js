@@ -1,15 +1,25 @@
 import { API_URL } from "@/config";
 import Phaser from "phaser";
-import MoveManager from "@managers//move/MoveManager";
+import MoveManager from "@managers/move/MoveManager";
 import SelectShapeManager from "@managers/select/SelectShapeManager";
-import FloorEditorUIInitializer from "@lib/FloorEditorUIInitializer";
 import { buildShapeFromInstructions } from "@utils/shapes";
+import PanningManager from "@managers/PanningManager";
+import ShapeManager from "@managers/ShapeManager";
+import CameraBoundsManager from "@managers/CameraBoundsManager";
+import ScrollbarManager from "@managers/ScrollbarManager";
+import UndoRedoManager from "@managers/UndoRedoManager";
+import OutlineManager from "@managers/outlines/OutlineManager";
+import ZoomManager from "@managers/ZoomManager";
+import LabeledCreateCommandEventHandler from "@managers/LabeledCreateCommandEventHandler";
+import ShapeInstructionsHandler from "@instructions/ShapeInstructionsHandler";
+import ShapeLabeler from "@managers/ShapeLabeler";
+import * as Shapes from "@shapes";
+import InstructionCommands from "@instructions/InstructionCommands.js";
 
 class FloorEditor extends Phaser.Scene {
   /**
    * Graph representing the floor layout
    * @type {Map<Phaser.GameObjects.Arc, Map<Phaser.GameObjects.Arc, Phaser.GameObjects.Line>>}
-   * @private
    * @default new Map()
    */
   #graph = new Map();
@@ -17,14 +27,12 @@ class FloorEditor extends Phaser.Scene {
   /**
    * Array of furniture in the scene
    * @type {Phaser.GameObjects.Shape[]}
-   * @private
    */
   #furniture = [];
 
   /**
    * Array to hold selected corners
    * @type {Phaser.GameObjects.Arc[]}
-   * @private
    * @default []
    */
   #selectedCorners = [];
@@ -32,7 +40,6 @@ class FloorEditor extends Phaser.Scene {
   /**
    * Preview corner before placement
    * @type {Phaser.GameObjects.Arc|null}
-   * @private
    * @default null
    */
   #cornerPreview = null;
@@ -41,7 +48,6 @@ class FloorEditor extends Phaser.Scene {
    * Current tool selected
    * @type {string}
    * @default "move"
-   * @private
    */
   #currentTool = "move";
 
@@ -56,7 +62,6 @@ class FloorEditor extends Phaser.Scene {
    * Move manager
    * @type {MoveManager}
    * @default null
-   * @private
    */
   #moveManager = null;
 
@@ -65,9 +70,72 @@ class FloorEditor extends Phaser.Scene {
    * Also handles rotation and resizing from resize:ResizeManager and rotation:RotationManager
    * @type {SelectShapeManager}
    * @default null
-   * @private
    */
   #selectManager = null;
+
+  /**
+   * Panning manager
+   * @type {PanningManager}
+   * @default null
+   */
+  #panningManager = null;
+
+  /**
+   * Furniture manager
+   * @type {ShapeManager}
+   * @default null
+   */
+  #furnitureManager = null;
+
+  /**
+   * Corner manager
+   * @type {ShapeManager}
+   * @default null
+   */
+  #cornerManager = null;
+
+  /**
+   * Wall manager
+   * @type {ShapeManager}
+   * @default null
+   */
+  #wallManager = null;
+
+  /**
+   * Camera bounds manager
+   * @type {CameraBoundsManager}
+   * @default null
+   */
+  #cameraBoundsManager = null;
+
+  /**
+   * Scrollbar manager
+   * @type {ScrollbarManager}
+   * @default null
+   */
+  #scrollbarManager = null;
+
+  /**
+   * Undo redo manager
+   * @type {UndoRedoManager}
+   * @default null
+   */
+  #undoRedoManager = null;
+
+  /**
+   * Furniture instructions handler
+   * @type {ShapeInstructionsHandler}
+   * @default null
+   */
+  #furnitureInstructionsHandler = null;
+
+  /**
+   * Furniture labeler
+   * @type {ShapeLabeler}
+   * @default null
+   */
+  #labeler = null;
+
   /**
    * Constructor for the FloorEditor scene
    * @constructor
@@ -84,7 +152,6 @@ class FloorEditor extends Phaser.Scene {
 
   /**
    * Creates a wall between two corners
-   * @private
    * @param {Phaser.GameObjects.Arc} corner1 - The first corner
    * @param {Phaser.GameObjects.Arc} corner2 - The second corner
    * @return {void}
@@ -111,7 +178,6 @@ class FloorEditor extends Phaser.Scene {
 
   /**
    * Updates the walls connected to a corner
-   * @private
    * @param {Phaser.GameObjects.Arc} corner - The corner to update walls for
    * @return {void}
    */
@@ -127,7 +193,6 @@ class FloorEditor extends Phaser.Scene {
    * Adds a corner to the floor editor
    * @param {number} positionX - The x-coordinate of the corner
    * @param {number} positionY - The y-coordinate of the corner
-   * @private
    * @return {Phaser.GameObjects.Arc} - The created corner object
    */
   #addCorner(positionX = 100, positionY = 100) {
@@ -169,7 +234,6 @@ class FloorEditor extends Phaser.Scene {
   /**
    * Loads the floor data from the API
    * @param {string} floorId - The ID of the floor to load
-   * @private
    * @returns {Promise<Object>} - The floor data
    * @throws {Error} - If the fetch fails or the response is not ok
    * @async
@@ -194,7 +258,6 @@ class FloorEditor extends Phaser.Scene {
   /**
    * Loads the floor by its ID
    * @param {string} floorId - The ID of the floor to load
-   * @private
    * @async
    */
   async #loadFloor(floorId) {
@@ -267,94 +330,331 @@ class FloorEditor extends Phaser.Scene {
    */
   async create() {
     this.#selectManager = new SelectShapeManager(this);
-    this.#moveManager = new MoveManager(this);
+    this.#moveManager = new MoveManager(this, new OutlineManager(this));
+    this.#undoRedoManager = new UndoRedoManager(this, 100);
+    this.#furnitureManager = new ShapeManager(this, {
+      move: this.#moveManager,
+      select: this.#selectManager,
+    });
+    this.#cornerManager = new ShapeManager(this);
+    this.#wallManager = new ShapeManager(this);
+    this.#labeler = new ShapeLabeler(this);
+
+    new LabeledCreateCommandEventHandler(
+      this,
+      this.#undoRedoManager,
+      this.#furnitureManager,
+      this.#labeler,
+    );
+
+    this.#furnitureInstructionsHandler = new ShapeInstructionsHandler(
+      this.#furnitureManager,
+    );
+    this.#panningManager = new PanningManager(this);
+
+    this.#panningManager.create();
+
+    const zoomManager = new ZoomManager(this);
+    zoomManager.create();
+
+    const camera = this.cameras.main;
+
+    const scrollXElement = document.getElementById("scrollX");
+    const scrollYElement = document.getElementById("scrollY");
+
+    const cameraWidth = camera.width;
+    const cameraHeight = camera.height;
+
+    const initialWorldWidth = cameraWidth * 3;
+    const initialWorldHeight = cameraHeight * 3;
+
+    this.#cameraBoundsManager = new CameraBoundsManager(this, camera, {
+      worldWidth: initialWorldWidth,
+      worldHeight: initialWorldHeight,
+      eventConfig: {
+        shapeAdded: { extraPadding: 0, allowShrink: false },
+        shapeMoved: { extraPadding: 0, allowShrink: false },
+        //shapeMoveEnd: { extraPadding: 0, allowShrink: true },
+        shapeResized: { extraPadding: 40, allowShrink: false },
+        //shapeResizeEnd: { extraPadding: 0, allowShrink: true },
+        shapeRotated: { extraPadding: 0, allowShrink: false },
+      },
+    });
+    this.#cameraBoundsManager.create();
+
+    this.#scrollbarManager = new ScrollbarManager(
+      this,
+      camera,
+      scrollXElement,
+      scrollYElement,
+      {
+        worldWidth: initialWorldWidth,
+        worldHeight: initialWorldHeight,
+        eventNames: [
+          "cameraZoomChanged",
+          "cameraPanned",
+          "cameraBoundsChanged",
+        ],
+      },
+    );
+    this.#scrollbarManager.create();
+
+    this.#furnitureManager.registerShape(
+      "rectangle",
+      (scene, params) => {
+        const rectangle = new Shapes.Rectangle(
+          scene,
+          params.x,
+          params.y,
+          params.width,
+          params.height,
+          params.color,
+        );
+        rectangle.setRotation(params.rotation);
+
+        return rectangle;
+      },
+      {
+        command: InstructionCommands.CREATE_RECTANGLE,
+      },
+    );
+    this.#furnitureManager.registerShape(
+      "ellipse",
+      (scene, params) => {
+        const ellipse = new Shapes.Ellipse(
+          scene,
+          params.x,
+          params.y,
+          params.width,
+          params.height,
+          params.color,
+        );
+        ellipse.setRotation(params.rotation);
+
+        return ellipse;
+      },
+      {
+        command: InstructionCommands.CREATE_ELLIPSE,
+      },
+    );
+    this.#furnitureManager.registerShape(
+      "arc",
+      (scene, params) => {
+        const arc = new Shapes.Arc(
+          scene,
+          params.x,
+          params.y,
+          params.radius,
+          params.startAngle,
+          params.endAngle,
+          false,
+          params.color,
+        );
+        arc.setRotation(params.rotation);
+
+        if (params.width && params.height) {
+          arc.setDisplaySize(params.width, params.height);
+        }
+
+        return arc;
+      },
+      {
+        command: InstructionCommands.CREATE_ARC,
+        fieldMap: {
+          radius: "arcRadius",
+          startAngle: "arcStartAngle",
+          endAngle: "arcEndAngle",
+        },
+      },
+    );
+    this.#furnitureManager.registerShape(
+      "polygon",
+      (scene, params) => {
+        const polygon = new Shapes.Polygon(
+          scene,
+          params.x,
+          params.y,
+          params.points,
+          params.color,
+        );
+        polygon.setRotation(params.rotation);
+        if (params.width && params.height) {
+          polygon.setDisplaySize(params.width, params.height);
+        }
+
+        return polygon;
+      },
+      {
+        command: InstructionCommands.CREATE_POLYGON,
+        fieldMap: { points: "polygonPoints" },
+      },
+    );
+    this.#furnitureManager.registerShape(
+      "container",
+      async (scene, params) => {
+        const children = [];
+        if (params.children && params.children.length > 0) {
+          for (const childSnapshot of params.children) {
+            const childShape =
+              await this.#furnitureManager.addShapeFromSnapshot(
+                childSnapshot,
+                false,
+              );
+
+            if (!childShape) {
+              continue;
+            }
+            children.push(childShape);
+          }
+        }
+
+        const container = new Shapes.Container(
+          scene,
+          params.x,
+          params.y,
+          children,
+        );
+        container.setRotation(params.rotation);
+        container.setSize(params.width, params.height);
+
+        return container;
+      },
+      {
+        command: InstructionCommands.BEGIN_CONTAINER,
+        priority: 1,
+      },
+    );
+    this.#furnitureManager.registerShape(
+      "custom",
+      async (_scene, params) => {
+        try {
+          const response = await fetch(
+            API_URL +
+              "/furniture-management/furniture/" +
+              params.templateId +
+              "/topDownView/template",
+          );
+          const templateData = await response.json();
+          if (!response.ok) {
+            if (templateData.errors && templateData.errors.length > 0) {
+              alert(templateData.errors.join("\n"));
+            }
+            console.error("Failed to load shape template:", templateData);
+            return;
+          }
+
+          const instructions = templateData.shape.instructions;
+
+          // Build from instructions returns array to make it more generic
+          // but we only expect one shape to be returned
+          const [reconstructedTemplateSnapshot] =
+            await this.#furnitureInstructionsHandler.convertFromInstructions(
+              instructions,
+              params.color,
+            );
+
+          const reconstructedTemplate =
+            await this.#furnitureManager.addShapeFromSnapshot(
+              reconstructedTemplateSnapshot,
+              false,
+            );
+
+          reconstructedTemplate.setPosition(params.x, params.y);
+          reconstructedTemplate.setDisplaySize(params.width, params.height);
+          reconstructedTemplate.setRotation(params.rotation);
+
+          reconstructedTemplate.metadata = {};
+          reconstructedTemplate.metadata.id = templateData.shape.shape.id;
+          reconstructedTemplate.metadata.furnitureId = parseInt(
+            params.templateId,
+            10,
+          );
+
+          return reconstructedTemplate;
+        } catch (error) {
+          alert(
+            "Failed to load shape template. Please check the console for details.",
+          );
+          console.error("Error fetching shape template:", error);
+        }
+      },
+      { command: InstructionCommands.BEGIN_CONTAINER },
+    );
+
+    this.#cornerManager.registerShape("corner", (scene, params) => {
+      const corner = new Shapes.Arc(
+        scene,
+        params.x,
+        params.y,
+        20,
+        0,
+        360,
+        false,
+        0xffffff,
+      );
+
+      this.#graph.set(corner, new Map());
+
+      corner.on("drag", (_pointer, dragX, dragY) => {
+        if (this.#currentTool !== "move") {
+          return;
+        }
+
+        corner.setPosition(dragX, dragY);
+        this.#updateWalls(corner);
+      });
+
+      corner.on("pointerdown", (_pointer, _x, _y, event) => {
+        event.stopPropagation();
+
+        if (!this.#selectedCorners.includes(corner)) {
+          corner.setFillStyle(0xff0000);
+          this.#selectedCorners.push(corner);
+          corner.setToTop();
+        }
+
+        if (this.#selectedCorners.length === 2) {
+          //this.#createWall(this.#selectedCorners[0], this.#selectedCorners[1]);
+          const params = {
+            corner1: this.#selectedCorners[0],
+            corner2: this.#selectedCorners[1],
+          };
+          this.#wallManager.addShape("wall", params, {}, false);
+
+          corner.setToTop();
+          this.#selectedCorners.forEach((c) => c.setFillStyle(0xffffff));
+          this.#selectedCorners = [];
+        }
+      });
+      return corner;
+    });
+
+    this.#wallManager.registerShape("wall", (scene, params) => {
+      const { corner1, corner2 } = params;
+      if (corner1 === corner2) {
+        console.warn("Cannot create a wall between the same corner.");
+        return;
+      }
+
+      if (this.#graph.get(corner1).has(corner2)) {
+        console.warn("A wall already exists between these corners.");
+        return;
+      }
+
+      const wall = scene.add
+        .line(0, 0, corner1.x, corner1.y, corner2.x, corner2.y, 0xffffff)
+        .setOrigin(0, 0)
+        .setLineWidth(10);
+
+      this.#graph.get(corner1).set(corner2, wall);
+      this.#graph.get(corner2).set(corner1, wall);
+    });
 
     const urlParams = new URLSearchParams(window.location.search);
     const floorId = urlParams.get("floorId");
     if (floorId) {
       await this.#loadFloor(floorId);
     }
-
-    /**
-     * Handles the move button click event
-     */
-    const handleMoveButtonClick = function () {
-      this.#currentTool = "move";
-      this.#selectedCorners.forEach((corner) => {
-        corner.setFillStyle(0xffffff);
-      });
-      this.#selectedCorners = [];
-      this.#selectManager.hide();
-    }.bind(this);
-
-    const handleSelectButtonClick = function () {
-      this.#currentTool = "select";
-      this.#selectedCorners.forEach((corner) => {
-        corner.setFillStyle(0xffffff);
-      });
-      this.#selectedCorners = [];
-    }.bind(this);
-
-    const addFurniture = async function (parameters) {
-      const id = parameters.id;
-
-      try {
-        const response = await fetch(
-          API_URL +
-            "/furniture-management/furniture/" +
-            id +
-            "/topDownView/template",
-        );
-        if (!response.ok) {
-          throw new Error("Failed to fetch furniture template.");
-        }
-
-        const templateData = await response.json();
-        const instructions = templateData.shape.instructions;
-        // Build from instructions returns array to make it more generic
-        // but we only expect one shape to be returned
-        const rebuildTemplate = buildShapeFromInstructions(
-          instructions,
-          this,
-          parameters.color,
-        )[0];
-
-        rebuildTemplate.id = templateData.shape.shape.id;
-        rebuildTemplate.furnitureId = parseInt(id, 10);
-
-        rebuildTemplate.setPosition(parameters.x, parameters.y);
-        rebuildTemplate.setDisplaySize(parameters.width, parameters.height);
-        rebuildTemplate.setRotation(parameters.rotation);
-
-        const label = this.add.text(
-          rebuildTemplate.x,
-          rebuildTemplate.y,
-          parameters.name,
-          {
-            fontSize: "16px",
-            color: parameters.textColor,
-          },
-        );
-        label.setOrigin(0.5, 0.5);
-        rebuildTemplate.label = label;
-
-        this.#furniture.push(rebuildTemplate);
-        rebuildTemplate.setInteractive({ draggable: true });
-        this.#moveManager.create(rebuildTemplate);
-        this.#selectManager.create(rebuildTemplate);
-      } catch (error) {
-        console.error("Error fetching shape template:", error);
-      }
-    }.bind(this);
-
-    FloorEditorUIInitializer.initialize(
-      handleMoveButtonClick,
-      handleSelectButtonClick,
-      addFurniture,
-      this.#selectManager.hide.bind(this.#selectManager),
-      () => this.#furniture,
-      () => this.#graph,
-    );
 
     window.addEventListener("pointermove", (event) => {
       const canvas = this.game.canvas;
