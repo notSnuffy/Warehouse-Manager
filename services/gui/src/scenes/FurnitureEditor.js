@@ -756,6 +756,7 @@ class FurnitureEditor extends Phaser.Scene {
 
       API_URL + "/shape-management/shapes",
     );
+    await this.#UIElements.shapeListUI.initialize();
 
     this.#UIElements.saveButton = new FurnitureSaveButtonBuilder()
       .setGetZones(() => this.#zoneManager.getRootShapes())

@@ -483,6 +483,7 @@ class ShapeEditor extends Phaser.Scene {
       ),
       API_URL + "/shape-management/shapes",
     );
+    this.#UIElements.shapeListUI.initialize();
 
     this.#UIElements.saveButton = new ShapeSaveButton(
       "saveButton",

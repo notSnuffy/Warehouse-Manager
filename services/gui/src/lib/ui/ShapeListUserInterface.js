@@ -34,8 +34,14 @@ class ShapeListUserInterface {
     this.#listContainer = document.getElementById(listContainerId);
     this.#buttonClickHandler = buttonClickHandler;
     this.#shapeManagementURL = shapeManagementURL;
+  }
 
-    this.#initializeShapeList();
+  /**
+   * Initializes the shape list user interface.
+   * @return {Promise<void>}
+   */
+  async initialize() {
+    await this.#initializeShapeList();
   }
 
   /**

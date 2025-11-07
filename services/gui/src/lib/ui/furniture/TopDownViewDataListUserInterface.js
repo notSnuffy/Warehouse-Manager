@@ -53,6 +53,7 @@ class TopDownViewDataListUserInterface {
   populateFromShapeList(shapeListElementId) {
     const shapeListElement = document.getElementById(shapeListElementId);
     const buttons = shapeListElement.querySelectorAll("button");
+    console.log("Populating from shape list:", buttons);
     buttons.forEach((button) => {
       let shapeName = button.dataset.shape_name;
 
