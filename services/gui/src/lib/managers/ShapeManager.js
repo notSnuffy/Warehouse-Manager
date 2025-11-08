@@ -30,14 +30,6 @@ class ShapeManager {
   #registry = new Map();
 
   /**
-   * Gets the managers to register new shapes with.
-   * @returns {Object} The managers.
-   */
-  get managers() {
-    return this.#factory.managers;
-  }
-
-  /**
    * Creates an instance of ShapeManager.
    * @param {Phaser.Scene} scene - The scene to which this manager belongs.
    * @param {Object} managers - Object where key represents manager ID and value represents the manager instance. Managers to register new shapes with.

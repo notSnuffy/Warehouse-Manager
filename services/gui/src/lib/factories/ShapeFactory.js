@@ -18,14 +18,6 @@ class ShapeFactory {
    */
   #managers;
 
-  /*
-   * Gets the managers to register new shapes with.
-   * @returns {Object} The managers.
-   */
-  get managers() {
-    return this.#managers;
-  }
-
   /**
    * Creates an instance of ShapeFactory.
    * @param {Phaser.Scene} scene - The scene to which this factory belongs.

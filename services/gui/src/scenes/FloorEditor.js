@@ -20,6 +20,7 @@ import WallRemoveCommand from "@commands/floor/WallRemoveCommand";
 import CornerRemoveCommand from "@commands/floor/CornerRemoveCommand";
 import WallCreateCommand from "@commands/floor/WallCreateCommand";
 import CornerCreateCommand from "@commands/floor/CornerCreateCommand";
+import { DefaultShapeInteractiveConfig } from "@utils/shapes";
 
 class FloorEditor extends Phaser.Scene {
   /**
@@ -335,7 +336,10 @@ class FloorEditor extends Phaser.Scene {
       move: this.#moveManager,
       select: this.#selectManager,
     });
-    this.#cornerManager = new ShapeManager(this);
+    this.#cornerManager = new ShapeManager(this, {
+      move: this.#moveManager,
+    });
+
     this.#wallManager = new ShapeManager(this);
     this.#labeler = new ShapeLabeler(this);
 
@@ -594,16 +598,16 @@ class FloorEditor extends Phaser.Scene {
 
       this.#graph.set(corner, new Map());
 
-      corner.setInteractive({ draggable: true });
+      //corner.setInteractive({ draggable: true });
 
-      corner.on("drag", (_pointer, dragX, dragY) => {
-        corner.setPosition(dragX, dragY);
-        this.#updateWalls(corner);
-        this.#selectedCorners.forEach((c) => {
-          c.setFillStyle(0xffffff);
-        });
-        this.#selectedCorners = [];
-      });
+      //corner.on("drag", (_pointer, dragX, dragY) => {
+      //  corner.setPosition(dragX, dragY);
+      //  this.#updateWalls(corner);
+      //  this.#selectedCorners.forEach((c) => {
+      //    c.setFillStyle(0xffffff);
+      //  });
+      //  this.#selectedCorners = [];
+      //});
 
       corner.on("pointerdown", async (_pointer, _x, _y, event) => {
         event.stopPropagation();
@@ -681,8 +685,8 @@ class FloorEditor extends Phaser.Scene {
       const scaleY = this.scale.displayScale.y;
 
       const canvasPointer = {
-        x: (event.clientX - canvasBounds.x) * scaleX,
-        y: (event.clientY - canvasBounds.y) * scaleY,
+        x: (event.x - canvasBounds.x) * scaleX,
+        y: (event.y - canvasBounds.y) * scaleY,
       };
 
       const addCornerButton = document.getElementById("addCornerButton");
@@ -702,21 +706,33 @@ class FloorEditor extends Phaser.Scene {
       if (canvasPointer.y < 0 || canvasPointer.y > this.cameras.main.height) {
         withinHeight = false;
       }
+      const worldPoint = this.cameras.main.getWorldPoint(
+        canvasPointer.x,
+        canvasPointer.y,
+      );
+
       if (!this.#cornerPreview) {
         this.#cornerPreview = this.add.circle(
-          canvasPointer.x,
-          canvasPointer.y,
+          worldPoint.x,
+          worldPoint.y,
           20,
           0x888888,
         );
       } else {
         if (withinWidth) {
-          this.#cornerPreview.x = canvasPointer.x;
+          this.#cornerPreview.x = worldPoint.x;
         }
         if (withinHeight) {
-          this.#cornerPreview.y = canvasPointer.y;
+          this.#cornerPreview.y = worldPoint.y;
         }
       }
+    });
+
+    this.events.on("shapeMoved", (shape) => {
+      if (!this.#graph.has(shape)) {
+        return;
+      }
+      this.#updateWalls(shape);
     });
 
     this.input.on("pointerdown", async (event) => {
@@ -729,10 +745,17 @@ class FloorEditor extends Phaser.Scene {
           this.#cornerPreview.destroy();
           this.#cornerPreview = null;
         }
-        const result = await this.#cornerManager.addShapeWithCommand("corner", {
-          x: event.worldX,
-          y: event.worldY,
-        });
+        const result = await this.#cornerManager.addShapeWithCommand(
+          "corner",
+          {
+            x: event.worldX,
+            y: event.worldY,
+          },
+          {
+            interactive: DefaultShapeInteractiveConfig.ARC,
+            managers: ["move"],
+          },
+        );
         const corner = /** @type {Phaser.GameObjects.Arc} */ (result.shape);
         const cornerCreateCommand = new CornerCreateCommand(
           result.command,
@@ -803,6 +826,10 @@ class FloorEditor extends Phaser.Scene {
         this.input.activePointer.worldX,
         this.input.activePointer.worldY,
       );
+      if (this.#cornerPreview) {
+        this.#cornerPreview.x = this.input.activePointer.worldX;
+        this.#cornerPreview.y = this.input.activePointer.worldY;
+      }
     }
     if (this.#selectManager.isResizing && this.#panningManager.isPanning) {
       this.input.activePointer.updateWorldPoint(this.cameras.main);

@@ -87,18 +87,19 @@ class SelectShapeManager extends Manager {
         this.hide();
       }
 
-      const shapeManager = shape.manager;
-      const registeredManagers = shapeManager.managers;
+      const registeredManagers = shape.managers;
 
       if (!registeredManagers) {
         return;
       }
 
-      registeredManagers.values().forEach((manager) => {
-        if (!(manager instanceof SelectShapeManager)) {
+      console.log(registeredManagers);
+
+      for (const manager of Object.values(registeredManagers)) {
+        if (manager !== "select") {
           return;
         }
-      });
+      }
 
       this.#lastSelected = shape;
       this.#rotationManager.create(shape);
