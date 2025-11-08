@@ -14,7 +14,12 @@ import LabeledCreateCommandEventHandler from "@managers/LabeledCreateCommandEven
 import ShapeInstructionsHandler from "@instructions/ShapeInstructionsHandler";
 import ShapeLabeler from "@managers/ShapeLabeler";
 import * as Shapes from "@shapes";
-import InstructionCommands from "@instructions/InstructionCommands.js";
+import InstructionCommands from "@instructions/InstructionCommands";
+import CompositeCommand from "@commands/CompositeCommand";
+import WallRemoveCommand from "@commands/floor/WallRemoveCommand";
+import CornerRemoveCommand from "@commands/floor/CornerRemoveCommand";
+import WallCreateCommand from "@commands/floor/WallCreateCommand";
+import CornerCreateCommand from "@commands/floor/CornerCreateCommand";
 
 class FloorEditor extends Phaser.Scene {
   /**
@@ -23,12 +28,6 @@ class FloorEditor extends Phaser.Scene {
    * @default new Map()
    */
   #graph = new Map();
-
-  /**
-   * Array of furniture in the scene
-   * @type {Phaser.GameObjects.Shape[]}
-   */
-  #furniture = [];
 
   /**
    * Array to hold selected corners
@@ -316,12 +315,12 @@ class FloorEditor extends Phaser.Scene {
       label.setOrigin(0.5, 0.5);
       furniture.label = label;
 
-      this.#furniture.push(furniture);
+      //this.#furniture.push(furniture);
       furniture.setInteractive({ draggable: true });
       this.#moveManager.create(furniture);
       this.#selectManager.create(furniture);
     });
-    console.log(this.#furniture);
+    //console.log(this.#furniture);
   }
 
   /**
@@ -595,16 +594,18 @@ class FloorEditor extends Phaser.Scene {
 
       this.#graph.set(corner, new Map());
 
-      corner.on("drag", (_pointer, dragX, dragY) => {
-        if (this.#currentTool !== "move") {
-          return;
-        }
+      corner.setInteractive({ draggable: true });
 
+      corner.on("drag", (_pointer, dragX, dragY) => {
         corner.setPosition(dragX, dragY);
         this.#updateWalls(corner);
+        this.#selectedCorners.forEach((c) => {
+          c.setFillStyle(0xffffff);
+        });
+        this.#selectedCorners = [];
       });
 
-      corner.on("pointerdown", (_pointer, _x, _y, event) => {
+      corner.on("pointerdown", async (_pointer, _x, _y, event) => {
         event.stopPropagation();
 
         if (!this.#selectedCorners.includes(corner)) {
@@ -619,7 +620,21 @@ class FloorEditor extends Phaser.Scene {
             corner1: this.#selectedCorners[0],
             corner2: this.#selectedCorners[1],
           };
-          this.#wallManager.addShape("wall", params, {}, false);
+          const result = await this.#wallManager.addShapeWithCommand(
+            "wall",
+            params,
+            {},
+            false,
+          );
+          const wall = /** @type {Phaser.GameObjects.Line} */ (result.shape);
+          const wallCreateCommand = new WallCreateCommand(
+            result.command,
+            this.#graph,
+            wall,
+            params.corner1,
+            params.corner2,
+          );
+          this.#undoRedoManager.pushCommand(wallCreateCommand);
 
           corner.setToTop();
           this.#selectedCorners.forEach((c) => c.setFillStyle(0xffffff));
@@ -648,6 +663,8 @@ class FloorEditor extends Phaser.Scene {
 
       this.#graph.get(corner1).set(corner2, wall);
       this.#graph.get(corner2).set(corner1, wall);
+
+      return wall;
     });
 
     const urlParams = new URLSearchParams(window.location.search);
@@ -702,14 +719,9 @@ class FloorEditor extends Phaser.Scene {
       }
     });
 
-    this.input.on("pointerdown", (event) => {
-      this.#selectManager.hide();
-      if (this.#currentTool === "select") {
-        this.#selectedCorners.forEach((corner) => {
-          corner.setFillStyle(0xffffff);
-        });
-        this.#selectedCorners = [];
-      }
+    this.input.on("pointerdown", async (event) => {
+      this.#selectedCorners.forEach((c) => c.setFillStyle(0xffffff));
+      this.#selectedCorners = [];
 
       const addCornerButton = document.getElementById("addCornerButton");
       if (addCornerButton.classList.contains("active")) {
@@ -717,30 +729,90 @@ class FloorEditor extends Phaser.Scene {
           this.#cornerPreview.destroy();
           this.#cornerPreview = null;
         }
-        this.#addCorner(event.x, event.y);
+        const result = await this.#cornerManager.addShapeWithCommand("corner", {
+          x: event.worldX,
+          y: event.worldY,
+        });
+        const corner = /** @type {Phaser.GameObjects.Arc} */ (result.shape);
+        const cornerCreateCommand = new CornerCreateCommand(
+          result.command,
+          this.#graph,
+          corner,
+        );
+        this.#undoRedoManager.pushCommand(cornerCreateCommand);
       }
     });
 
-    this.events.on("shapeMoved", (shape) => {
-      shape.label.setPosition(shape.x, shape.y);
-      shape.label.setToTop();
-    });
-
-    this.events.on("shapeSelected", (shape) => {
-      shape.label.setPosition(shape.x, shape.y);
-      shape.label.setToTop();
-    });
-
-    this.events.on("shapeResized", (shape) => {
-      shape.label.setPosition(shape.x, shape.y);
-      shape.label.setToTop();
+    this.input.keyboard.on("keydown-DELETE", async () => {
+      if (this.#selectedCorners.length > 0) {
+        const compositeCommand = new CompositeCommand();
+        // This array only holds one or zero corners at a time since if there are two, a wall is created and the array is cleared
+        const [corner] = this.#selectedCorners;
+        const connectedCorners = this.#graph.get(corner);
+        connectedCorners.forEach(async (wall, otherCorner) => {
+          this.#graph.get(corner).delete(otherCorner);
+          this.#graph.get(otherCorner).delete(corner);
+          const { command } = await this.#wallManager.removeShapeWithCommand(
+            wall,
+            false,
+          );
+          const wallRemoveCommand = new WallRemoveCommand(
+            command,
+            this.#graph,
+            wall,
+            corner,
+            otherCorner,
+          );
+          compositeCommand.addCommand(wallRemoveCommand);
+        });
+        this.#graph.delete(corner);
+        const { command } =
+          await this.#cornerManager.removeShapeWithCommand(corner);
+        const cornerRemoveCommand = new CornerRemoveCommand(
+          command,
+          this.#graph,
+          corner,
+        );
+        compositeCommand.addCommand(cornerRemoveCommand);
+        this.#undoRedoManager.pushCommand(compositeCommand);
+      }
     });
   }
   /**
    * Updates the scene
    * @public
    */
-  update() {}
+  update() {
+    // Function that prints every ten seconds the graphs structure for debugging
+    if (!this._logInterval) {
+      this._logInterval = setInterval(() => {
+        const now = Date.now();
+
+        if (this._lastLogTime && now - this._lastLogTime < 10000) {
+          return;
+        }
+        this._lastLogTime = now;
+        console.log(this.#graph);
+      }, 10000);
+    }
+
+    if (this.#moveManager.isDragging && this.#panningManager.isPanning) {
+      this.input.activePointer.updateWorldPoint(this.cameras.main);
+      this.#moveManager.update(
+        null,
+        this.input.activePointer.worldX,
+        this.input.activePointer.worldY,
+      );
+    }
+    if (this.#selectManager.isResizing && this.#panningManager.isPanning) {
+      this.input.activePointer.updateWorldPoint(this.cameras.main);
+      this.#selectManager.update(
+        this.input.activePointer.worldX,
+        this.input.activePointer.worldY,
+      );
+    }
+    this.#panningManager.update();
+  }
 }
 
 export { FloorEditor };

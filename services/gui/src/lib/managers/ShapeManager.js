@@ -30,6 +30,14 @@ class ShapeManager {
   #registry = new Map();
 
   /**
+   * Gets the managers to register new shapes with.
+   * @returns {Object} The managers.
+   */
+  get managers() {
+    return this.#factory.managers;
+  }
+
+  /**
    * Creates an instance of ShapeManager.
    * @param {Phaser.Scene} scene - The scene to which this manager belongs.
    * @param {Object} managers - Object where key represents manager ID and value represents the manager instance. Managers to register new shapes with.
@@ -119,10 +127,14 @@ class ShapeManager {
    * @param {String[]} [additionalData.managers] - Optional list of manager IDs the shape belongs to.
    * @param {boolean} [emitEvent=true] - Whether to emit an event after adding the shape.
    * @throws {Error} If the shape type is not registered.
-   * @returns {Promise<Phaser.GameObjects.Shape>} The added shape.
+   * @returns {Promise<Phaser.GameObjects.Shape|null>} The added shape.
    */
   async addShape(type, params, additionalData = {}, emitEvent = true) {
     const shape = await this.#factory.create(type, params, additionalData);
+    if (!shape) {
+      return null;
+    }
+
     shape.deleted = false;
     shape.manager = this;
 
@@ -151,7 +163,7 @@ class ShapeManager {
    * @param {Object[]} [snapshot.children] - Optional child shapes.
    * @param {boolean} [emitEvent=true] - Whether to emit an event after adding the shape.
    * @throws {Error} If the shape type is not registered.
-   * @returns {Promise<Phaser.GameObjects.Shape>} The added shape.
+   * @returns {Promise<Phaser.GameObjects.Shape|null>} The added shape.
    */
   async addShapeFromSnapshot(snapshot, emitEvent = true) {
     const { transform, specific, metadata, additionalData, children } =
@@ -183,7 +195,7 @@ class ShapeManager {
    * @param {String[]} [additionalData.managers] - Optional list of manager IDs the shape belongs to.
    * @param {boolean} [emitEvent=true] - Whether to emit an event after adding the shape.
    * @throws {Error} If the shape type is not registered.
-   * @returns {Promise<{shape: Phaser.GameObjects.Shape, command: AddShapeCommand}>} The added shape and the command used to add it.
+   * @returns {Promise<{shape: Phaser.GameObjects.Shape, command: AddShapeCommand}|null>} The added shape and the command used to add it.
    */
   async addShapeWithCommand(
     type,
@@ -199,6 +211,10 @@ class ShapeManager {
       emitEvent,
     );
     const shape = await command.execute();
+    if (!shape) {
+      return null;
+    }
+
     return { shape, command };
   }
 

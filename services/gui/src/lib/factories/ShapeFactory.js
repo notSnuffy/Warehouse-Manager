@@ -18,6 +18,14 @@ class ShapeFactory {
    */
   #managers;
 
+  /*
+   * Gets the managers to register new shapes with.
+   * @returns {Object} The managers.
+   */
+  get managers() {
+    return this.#managers;
+  }
+
   /**
    * Creates an instance of ShapeFactory.
    * @param {Phaser.Scene} scene - The scene to which this factory belongs.
@@ -39,7 +47,7 @@ class ShapeFactory {
    * @param {Object} [additionalData.metadata] - Optional metadata to attach to the shape.
    * @param {string[]} [additionalData.managers] - Optional list of manager IDs to register the shape with.
    * @throws {Error} If the shape type is not registered or if the factory does not return a valid Phaser Game Object.
-   * @returns {Promise<Phaser.GameObjects.Shape>} The created shape.
+   * @returns {Promise<Phaser.GameObjects.Shape|null>} The created shape.
    */
   async create(type, params, additionalData = {}) {
     const shapeEntry = this.#registry.get(type);
@@ -51,9 +59,7 @@ class ShapeFactory {
 
     const shape = await factory(this.#scene, params);
     if (!shape) {
-      throw new Error(
-        `Factory for shape type '${type}' did not return a valid Phaser Game Object.`,
-      );
+      return null;
     }
 
     if (metadata.defaultInteractive && !additionalData.interactive) {
