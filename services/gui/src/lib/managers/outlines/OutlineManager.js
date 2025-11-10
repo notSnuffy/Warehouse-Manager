@@ -1,6 +1,6 @@
 /**
+ * Callback function to draw the outline for a shape
  * @callback drawOutlineCallback
- * @description Callback function to draw the outline
  * @param {Phaser.GameObjects.Graphics} graphics - The graphics object to draw with
  * @param {Phaser.GameObjects.Shape} shape - The shape to draw the outline for
  * @returns {void}
@@ -15,7 +15,6 @@ class OutlineManager {
   /**
    * Map of outlines
    * @type {Map<Phaser.GameObjects.Shape, Phaser.GameObjects.Graphics>}
-   * @private
    * @default new Map()
    */
   #outlines = new Map();
@@ -36,9 +35,6 @@ class OutlineManager {
    */
   create(shape, drawOutline) {
     if (!shape || this.#outlines.has(shape)) {
-      console.warn(
-        "Outline already exists for this shape or shape is invalid.",
-      );
       return;
     }
     if (!drawOutline || typeof drawOutline !== "function") {

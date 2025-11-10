@@ -22,6 +22,10 @@ import WallCreateCommand from "@commands/floor/WallCreateCommand";
 import CornerCreateCommand from "@commands/floor/CornerCreateCommand";
 import { DefaultShapeInteractiveConfig } from "@utils/shapes";
 import CornerCreateCommandEventHandler from "@managers/CornerCreateCommandEventHandler";
+import LabeledShapeModalUserInterface from "@ui/LabeledShapeModalUserInterface";
+import UndoRedoUserInterface from "@ui/UndoRedoUserInterface";
+import FurnitureListUserInterface from "@ui/furniture/FurnitureListUserInterface";
+import { ShapeFieldSchemas } from "@ui/ShapeFieldSchemas";
 
 class FloorEditor extends Phaser.Scene {
   /**
@@ -136,6 +140,22 @@ class FloorEditor extends Phaser.Scene {
    * @default null
    */
   #labeler = null;
+
+  /**
+   * Object containing references to UI elements
+   * @type {Object}
+   * @property {LabeledModalUserInterface|null} furnitureModal - The furniture modal UI
+   * @property {UndoRedoUserInterface|null} undoRedoUI - The undo/redo UI
+   * @property {FurnitureListUserInterface|null} furnitureListUI - The furniture list UI
+   * @property {FloorSaveButtonUserInterface|null} saveButton - The floor save button UI
+   * @default { furnitureModal: null, undoRedoUI: null, furnitureListUI: null, saveButton: null}
+   */
+  #UIElements = {
+    furnitureModal: null,
+    undoRedoUI: null,
+    furnitureListUI: null,
+    saveButton: null,
+  };
 
   /**
    * Constructor for the FloorEditor scene
@@ -274,7 +294,7 @@ class FloorEditor extends Phaser.Scene {
     });
 
     this.#wallManager = new ShapeManager(this);
-    this.#labeler = new ShapeLabeler(this);
+    this.#labeler = new ShapeLabeler(this, false);
 
     new CornerCreateCommandEventHandler(
       this,
@@ -512,6 +532,7 @@ class FloorEditor extends Phaser.Scene {
             params.templateId,
             10,
           );
+          reconstructedTemplate.metadata.furnitureName = params.templateName;
 
           return reconstructedTemplate;
         } catch (error) {
@@ -610,6 +631,51 @@ class FloorEditor extends Phaser.Scene {
 
       return wall;
     });
+
+    const LabelColorSchema = {
+      type: "color",
+      name: "labelColor",
+      label: "Label Color",
+      attributes: {
+        required: true,
+        value: "#ffffff",
+        title: "Choose your label color",
+        name: "labelColor",
+      },
+      classes: ["form-control-color"],
+    };
+
+    this.#UIElements.furnitureModal = new LabeledShapeModalUserInterface(
+      this.#furnitureManager,
+      this.#labeler,
+      this.#undoRedoManager,
+      "newFurnitureModal",
+      ["move", "select"],
+      {
+        CUSTOM: [...ShapeFieldSchemas.CUSTOM, LabelColorSchema],
+      },
+      () => {},
+      (shape) => shape.metadata.furnitureName || "Furniture",
+    );
+    this.#UIElements.undoRedoUI = new UndoRedoUserInterface(
+      this,
+      this.#undoRedoManager,
+      "undoButton",
+      "redoButton",
+    );
+
+    this.#UIElements.furnitureListUI = new FurnitureListUserInterface(
+      "furnitureMenuButtons",
+      (furnitureType, furnitureId, furnitureName) => {
+        this.#UIElements.furnitureModal.openShapeModal(
+          furnitureType,
+          furnitureId,
+          furnitureName,
+        );
+      },
+      API_URL + "/furniture-management/furniture",
+    );
+    await this.#UIElements.furnitureListUI.initialize();
 
     const urlParams = new URLSearchParams(window.location.search);
     const floorId = urlParams.get("floorId");

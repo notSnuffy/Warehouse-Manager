@@ -17,18 +17,25 @@ class ShapeModalUserInterface {
   undoRedoManager;
 
   /**
-   * The current shape type being added or edited
+   * The current shape type being added
    * @type {string|null}
    * @default null
    */
   #currentShapeType = null;
 
   /**
-   * The current shape ID being edited (null if adding a new shape)
+   * The current shape ID being added
    * @type {string|null}
    * @default null
    */
   #currentShapeId = null;
+
+  /**
+   * The current shape name being added
+   * @type {string|null}
+   * @default null
+   */
+  #currentShapeName = null;
 
   /**
    * The modal element
@@ -85,6 +92,7 @@ class ShapeModalUserInterface {
   openShapeModal(shapeType, shapeId, shapeName) {
     this.#currentShapeType = shapeType;
     this.#currentShapeId = shapeId;
+    this.#currentShapeName = shapeName;
 
     const modalTitle = this.#modal.querySelector("#modalTitle");
     modalTitle.textContent =
@@ -110,7 +118,6 @@ class ShapeModalUserInterface {
    * @private
    */
   async onModalConfirmation() {
-    console.log(this.#modal);
     const form = this.#modal.querySelector("#shapeForm");
     const isValid = form.checkValidity();
     if (!isValid) {
@@ -123,6 +130,9 @@ class ShapeModalUserInterface {
 
     if (this.#currentShapeId) {
       params.templateId = this.#currentShapeId;
+    }
+    if (this.#currentShapeName) {
+      params.templateName = this.#currentShapeName;
     }
 
     Object.keys(params).forEach((key) => {
@@ -166,6 +176,8 @@ class ShapeModalUserInterface {
     }
 
     this.#currentShapeType = null;
+    this.#currentShapeId = null;
+    this.#currentShapeName = null;
     const bootstrapModal = Modal.getInstance(this.#modal);
     bootstrapModal.hide();
   }

@@ -22,6 +22,12 @@ class LabeledShapeModalUserInterface extends ShapeModalUserInterface {
   #labelUpdateCallback;
 
   /**
+   * Function to get the text for the label
+   * @type {Function}
+   */
+  #getTextForLabel;
+
+  /**
    * Creates an instance of LabeledShapeModalUserInterface.
    * @param {ShapeManager} shapeManager - The shape manager instance
    * @param {ShapeLabeler} shapeLabeler - The shape labeler instance
@@ -30,6 +36,7 @@ class LabeledShapeModalUserInterface extends ShapeModalUserInterface {
    * @param {Array} managersToRegisterWith - The list of managers to register new shapes with
    * @param {Object} shapeFieldsSchemas - The shape fields schemas
    * @param {Function} labelUpdateCallback - Callback function to call after label updates
+   * @param {Function} getTextForLabel - Function to get the text for the label
    */
   constructor(
     shapeManager,
@@ -39,6 +46,7 @@ class LabeledShapeModalUserInterface extends ShapeModalUserInterface {
     managersToRegisterWith,
     shapeFieldsSchemas,
     labelUpdateCallback = () => {},
+    getTextForLabel = (_shape) => "New Label",
   ) {
     super(
       shapeManager,
@@ -49,6 +57,7 @@ class LabeledShapeModalUserInterface extends ShapeModalUserInterface {
     );
     this.#labeler = shapeLabeler;
     this.#labelUpdateCallback = labelUpdateCallback;
+    this.#getTextForLabel = getTextForLabel;
   }
 
   /**
@@ -74,7 +83,7 @@ class LabeledShapeModalUserInterface extends ShapeModalUserInterface {
     const addLabelCommand = new AddLabelCommand(
       this.#labeler,
       shape,
-      params.zoneName,
+      params.labelText || this.#getTextForLabel(shape),
       params.labelColor,
       this.#labelUpdateCallback,
     );

@@ -12,6 +12,13 @@ class ShapeLabeler {
   #scene;
 
   /**
+   * Whether to allow label editing.
+   * @type {boolean}
+   * @default true
+   */
+  #allowEdit;
+
+  /**
    * Map of shape IDs to their corresponding labels.
    * @type {Map<Phaser.GameObjects.Shape, Phaser.GameObjects.Text>}
    */
@@ -26,9 +33,11 @@ class ShapeLabeler {
   /**
    * Constructor
    * @param {Phaser.Scene} scene - The Phaser scene instance
+   * @param {boolean} [allowEdit=true] - Whether to allow label editing
    */
-  constructor(scene) {
+  constructor(scene, allowEdit = true) {
     this.#scene = scene;
+    this.#allowEdit = allowEdit;
     this.#eventEmitter = new Phaser.Events.EventEmitter();
 
     this.#initializeLabelEvents();
@@ -152,7 +161,7 @@ class ShapeLabeler {
    * @param {Function} updateCallback - Callback function to call after updating the label
    * @return {void}
    */
-  addLabel(shape, labelText, labelColor, updateCallback) {
+  addLabel(shape, labelText, labelColor, updateCallback = () => {}) {
     this.removeLabel(shape);
 
     const label = this.#scene.add.text(shape.x, shape.y, labelText, {
@@ -163,19 +172,21 @@ class ShapeLabeler {
     label.setOrigin(0.5, 0.5);
     label.setToTop();
 
-    label.setInteractive({ useHandCursor: true });
-    label.on("pointerdown", (pointer) => {
-      if (!pointer.leftButtonDown()) {
-        return;
-      }
+    if (this.#allowEdit) {
+      label.setInteractive({ useHandCursor: true });
+      label.on("pointerdown", (pointer) => {
+        if (!pointer.leftButtonDown()) {
+          return;
+        }
 
-      const lastTapTime = label._lastTapTime || 0;
-      const clickDelay = this.#scene.time.now - lastTapTime;
-      label._lastTapTime = this.#scene.time.now;
-      if (clickDelay < 300) {
-        this.#promptLabelEdit(shape, label, updateCallback);
-      }
-    });
+        const lastTapTime = label._lastTapTime || 0;
+        const clickDelay = this.#scene.time.now - lastTapTime;
+        label._lastTapTime = this.#scene.time.now;
+        if (clickDelay < 300) {
+          this.#promptLabelEdit(shape, label, updateCallback);
+        }
+      });
+    }
 
     label.createSnapshot = function () {
       return {
@@ -213,19 +224,21 @@ class ShapeLabeler {
     label.setOrigin(0.5, 0.5);
     label.setToTop();
 
-    label.setInteractive({ useHandCursor: true });
-    label.on("pointerdown", (pointer) => {
-      if (!pointer.leftButtonDown()) {
-        return;
-      }
+    if (this.#allowEdit) {
+      label.setInteractive({ useHandCursor: true });
+      label.on("pointerdown", (pointer) => {
+        if (!pointer.leftButtonDown()) {
+          return;
+        }
 
-      const lastTapTime = label._lastTapTime || 0;
-      const clickDelay = this.#scene.time.now - lastTapTime;
-      label._lastTapTime = this.#scene.time.now;
-      if (clickDelay < 300) {
-        this.#promptLabelEdit(shape, label, snapshot.updateCallback);
-      }
-    });
+        const lastTapTime = label._lastTapTime || 0;
+        const clickDelay = this.#scene.time.now - lastTapTime;
+        label._lastTapTime = this.#scene.time.now;
+        if (clickDelay < 300) {
+          this.#promptLabelEdit(shape, label, snapshot.updateCallback);
+        }
+      });
+    }
 
     label.createSnapshot = function () {
       return {

@@ -125,7 +125,7 @@ class FurnitureEditor extends Phaser.Scene {
    * Object containing references to UI elements
    * @type {Object}
    * @property {ShapeModalUserInterface|null} shapeModal - The shape modal UI
-   * @property {ShapeModalUserInterface|null} zoneModal - The zone modal UI
+   * @property {LabeledModalUserInterface|null} zoneModal - The zone modal UI
    * @property {UndoRedoUserInterface|null} undoRedoUI - The undo/redo UI
    * @property {ShapeListUserInterface|null} shapeListUI - The shape list UI
    * @property {FurnitureSaveButtonUserInterface|null} saveButton - The furniture save button UI
@@ -730,6 +730,7 @@ class FurnitureEditor extends Phaser.Scene {
       (shape, newLabelText) => {
         shape.metadata.zoneName = newLabelText;
       },
+      (shape) => shape.metadata.zoneName || "New Zone",
     );
     this.#UIElements.undoRedoUI = new UndoRedoUserInterface(
       this,

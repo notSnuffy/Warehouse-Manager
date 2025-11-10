@@ -93,12 +93,11 @@ class SelectShapeManager extends Manager {
         return;
       }
 
-      console.log(registeredManagers);
-
-      for (const manager of Object.values(registeredManagers)) {
-        if (manager !== "select") {
-          return;
-        }
+      if (
+        !Array.isArray(registeredManagers) ||
+        !registeredManagers.includes("select")
+      ) {
+        return;
       }
 
       this.#lastSelected = shape;
