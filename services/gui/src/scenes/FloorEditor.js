@@ -21,6 +21,7 @@ import CornerRemoveCommand from "@commands/floor/CornerRemoveCommand";
 import WallCreateCommand from "@commands/floor/WallCreateCommand";
 import CornerCreateCommand from "@commands/floor/CornerCreateCommand";
 import { DefaultShapeInteractiveConfig } from "@utils/shapes";
+import CornerCreateCommandEventHandler from "@managers/CornerCreateCommandEventHandler";
 
 class FloorEditor extends Phaser.Scene {
   /**
@@ -151,32 +152,6 @@ class FloorEditor extends Phaser.Scene {
   init() {}
 
   /**
-   * Creates a wall between two corners
-   * @param {Phaser.GameObjects.Arc} corner1 - The first corner
-   * @param {Phaser.GameObjects.Arc} corner2 - The second corner
-   * @return {void}
-   */
-  #createWall(corner1, corner2) {
-    if (corner1 === corner2) {
-      console.warn("Cannot create a wall between the same corner.");
-      return;
-    }
-
-    if (this.#graph.get(corner1).has(corner2)) {
-      console.warn("A wall already exists between these corners.");
-      return;
-    }
-
-    const wall = this.add
-      .line(0, 0, corner1.x, corner1.y, corner2.x, corner2.y, 0xffffff)
-      .setOrigin(0, 0)
-      .setLineWidth(10);
-
-    this.#graph.get(corner1).set(corner2, wall);
-    this.#graph.get(corner2).set(corner1, wall);
-  }
-
-  /**
    * Updates the walls connected to a corner
    * @param {Phaser.GameObjects.Arc} corner - The corner to update walls for
    * @return {void}
@@ -187,48 +162,6 @@ class FloorEditor extends Phaser.Scene {
     connectedCorners.forEach((wall, otherCorner) => {
       wall.setTo(corner.x, corner.y, otherCorner.x, otherCorner.y);
     });
-  }
-
-  /**
-   * Adds a corner to the floor editor
-   * @param {number} positionX - The x-coordinate of the corner
-   * @param {number} positionY - The y-coordinate of the corner
-   * @return {Phaser.GameObjects.Arc} - The created corner object
-   */
-  #addCorner(positionX = 100, positionY = 100) {
-    const corner = this.add
-      .circle(positionX, positionY, 20, 0xffffff)
-      .setInteractive({ draggable: true });
-
-    this.#graph.set(corner, new Map());
-
-    corner.on("drag", (_pointer, dragX, dragY) => {
-      if (this.#currentTool !== "move") {
-        return;
-      }
-
-      corner.setPosition(dragX, dragY);
-      this.#updateWalls(corner);
-    });
-
-    corner.on("pointerdown", (_pointer, _x, _y, event) => {
-      event.stopPropagation();
-      if (this.#currentTool !== "select") {
-        return;
-      }
-
-      if (!this.#selectedCorners.includes(corner)) {
-        corner.setFillStyle(0xff0000);
-        this.#selectedCorners.push(corner);
-      }
-
-      if (this.#selectedCorners.length === 2) {
-        this.#createWall(this.#selectedCorners[0], this.#selectedCorners[1]);
-        this.#selectedCorners.forEach((c) => c.setFillStyle(0xffffff));
-        this.#selectedCorners = [];
-      }
-    });
-    return corner;
   }
 
   /**
@@ -270,13 +203,13 @@ class FloorEditor extends Phaser.Scene {
 
     const cornerMap = new Map();
 
-    floorData.corners.forEach((cornerData) => {
-      const corner = this.#addCorner(
-        cornerData.positionX,
-        cornerData.positionY,
-      );
-      cornerMap.set(cornerData.id, corner);
-    });
+    //floorData.corners.forEach((cornerData) => {
+    //const corner = this.#addCorner(
+    //  cornerData.positionX,
+    //  cornerData.positionY,
+    //);
+    //cornerMap.set(cornerData.id, corner);
+    //});
 
     floorData.walls.forEach((wallData) => {
       const startCorner = cornerMap.get(wallData.startCornerId);
@@ -286,7 +219,7 @@ class FloorEditor extends Phaser.Scene {
         if (this.#graph.get(startCorner).has(endCorner)) {
           return;
         }
-        this.#createWall(startCorner, endCorner);
+        //this.#createWall(startCorner, endCorner);
       } else {
         console.warn("Invalid corners for wall:", wallData);
       }
@@ -342,6 +275,13 @@ class FloorEditor extends Phaser.Scene {
 
     this.#wallManager = new ShapeManager(this);
     this.#labeler = new ShapeLabeler(this);
+
+    new CornerCreateCommandEventHandler(
+      this,
+      this.#undoRedoManager,
+      this.#cornerManager,
+      this.#graph,
+    );
 
     new LabeledCreateCommandEventHandler(
       this,
