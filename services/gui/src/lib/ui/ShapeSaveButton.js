@@ -112,7 +112,7 @@ class ShapeSaveButton {
 
       const method = isUpdate ? "PUT" : "POST";
       const url = isUpdate
-        ? this.#shapeManagementURL + `${currentShapeId}`
+        ? this.#shapeManagementURL + `/${currentShapeId}`
         : this.#shapeManagementURL;
 
       try {

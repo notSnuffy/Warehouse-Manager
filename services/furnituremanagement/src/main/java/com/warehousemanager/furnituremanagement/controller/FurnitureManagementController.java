@@ -474,7 +474,9 @@ public class FurnitureManagementController {
                               + furnitureDataTransferObject.furnitureId()));
       ShapeInstanceCreateObject shapeInstanceCreateObject =
           new ShapeInstanceCreateObject(
-              furnitureDataTransferObject.shapeId(), furnitureDataTransferObject.instructions());
+              furnitureDataTransferObject.shapeId(),
+              null,
+              furnitureDataTransferObject.instructions());
       ShapeInstance topDownViewInstance =
           restClient
               .post()
@@ -524,7 +526,7 @@ public class FurnitureManagementController {
     ServiceInstance serviceInstance = discoveryClient.getInstances("shape-management").get(0);
     String url = serviceInstance.getUri() + "/shapes/instances";
     ShapeInstanceCreateObject shapeInstanceCreateObject =
-        new ShapeInstanceCreateObject(dto.shapeId(), dto.instructions());
+        new ShapeInstanceCreateObject(dto.shapeId(), dto.shapeVersion(), dto.instructions());
     ShapeInstance topDownViewInstance =
         restClient
             .post()

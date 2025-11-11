@@ -2,7 +2,6 @@ import { API_URL } from "@/config";
 import Phaser from "phaser";
 import MoveManager from "@managers/move/MoveManager";
 import SelectShapeManager from "@managers/select/SelectShapeManager";
-import { buildShapeFromInstructions } from "@utils/shapes";
 import PanningManager from "@managers/PanningManager";
 import ShapeManager from "@managers/ShapeManager";
 import CameraBoundsManager from "@managers/CameraBoundsManager";
@@ -26,6 +25,7 @@ import LabeledShapeModalUserInterface from "@ui/LabeledShapeModalUserInterface";
 import UndoRedoUserInterface from "@ui/UndoRedoUserInterface";
 import FurnitureListUserInterface from "@ui/furniture/FurnitureListUserInterface";
 import { ShapeFieldSchemas } from "@ui/ShapeFieldSchemas";
+import FloorSaveButton from "@ui/floor/FloorSaveButton";
 
 class FloorEditor extends Phaser.Scene {
   /**
@@ -196,10 +196,16 @@ class FloorEditor extends Phaser.Scene {
       const response = await fetch(
         `${API_URL}/floor-management/floors/${floorId}`,
       );
-      if (!response.ok) {
-        throw new Error("Failed to fetch floor data.");
-      }
       const floorData = await response.json();
+
+      if (!response.ok) {
+        if (floorData.errors && floorData.errors.length > 0) {
+          alert(floorData.errors.join("\n"));
+        }
+        console.error("Failed to load floor data:", floorData);
+        return;
+      }
+
       console.log("Floor data fetched successfully:", floorData);
       return floorData;
     } catch (error) {
@@ -223,13 +229,20 @@ class FloorEditor extends Phaser.Scene {
 
     const cornerMap = new Map();
 
-    //floorData.corners.forEach((cornerData) => {
-    //const corner = this.#addCorner(
-    //  cornerData.positionX,
-    //  cornerData.positionY,
-    //);
-    //cornerMap.set(cornerData.id, corner);
-    //});
+    floorData.corners.forEach(async (cornerData) => {
+      const corner = await this.#cornerManager.addShape(
+        "corner",
+        {
+          x: cornerData.positionX,
+          y: cornerData.positionY,
+        },
+        {
+          interactive: DefaultShapeInteractiveConfig.ARC,
+          managers: ["move"],
+        },
+      );
+      cornerMap.set(cornerData.id, corner);
+    });
 
     floorData.walls.forEach((wallData) => {
       const startCorner = cornerMap.get(wallData.startCornerId);
@@ -239,40 +252,92 @@ class FloorEditor extends Phaser.Scene {
         if (this.#graph.get(startCorner).has(endCorner)) {
           return;
         }
-        //this.#createWall(startCorner, endCorner);
+
+        const params = {
+          corner1: startCorner,
+          corner2: endCorner,
+        };
+
+        this.#wallManager.addShape("wall", params, {}, false);
       } else {
         console.warn("Invalid corners for wall:", wallData);
       }
     });
 
-    floorData.furniture.forEach((furnitureData) => {
+    floorData.furniture.forEach(async (furnitureData) => {
       const furnitureInstructions =
         furnitureData.topDownViewInstance.instructions;
-      const shapeId = furnitureData.topDownViewInstance.shape.id;
       const furnitureId = furnitureData.furniture.id;
       const name = furnitureData.furniture.name;
 
-      const furniture = buildShapeFromInstructions(
-        furnitureInstructions,
-        this,
-        0xffffff,
-      )[0];
+      if (!furnitureInstructions) {
+        return;
+      }
 
-      furniture.id = shapeId;
-      furniture.furnitureId = furnitureId;
-      furniture.furnitureInstanceId = furnitureData.id;
+      if (
+        !Array.isArray(furnitureInstructions) ||
+        furnitureInstructions.length === 0
+      ) {
+        return;
+      }
 
-      const label = this.add.text(furniture.x, furniture.y, name, {
-        fontSize: "16px",
-        color: "#00ff00",
-      });
-      label.setOrigin(0.5, 0.5);
-      furniture.label = label;
+      const configureInteractive = (snapshots) => {
+        snapshots.forEach((snapshot) => {
+          const type = snapshot.metadata.type;
 
-      //this.#furniture.push(furniture);
-      furniture.setInteractive({ draggable: true });
-      this.#moveManager.create(furniture);
-      this.#selectManager.create(furniture);
+          const interactiveConfig = DefaultShapeInteractiveConfig[
+            type.toUpperCase()
+          ] || {
+            draggable: true,
+          };
+
+          const managers = ["move", "select"];
+
+          snapshot.additionalData = {
+            interactive: interactiveConfig,
+            managers: managers,
+          };
+        });
+      };
+
+      furnitureInstructions[0].parameters.shapeVersion =
+        furnitureData.topDownViewInstance.shapeVersion;
+      const snapshots =
+        await this.#furnitureInstructionsHandler.convertFromInstructions(
+          furnitureInstructions,
+          0xffffff,
+        );
+      configureInteractive(snapshots);
+      const [furnitureSnapshot] = snapshots;
+      furnitureSnapshot.metadata.furnitureId = furnitureId;
+      furnitureSnapshot.metadata.furnitureInstanceId = furnitureData.id;
+      furnitureSnapshot.metadata.name = name;
+      const furniture =
+        await this.#furnitureManager.addShapeFromSnapshot(furnitureSnapshot);
+      console.log("Loaded furniture:", furniture);
+      this.#labeler.addLabel(furniture, name, "#ffffff", () => {});
+
+      //const furniture = buildShapeFromInstructions(
+      //  furnitureInstructions,
+      //  this,
+      //  0xffffff,
+      //)[0];
+
+      //furniture.id = shapeId;
+      //furniture.furnitureId = furnitureId;
+      //furniture.furnitureInstanceId = furnitureData.id;
+
+      //const label = this.add.text(furniture.x, furniture.y, name, {
+      //  fontSize: "16px",
+      //  color: "#00ff00",
+      //});
+      //label.setOrigin(0.5, 0.5);
+      //furniture.label = label;
+
+      ////this.#furniture.push(furniture);
+      //furniture.setInteractive({ draggable: true });
+      //this.#moveManager.create(furniture);
+      //this.#selectManager.create(furniture);
     });
     //console.log(this.#furniture);
   }
@@ -684,6 +749,15 @@ class FloorEditor extends Phaser.Scene {
     );
     await this.#UIElements.furnitureListUI.initialize();
 
+    this.#UIElements.saveButton = new FloorSaveButton(
+      "saveButton",
+      "floorName",
+      () => this.#furnitureManager.getRootShapes(),
+      () => this.#graph,
+      this.#furnitureInstructionsHandler,
+      API_URL + "/floor-management/floors",
+    );
+
     const urlParams = new URLSearchParams(window.location.search);
     const floorId = urlParams.get("floorId");
     if (floorId) {
@@ -819,19 +893,6 @@ class FloorEditor extends Phaser.Scene {
    * @public
    */
   update() {
-    // Function that prints every ten seconds the graphs structure for debugging
-    if (!this._logInterval) {
-      this._logInterval = setInterval(() => {
-        const now = Date.now();
-
-        if (this._lastLogTime && now - this._lastLogTime < 10000) {
-          return;
-        }
-        this._lastLogTime = now;
-        console.log(this.#graph);
-      }, 10000);
-    }
-
     if (this.#moveManager.isDragging && this.#panningManager.isPanning) {
       this.input.activePointer.updateWorldPoint(this.cameras.main);
       this.#moveManager.update(
