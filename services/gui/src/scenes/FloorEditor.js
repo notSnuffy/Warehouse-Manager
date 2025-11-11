@@ -320,30 +320,7 @@ class FloorEditor extends Phaser.Scene {
         await this.#furnitureManager.addShapeFromSnapshot(furnitureSnapshot);
       console.log("Loaded furniture:", furniture);
       this.#labeler.addLabel(furniture, name, "#ffffff", () => {});
-
-      //const furniture = buildShapeFromInstructions(
-      //  furnitureInstructions,
-      //  this,
-      //  0xffffff,
-      //)[0];
-
-      //furniture.id = shapeId;
-      //furniture.furnitureId = furnitureId;
-      //furniture.furnitureInstanceId = furnitureData.id;
-
-      //const label = this.add.text(furniture.x, furniture.y, name, {
-      //  fontSize: "16px",
-      //  color: "#00ff00",
-      //});
-      //label.setOrigin(0.5, 0.5);
-      //furniture.label = label;
-
-      ////this.#furniture.push(furniture);
-      //furniture.setInteractive({ draggable: true });
-      //this.#moveManager.create(furniture);
-      //this.#selectManager.create(furniture);
     });
-    //console.log(this.#furniture);
   }
 
   /**

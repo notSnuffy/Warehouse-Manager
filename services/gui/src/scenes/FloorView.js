@@ -1,13 +1,21 @@
-import { API_URL } from "@/config";
-import Phaser from "phaser";
 import { populateFloorViewItemList } from "@utils/UIHelperFunctions";
 import { buildShapeFromInstructions } from "@utils/shapes";
+import { API_URL } from "@/config";
+import Phaser from "phaser";
+import PanningManager from "@managers/PanningManager";
+import ShapeManager from "@managers/ShapeManager";
+import CameraBoundsManager from "@managers/CameraBoundsManager";
+import ScrollbarManager from "@managers/ScrollbarManager";
+import UndoRedoManager from "@managers/UndoRedoManager";
+import ZoomManager from "@managers/ZoomManager";
+import * as Shapes from "@shapes";
+import InstructionCommands from "@instructions/InstructionCommands";
+import UndoRedoUserInterface from "@ui/UndoRedoUserInterface";
 
 class FloorView extends Phaser.Scene {
   /**
    * Map of furniture instances by their IDs
    * @type {Map<string, Object>}
-   * @private
    * @default new Map()
    */
   #furnitureInstances = new Map();
@@ -15,10 +23,88 @@ class FloorView extends Phaser.Scene {
   /**
    * If item is being dragged
    * @type {boolean}
-   * @private
    * @default false
    */
   #isDragging = false;
+
+  /**
+   * Panning manager
+   * @type {PanningManager}
+   * @default null
+   */
+  #panningManager = null;
+
+  /**
+   * Furniture manager
+   * @type {ShapeManager}
+   * @default null
+   */
+  #furnitureManager = null;
+
+  /**
+   * Corner manager
+   * @type {ShapeManager}
+   * @default null
+   */
+  #cornerManager = null;
+
+  /**
+   * Wall manager
+   * @type {ShapeManager}
+   * @default null
+   */
+  #wallManager = null;
+
+  /**
+   * Camera bounds manager
+   * @type {CameraBoundsManager}
+   * @default null
+   */
+  #cameraBoundsManager = null;
+
+  /**
+   * Scrollbar manager
+   * @type {ScrollbarManager}
+   * @default null
+   */
+  #scrollbarManager = null;
+
+  /**
+   * Undo redo manager
+   * @type {UndoRedoManager}
+   * @default null
+   */
+  #undoRedoManager = null;
+
+  /**
+   * Furniture instructions handler
+   * @type {ShapeInstructionsHandler}
+   * @default null
+   */
+  // #furnitureInstructionsHandler = null;
+
+  /**
+   * Furniture labeler
+   * @type {ShapeLabeler}
+   * @default null
+   */
+  //  #labeler = null;
+
+  /**
+   * Object containing references to UI elements
+   * @type {Object}
+   * @property {LabeledModalUserInterface|null} furnitureModal - The furniture modal UI
+   * @property {UndoRedoUserInterface|null} undoRedoUI - The undo/redo UI
+   * @property {FurnitureListUserInterface|null} furnitureListUI - The furniture list UI
+   * @property {FloorSaveButtonUserInterface|null} saveButton - The floor save button UI
+   * @default { furnitureModal: null, undoRedoUI: null, furnitureListUI: null, saveButton: null}
+   */
+  #UIElements = {
+    furnitureModal: null,
+    undoRedoUI: null,
+    furnitureListUI: null,
+    saveButton: null,
+  };
 
   /**
    * Getter for the dragging state
@@ -31,15 +117,13 @@ class FloorView extends Phaser.Scene {
   /**
    * Last hovered item
    * @type {Phaser.GameObjects.GameObject|null}
-   * @private
    * @default null
    */
   #lastHover = null;
 
   /**
    * Timer for hover events
-   * @type {Phaser.Time.Clock|null}
-   * @private
+   * @type {Phaser.Time.TimerEvent|null}
    * @default null
    */
   #hoverTimer = null;
@@ -47,7 +131,6 @@ class FloorView extends Phaser.Scene {
   /**
    * Handler for canvas hover events
    * @type {Function|null}
-   * @private
    * @default null
    */
   #hoverCanvasHandler = null;
@@ -55,7 +138,6 @@ class FloorView extends Phaser.Scene {
   /**
    * Map of items in the item list
    * @type {Map<string, Object>|null}
-   * @private
    * @default null
    */
   #itemMap = null;
@@ -113,9 +195,8 @@ class FloorView extends Phaser.Scene {
 
   /**
    * Creates a wall between two corners
-   * @private
-   * @param {Phaser.GameObjects.Circle} corner1 - The first corner
-   * @param {Phaser.GameObjects.Circle} corner2 - The second corner
+   * @param {Phaser.GameObjects.Arc} corner1 - The first corner
+   * @param {Phaser.GameObjects.Arc} corner2 - The second corner
    * @return {void}
    */
   #createWall(corner1, corner2) {
@@ -129,8 +210,7 @@ class FloorView extends Phaser.Scene {
    * Adds a corner to the floor editor
    * @param {number} positionX - The x-coordinate of the corner
    * @param {number} positionY - The y-coordinate of the corner
-   * @private
-   * @return {Phaser.GameObjects.Circle} - The created corner object
+   * @return {Phaser.GameObjects.Arc} - The created corner object
    */
   #addCorner(positionX = 100, positionY = 100) {
     const corner = this.add.circle(positionX, positionY, 20, 0xffffff);
@@ -141,7 +221,6 @@ class FloorView extends Phaser.Scene {
   /**
    * Loads the floor data from the API
    * @param {string} floorId - The ID of the floor to load
-   * @private
    * @returns {Promise<Object>} - The floor data
    * @throws {Error} - If the fetch fails or the response is not ok
    * @async
@@ -166,7 +245,6 @@ class FloorView extends Phaser.Scene {
   /**
    * Loads the floor by its ID
    * @param {string} floorId - The ID of the floor to load
-   * @private
    * @async
    */
   async #loadFloor(floorId) {
@@ -243,7 +321,6 @@ class FloorView extends Phaser.Scene {
 
   /**
    * Handles the dragover event on the canvas
-   * @private
    * @param {Event} e - The dragover event
    * @return {void}
    */
@@ -332,6 +409,219 @@ class FloorView extends Phaser.Scene {
    * @public
    */
   async create() {
+    this.#undoRedoManager = new UndoRedoManager(this, 100);
+
+    this.#furnitureManager = new ShapeManager(this);
+    this.#cornerManager = new ShapeManager(this);
+    this.#wallManager = new ShapeManager(this);
+
+    //  this.#labeler = new ShapeLabeler(this, false);
+
+    // this.#furnitureInstructionsHandler = new ShapeInstructionsHandler(
+    //   this.#furnitureManager,
+    // );
+    this.#panningManager = new PanningManager(this);
+
+    this.#panningManager.create();
+
+    const zoomManager = new ZoomManager(this);
+    zoomManager.create();
+
+    const camera = this.cameras.main;
+
+    const scrollXElement = document.getElementById("scrollX");
+    const scrollYElement = document.getElementById("scrollY");
+
+    const cameraWidth = camera.width;
+    const cameraHeight = camera.height;
+
+    const initialWorldWidth = cameraWidth * 3;
+    const initialWorldHeight = cameraHeight * 3;
+
+    this.#cameraBoundsManager = new CameraBoundsManager(this, camera, {
+      worldWidth: initialWorldWidth,
+      worldHeight: initialWorldHeight,
+      eventConfig: {
+        shapeAdded: { extraPadding: 0, allowShrink: false },
+      },
+    });
+    this.#cameraBoundsManager.create();
+
+    this.#scrollbarManager = new ScrollbarManager(
+      this,
+      camera,
+      scrollXElement,
+      scrollYElement,
+      {
+        worldWidth: initialWorldWidth,
+        worldHeight: initialWorldHeight,
+        eventNames: [
+          "cameraZoomChanged",
+          "cameraPanned",
+          "cameraBoundsChanged",
+        ],
+      },
+    );
+    this.#scrollbarManager.create();
+
+    this.#furnitureManager.registerShape(
+      "rectangle",
+      (scene, params) => {
+        const rectangle = new Shapes.Rectangle(
+          scene,
+          params.x,
+          params.y,
+          params.width,
+          params.height,
+          params.color,
+        );
+        rectangle.setRotation(params.rotation);
+
+        return rectangle;
+      },
+      {
+        command: InstructionCommands.CREATE_RECTANGLE,
+      },
+    );
+    this.#furnitureManager.registerShape(
+      "ellipse",
+      (scene, params) => {
+        const ellipse = new Shapes.Ellipse(
+          scene,
+          params.x,
+          params.y,
+          params.width,
+          params.height,
+          params.color,
+        );
+        ellipse.setRotation(params.rotation);
+
+        return ellipse;
+      },
+      {
+        command: InstructionCommands.CREATE_ELLIPSE,
+      },
+    );
+    this.#furnitureManager.registerShape(
+      "arc",
+      (scene, params) => {
+        const arc = new Shapes.Arc(
+          scene,
+          params.x,
+          params.y,
+          params.radius,
+          params.startAngle,
+          params.endAngle,
+          false,
+          params.color,
+        );
+        arc.setRotation(params.rotation);
+
+        if (params.width && params.height) {
+          arc.setDisplaySize(params.width, params.height);
+        }
+
+        return arc;
+      },
+      {
+        command: InstructionCommands.CREATE_ARC,
+        fieldMap: {
+          radius: "arcRadius",
+          startAngle: "arcStartAngle",
+          endAngle: "arcEndAngle",
+        },
+      },
+    );
+    this.#furnitureManager.registerShape(
+      "polygon",
+      (scene, params) => {
+        const polygon = new Shapes.Polygon(
+          scene,
+          params.x,
+          params.y,
+          params.points,
+          params.color,
+        );
+        polygon.setRotation(params.rotation);
+        if (params.width && params.height) {
+          polygon.setDisplaySize(params.width, params.height);
+        }
+
+        return polygon;
+      },
+      {
+        command: InstructionCommands.CREATE_POLYGON,
+        fieldMap: { points: "polygonPoints" },
+      },
+    );
+    this.#furnitureManager.registerShape(
+      "container",
+      async (scene, params) => {
+        const children = [];
+        if (params.children && params.children.length > 0) {
+          for (const childSnapshot of params.children) {
+            const childShape =
+              await this.#furnitureManager.addShapeFromSnapshot(
+                childSnapshot,
+                false,
+              );
+
+            if (!childShape) {
+              continue;
+            }
+            children.push(childShape);
+          }
+        }
+
+        const container = new Shapes.Container(
+          scene,
+          params.x,
+          params.y,
+          children,
+        );
+        container.setRotation(params.rotation);
+        container.setSize(params.width, params.height);
+
+        return container;
+      },
+      {
+        command: InstructionCommands.BEGIN_CONTAINER,
+      },
+    );
+
+    this.#cornerManager.registerShape("corner", (scene, params) => {
+      const corner = new Shapes.Arc(
+        scene,
+        params.x,
+        params.y,
+        20,
+        0,
+        360,
+        false,
+        0xffffff,
+      );
+
+      return corner;
+    });
+
+    this.#wallManager.registerShape("wall", (scene, params) => {
+      const { corner1, corner2 } = params;
+
+      const wall = scene.add
+        .line(0, 0, corner1.x, corner1.y, corner2.x, corner2.y, 0xffffff)
+        .setOrigin(0, 0)
+        .setLineWidth(10);
+
+      return wall;
+    });
+
+    this.#UIElements.undoRedoUI = new UndoRedoUserInterface(
+      this,
+      this.#undoRedoManager,
+      "undoButton",
+      "redoButton",
+    );
+
     const backButtonElement = document.getElementById("backButton");
     backButtonElement;
 

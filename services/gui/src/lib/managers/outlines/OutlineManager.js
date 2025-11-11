@@ -57,7 +57,6 @@ class OutlineManager {
    */
   update(shape, drawOutline) {
     if (!shape || !this.#outlines.has(shape)) {
-      console.warn("No outline exists for this shape or shape is invalid.");
       return;
     }
     if (!drawOutline || typeof drawOutline !== "function") {
@@ -77,7 +76,6 @@ class OutlineManager {
    */
   hide(shape) {
     if (!shape || !this.#outlines.has(shape)) {
-      console.warn("No outline exists for this shape or shape is invalid.");
       return;
     }
     const outline = this.#outlines.get(shape);

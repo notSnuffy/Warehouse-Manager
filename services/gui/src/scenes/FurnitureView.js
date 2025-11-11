@@ -343,7 +343,11 @@ class FurnitureView extends Phaser.Scene {
     backButton.classList.add("btn", "btn-primary", "mr-2");
     backButton.textContent = "Back";
 
-    document.getElementById("navbarButtons").appendChild(backButton);
+    const navbarButtonsElement = document.getElementById("navbarButtons");
+    navbarButtonsElement.insertBefore(
+      backButton,
+      navbarButtonsElement.firstChild,
+    );
 
     backButton.addEventListener("click", () => {
       this.scene.stop();

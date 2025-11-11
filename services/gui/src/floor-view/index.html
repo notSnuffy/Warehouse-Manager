@@ -12,7 +12,42 @@
         <div
           class="navbar-nav d-flex align-items-center gap-1"
           id="navbarButtons"
-        ></div>
+        >
+          <ul class="navbar-nav">
+            <li class="nav-item dropdown">
+              <button
+                class="btn btn-primary dropdown-toggle mr-2"
+                type="button"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+              >
+                Edit
+              </button>
+              <ul class="dropdown-menu">
+                <li>
+                  <button
+                    class="dropdown-item d-flex justify-content-between align-items-center"
+                    id="undoButton"
+                    type="button"
+                  >
+                    Undo
+                    <span class="text-secondary">Ctrl+Z</span>
+                  </button>
+                </li>
+                <li>
+                  <button
+                    class="dropdown-item d-flex justify-content-between align-items-center"
+                    id="redoButton"
+                    type="button"
+                  >
+                    Redo
+                    <span class="text-secondary">Ctrl+Y</span>
+                  </button>
+                </li>
+              </ul>
+            </li>
+          </ul>
+        </div>
         <h3 class="text-white text-center mx-auto" id="viewElementName"></h3>
         <button id="saveButton" class="btn btn-primary">Save</button>
       </div>
@@ -25,7 +60,42 @@
             <ul class="list-group" id="itemsMenuItems"></ul>
           </div>
         </div>
-        <div class="col-md-10 ps-0" id="viewContainer"></div>
+        <div class="col-md-10 ps-0 position-relative" id="editorArea">
+          <div id="viewContainer"></div>
+          <input
+            type="range"
+            class="form-range"
+            min="0"
+            max="100"
+            step="1"
+            id="scrollX"
+            style="
+              position: absolute;
+              bottom: 0;
+              left: 0;
+              width: calc(100% - 26px);
+              height: 16px;
+            "
+          />
+          <input
+            type="range"
+            class="form-range"
+            min="0"
+            max="100"
+            step="1"
+            id="scrollY"
+            style="
+              position: absolute;
+              top: 0;
+              right: 26px;
+              width: calc(100vh - 72px);
+              height: 16px;
+
+              transform: rotate(90deg) translateX(100%) translateY(-100%);
+              transform-origin: top right;
+            "
+          />
+        </div>
       </div>
     </div>
     <div
