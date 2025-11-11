@@ -229,7 +229,7 @@ class FloorEditor extends Phaser.Scene {
 
     const cornerMap = new Map();
 
-    floorData.corners.forEach(async (cornerData) => {
+    for (const cornerData of floorData.corners) {
       const corner = await this.#cornerManager.addShape(
         "corner",
         {
@@ -241,8 +241,12 @@ class FloorEditor extends Phaser.Scene {
           managers: ["move"],
         },
       );
+      console.log("Loaded corner:", corner);
+      console.log("With ID:", cornerData);
       cornerMap.set(cornerData.id, corner);
-    });
+      console.log(Array.from(cornerMap.entries()));
+    }
+    console.log("Corners loaded:", cornerMap);
 
     floorData.walls.forEach((wallData) => {
       const startCorner = cornerMap.get(wallData.startCornerId);
