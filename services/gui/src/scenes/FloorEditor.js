@@ -573,11 +573,18 @@ class FloorEditor extends Phaser.Scene {
       corner.on("pointerdown", async (_pointer, _x, _y, event) => {
         event.stopPropagation();
 
-        if (!this.#selectedCorners.includes(corner)) {
-          corner.setFillStyle(0xff0000);
-          this.#selectedCorners.push(corner);
-          corner.setToTop();
+        if (this.#selectedCorners.includes(corner)) {
+          corner.setFillStyle(0xffffff);
+          this.#selectedCorners = this.#selectedCorners.filter(
+            (c) => c !== corner,
+          );
+
+          return;
         }
+
+        corner.setFillStyle(0xff0000);
+        this.#selectedCorners.push(corner);
+        corner.setToTop();
 
         if (this.#selectedCorners.length === 2) {
           //this.#createWall(this.#selectedCorners[0], this.#selectedCorners[1]);
