@@ -269,6 +269,7 @@ class FloorEditor extends Phaser.Scene {
     });
 
     floorData.furniture.forEach(async (furnitureData) => {
+      console.log("Loading furniture:", furnitureData);
       const furnitureInstructions =
         furnitureData.topDownViewInstance.instructions;
       const furnitureId = furnitureData.furniture.id;
@@ -306,11 +307,13 @@ class FloorEditor extends Phaser.Scene {
 
       furnitureInstructions[0].parameters.shapeVersion =
         furnitureData.topDownViewInstance.shapeVersion;
+      console.log(furnitureInstructions);
       const snapshots =
         await this.#furnitureInstructionsHandler.convertFromInstructions(
           furnitureInstructions,
           0xffffff,
         );
+      console.log("Converted furniture snapshots:", snapshots);
       configureInteractive(snapshots);
       const [furnitureSnapshot] = snapshots;
       furnitureSnapshot.metadata.furnitureId = furnitureId;
@@ -631,6 +634,7 @@ class FloorEditor extends Phaser.Scene {
         corner.setFillStyle(0xff0000);
         this.#selectedCorners.push(corner);
         corner.setToTop();
+        this.#selectManager.hide();
 
         if (this.#selectedCorners.length === 2) {
           //this.#createWall(this.#selectedCorners[0], this.#selectedCorners[1]);

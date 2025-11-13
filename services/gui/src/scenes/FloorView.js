@@ -1,5 +1,4 @@
 import { populateFloorViewItemList } from "@utils/UIHelperFunctions";
-import { buildShapeFromInstructions } from "@utils/shapes";
 import { API_URL } from "@/config";
 import Phaser from "phaser";
 import PanningManager from "@managers/PanningManager";
@@ -11,6 +10,8 @@ import ZoomManager from "@managers/ZoomManager";
 import * as Shapes from "@shapes";
 import InstructionCommands from "@instructions/InstructionCommands";
 import UndoRedoUserInterface from "@ui/UndoRedoUserInterface";
+import ShapeInstructionsHandler from "@instructions/ShapeInstructionsHandler";
+import ShapeLabeler from "@managers/ShapeLabeler";
 
 class FloorView extends Phaser.Scene {
   /**
@@ -81,14 +82,14 @@ class FloorView extends Phaser.Scene {
    * @type {ShapeInstructionsHandler}
    * @default null
    */
-  // #furnitureInstructionsHandler = null;
+  #furnitureInstructionsHandler = null;
 
   /**
    * Furniture labeler
    * @type {ShapeLabeler}
    * @default null
    */
-  //  #labeler = null;
+  #labeler = null;
 
   /**
    * Object containing references to UI elements
@@ -194,31 +195,6 @@ class FloorView extends Phaser.Scene {
   init() {}
 
   /**
-   * Creates a wall between two corners
-   * @param {Phaser.GameObjects.Arc} corner1 - The first corner
-   * @param {Phaser.GameObjects.Arc} corner2 - The second corner
-   * @return {void}
-   */
-  #createWall(corner1, corner2) {
-    this.add
-      .line(0, 0, corner1.x, corner1.y, corner2.x, corner2.y, 0xffffff)
-      .setOrigin(0, 0)
-      .setLineWidth(10);
-  }
-
-  /**
-   * Adds a corner to the floor editor
-   * @param {number} positionX - The x-coordinate of the corner
-   * @param {number} positionY - The y-coordinate of the corner
-   * @return {Phaser.GameObjects.Arc} - The created corner object
-   */
-  #addCorner(positionX = 100, positionY = 100) {
-    const corner = this.add.circle(positionX, positionY, 20, 0xffffff);
-
-    return corner;
-  }
-
-  /**
    * Loads the floor data from the API
    * @param {string} floorId - The ID of the floor to load
    * @returns {Promise<Object>} - The floor data
@@ -255,50 +231,68 @@ class FloorView extends Phaser.Scene {
     const viewElementNameElement = document.getElementById("viewElementName");
     viewElementNameElement.textContent = `${floorData.name}`;
 
-    floorData.corners.forEach((cornerData) => {
-      const corner = this.#addCorner(
-        cornerData.positionX,
-        cornerData.positionY,
-      );
+    for (const cornerData of floorData.corners) {
+      const corner = await this.#cornerManager.addShape("corner", {
+        x: cornerData.positionX,
+        y: cornerData.positionY,
+      });
+
       cornerMap.set(cornerData.id, corner);
-    });
+    }
 
     floorData.walls.forEach((wallData) => {
       const startCorner = cornerMap.get(wallData.startCornerId);
       const endCorner = cornerMap.get(wallData.endCornerId);
       if (startCorner && endCorner) {
-        this.#createWall(startCorner, endCorner);
+        const params = {
+          corner1: startCorner,
+          corner2: endCorner,
+        };
+
+        this.#wallManager.addShape("wall", params, {}, false);
       } else {
         console.warn("Invalid corners for wall:", wallData);
       }
     });
-
-    floorData.furniture.forEach((furnitureData) => {
+    floorData.furniture.forEach(async (furnitureData) => {
       const furnitureInstructions =
         furnitureData.topDownViewInstance.instructions;
-      const shapeId = furnitureData.topDownViewInstance.shape.id;
-      const furnitureId = furnitureData.furniture.id;
-      const furnitureInstanceId = furnitureData.id;
       const name = furnitureData.furniture.name;
+      const furnitureInstanceId = furnitureData.id;
 
-      const furniture = buildShapeFromInstructions(
-        furnitureInstructions,
-        this,
-        0xffffff,
-      )[0];
+      if (!furnitureInstructions) {
+        return;
+      }
 
-      furniture.id = shapeId;
-      furniture.furnitureId = furnitureId;
-      furniture.furnitureInstanceId = furnitureInstanceId;
+      if (
+        !Array.isArray(furnitureInstructions) ||
+        furnitureInstructions.length === 0
+      ) {
+        return;
+      }
 
-      const label = this.add.text(furniture.x, furniture.y, name, {
-        fontSize: "16px",
-        color: "#00ff00",
-      });
-      label.setOrigin(0.5, 0.5);
-      furniture.label = label;
+      const configureInteractive = (snapshots) => {
+        snapshots.forEach((snapshot) => {
+          const interactiveConfig = {};
 
-      furniture.setInteractive();
+          snapshot.additionalData = {
+            interactive: interactiveConfig,
+          };
+        });
+      };
+
+      const snapshots =
+        await this.#furnitureInstructionsHandler.convertFromInstructions(
+          furnitureInstructions,
+          0xffffff,
+        );
+      configureInteractive(snapshots);
+      const [furnitureSnapshot] = snapshots;
+
+      furnitureSnapshot.metadata.furnitureInstanceId = furnitureInstanceId;
+      const furniture =
+        await this.#furnitureManager.addShapeFromSnapshot(furnitureSnapshot);
+
       furniture.on("pointerdown", () => {
         this.scene.sleep();
         this.scene.launch("FurnitureView", {
@@ -306,6 +300,8 @@ class FloorView extends Phaser.Scene {
         });
         this.scene.bringToTop("FurnitureView");
       });
+
+      this.#labeler.addLabel(furniture, name, "#ffffff", () => {});
 
       furnitureData.zoneInstances.forEach((zoneInstance) => {
         const itemSet = new Set();
@@ -346,8 +342,12 @@ class FloorView extends Phaser.Scene {
     console.log(`Pointer position: (${canvasPointerX}, ${canvasPointerY})`);
 
     const pointer = this.input.activePointer;
-    pointer.x = canvasPointerX;
-    pointer.y = canvasPointerY;
+    const worldPoint = this.cameras.main.getWorldPoint(
+      canvasPointerX,
+      canvasPointerY,
+    );
+    pointer.x = worldPoint.x;
+    pointer.y = worldPoint.y;
 
     const hits = this.input.hitTestPointer(pointer);
     console.log("Hit test results:", [...hits]);
@@ -379,7 +379,7 @@ class FloorView extends Phaser.Scene {
       this.scene.sleep();
       this.scene.launch("FurnitureView", {
         furnitureInstance: this.#furnitureInstances.get(
-          topHit.furnitureInstanceId,
+          topHit.metadata.furnitureInstanceId,
         ),
       });
       this.scene.bringToTop("FurnitureView");
@@ -394,7 +394,6 @@ class FloorView extends Phaser.Scene {
 
   /**
    * Adds a hover handler to the game canvas
-   * @private
    * @return {void}
    */
   #addCanvasHoverHandler() {
@@ -415,11 +414,11 @@ class FloorView extends Phaser.Scene {
     this.#cornerManager = new ShapeManager(this);
     this.#wallManager = new ShapeManager(this);
 
-    //  this.#labeler = new ShapeLabeler(this, false);
+    this.#labeler = new ShapeLabeler(this, false);
 
-    // this.#furnitureInstructionsHandler = new ShapeInstructionsHandler(
-    //   this.#furnitureManager,
-    // );
+    this.#furnitureInstructionsHandler = new ShapeInstructionsHandler(
+      this.#furnitureManager,
+    );
     this.#panningManager = new PanningManager(this);
 
     this.#panningManager.create();
@@ -715,7 +714,9 @@ class FloorView extends Phaser.Scene {
    * Updates the scene
    * @public
    */
-  update() {}
+  update() {
+    this.#panningManager.update();
+  }
 }
 
-export { FloorView };
+export default FloorView;

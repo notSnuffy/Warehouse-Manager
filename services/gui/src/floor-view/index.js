@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import { FloorView } from "@scenes/FloorView";
+import FloorView from "@scenes/FloorView";
 import { FurnitureView } from "@scenes/FurnitureView";
 
 import "./styles.scss";

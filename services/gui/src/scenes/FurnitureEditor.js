@@ -129,7 +129,7 @@ class FurnitureEditor extends Phaser.Scene {
    * @property {UndoRedoUserInterface|null} undoRedoUI - The undo/redo UI
    * @property {ShapeListUserInterface|null} shapeListUI - The shape list UI
    * @property {FurnitureSaveButtonUserInterface|null} saveButton - The furniture save button UI
-   * @default { shapeModal: null, undoRedoUI: null, shapeListUI: null, saveButton: null}
+   * @default { shapeModal: null, zoneModal: null, undoRedoUI: null, shapeListUI: null, saveButton: null}
    */
   #UIElements = {
     shapeModal: null,

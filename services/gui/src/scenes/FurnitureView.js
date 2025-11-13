@@ -1,7 +1,17 @@
 import Phaser from "phaser";
 import { Modal } from "bootstrap";
 import Sortable from "sortablejs";
-import { buildShapeFromInstructions } from "@utils/shapes";
+import PanningManager from "@managers/PanningManager";
+import ShapeManager from "@managers/ShapeManager";
+import CameraBoundsManager from "@managers/CameraBoundsManager";
+import ScrollbarManager from "@managers/ScrollbarManager";
+import UndoRedoManager from "@managers/UndoRedoManager";
+import ZoomManager from "@managers/ZoomManager";
+import ShapeInstructionsHandler from "@instructions/ShapeInstructionsHandler";
+//import ShapeLabeler from "@managers/ShapeLabeler";
+import * as Shapes from "@shapes";
+import InstructionCommands from "@instructions/InstructionCommands.js";
+import UndoRedoUserInterface from "@ui/UndoRedoUserInterface";
 
 /**
  * Represents the furniture view scene
@@ -12,42 +22,93 @@ class FurnitureView extends Phaser.Scene {
   /**
    * Furniture instance of the furniture being viewed
    * @type {Object|null}
-   * @private
-   * @default null
    */
-  #furnitureInstance = null;
+  #furnitureInstance;
 
   /**
    * Last hovered item
    * @type {Phaser.GameObjects.GameObject|null}
-   * @private
-   * @default null
    */
-  #lastHover = null;
+  #lastHover;
 
   /**
    * Timer for hover events
-   * @type {Phaser.Time.Clock|null}
-   * @private
-   * @default null
+   * @type {Phaser.Time.TimerEvent|null}
    */
-  #hoverTimer = null;
+  #hoverTimer;
 
   /**
    * Handler for canvas hover events
    * @type {EventListener|null}
-   * @private
-   * @default null
    */
-  #hoverCanvasHandler = null;
+  #hoverCanvasHandler;
 
   /**
    * Handler for modal hidden events
    * @type {Function|null}
-   * @private
-   * @default null
    */
-  #modalHiddenHandler = null;
+  #modalHiddenHandler;
+
+  /**
+   * Panning manager
+   * @type {PanningManager}
+   */
+  #panningManager;
+
+  /**
+   * Shape manager
+   * @type {ShapeManager}
+   */
+  #shapeManager;
+
+  /**
+   * Shape manager for placement zones in the furniture
+   * @type {ShapeManager}
+   */
+  #zoneManager;
+
+  /**
+   * Camera bounds manager
+   * @type {CameraBoundsManager}
+   */
+  #cameraBoundsManager;
+
+  /**
+   * Scrollbar manager
+   * @type {ScrollbarManager}
+   */
+  #scrollbarManager;
+
+  /**
+   * Undo redo manager
+   * @type {UndoRedoManager}
+   */
+  #undoRedoManager;
+
+  /**
+   * Shape instruction handler
+   * @type {ShapeInstructionsHandler}
+   */
+  #shapeInstructionHandler;
+
+  /**
+   * Zone instruction handler
+   * @type {ShapeInstructionsHandler}
+   */
+  #zoneInstructionHandler;
+
+  /**
+   * Shape labeler
+   * @type {ShapeLabeler}
+   */
+  //  #labeler;
+
+  /**
+   * Object containing references to UI elements
+   * @type {Object}
+   * @property {UndoRedoUserInterface|null} undoRedoUI - The undo/redo UI
+   */
+  #UIElements;
 
   /**
    * Constructor for the FurnitureView scene
@@ -60,7 +121,6 @@ class FurnitureView extends Phaser.Scene {
   /**
    * Loads the furniture instance by its ID
    * @param {Object} furnitureInstance - The furniture instance to load
-   * @private
    * @async
    */
   #loadFurniture(furnitureInstance) {
@@ -68,26 +128,43 @@ class FurnitureView extends Phaser.Scene {
     viewElementNameElement.textContent = furnitureInstance.furniture.name;
 
     if (furnitureInstance.furniture.shapes) {
-      furnitureInstance.furniture.shapes.forEach((shapeData) => {
-        const shape = buildShapeFromInstructions(
-          shapeData.instructions,
-          this,
-        )[0];
-        shape.id = shapeData.shape.id;
+      furnitureInstance.furniture.shapes.forEach(async (shapeData) => {
+        const snapshots =
+          await this.#shapeInstructionHandler.convertFromInstructions(
+            shapeData.instructions,
+            0xffffff,
+          );
+
+        const [shapeSnapshot] = snapshots;
+
+        await this.#shapeManager.addShapeFromSnapshot(shapeSnapshot);
       });
     }
 
+    const configureInteractive = (snapshots) => {
+      snapshots.forEach((snapshot) => {
+        const interactiveConfig = {};
+
+        snapshot.additionalData = {
+          interactive: interactiveConfig,
+        };
+      });
+    };
+
     if (furnitureInstance.zoneInstances) {
-      furnitureInstance.zoneInstances.forEach((zoneData) => {
-        console.log("Zone data:", zoneData);
-        const zone = buildShapeFromInstructions(
-          zoneData.zone.shape.instructions,
-          this,
-          0xeb7734,
-        )[0];
-        zone.id = zoneData.id;
+      furnitureInstance.zoneInstances.forEach(async (zoneData) => {
+        const zoneSnapshots =
+          await this.#zoneInstructionHandler.convertFromInstructions(
+            zoneData.zone.shape.instructions,
+            0xeb7734,
+          );
+        configureInteractive(zoneSnapshots);
+        const [zoneSnapshot] = zoneSnapshots;
+
+        const zone = await this.#zoneManager.addShapeFromSnapshot(zoneSnapshot);
+        zone.metadata.zoneId = zoneData.id;
         zone.items = zoneData.items || new Set();
-        zone.setInteractive();
+
         zone.on("pointerdown", () => {
           const zoneItemsModalElement =
             document.getElementById("zoneItemsModal");
@@ -95,7 +172,7 @@ class FurnitureView extends Phaser.Scene {
 
           const zoneItemsListElement = document.getElementById("zoneItemsList");
           zoneItemsListElement.innerHTML = "";
-          zoneItemsListElement.dataset.zoneId = zone.id;
+          zoneItemsListElement.dataset.zoneId = zone.metadata.zoneId;
 
           this.#populateZoneItems(zone.items, zoneItemsListElement);
 
@@ -108,7 +185,6 @@ class FurnitureView extends Phaser.Scene {
 
   /**
    * Handler for modal hidden events
-   * @private
    * @return {void}
    */
   #handleModalHidden() {
@@ -125,7 +201,6 @@ class FurnitureView extends Phaser.Scene {
   /**
    * Makes a list sortable using Sortable.js
    * @param {HTMLElement} unorderedListElement - The unordered list element to make sortable
-   * @private
    * @return {void}
    */
   #makeSortable(unorderedListElement) {
@@ -206,7 +281,6 @@ class FurnitureView extends Phaser.Scene {
    * Populates zone items into a given unordered list element
    * @param {Set} items - Set of item ids with which to populate the list
    * @param {HTMLElement} unorderedListElement - The unordered list element to populate
-   * @private
    * @return {void}
    */
   #populateZoneItems(items, unorderedListElement) {
@@ -292,7 +366,7 @@ class FurnitureView extends Phaser.Scene {
 
       const zoneItemsListElement = document.getElementById("zoneItemsList");
       zoneItemsListElement.innerHTML = "";
-      zoneItemsListElement.dataset.zoneId = topHit.id;
+      zoneItemsListElement.dataset.zoneId = topHit.metadata.zoneId;
       console.log("Top hit items:", topHit.items);
 
       this.#populateZoneItems(topHit.items, zoneItemsListElement);
@@ -312,7 +386,6 @@ class FurnitureView extends Phaser.Scene {
 
   /**
    * Adds a hover handler to the game canvas
-   * @private
    * @return {void}
    */
   #addCanvasHoverHandler() {
@@ -330,6 +403,23 @@ class FurnitureView extends Phaser.Scene {
   init(data) {
     this.#furnitureInstance = data.furnitureInstance || null;
     console.log("Furniture instance ID:", this.#furnitureInstance);
+
+    this.#lastHover = null;
+    this.#hoverTimer = null;
+    this.#hoverCanvasHandler = null;
+    this.#modalHiddenHandler = null;
+    this.#panningManager = null;
+    this.#shapeManager = null;
+    this.#zoneManager = null;
+    this.#cameraBoundsManager = null;
+    this.#scrollbarManager = null;
+    this.#undoRedoManager = null;
+    this.#shapeInstructionHandler = null;
+    this.#zoneInstructionHandler = null;
+    //   this.#labeler = null;
+    this.#UIElements = {
+      undoRedoUI: null,
+    };
   }
 
   /**
@@ -337,6 +427,300 @@ class FurnitureView extends Phaser.Scene {
    * @public
    */
   async create() {
+    console.log("Scene camera:", this.cameras.main);
+    this.#undoRedoManager = new UndoRedoManager(this, 100);
+    this.#shapeManager = new ShapeManager(this);
+    this.#zoneManager = new ShapeManager(this);
+    //  this.#labeler = new ShapeLabeler(this, false);
+
+    this.#shapeInstructionHandler = new ShapeInstructionsHandler(
+      this.#shapeManager,
+    );
+    this.#zoneInstructionHandler = new ShapeInstructionsHandler(
+      this.#zoneManager,
+    );
+    this.#panningManager = new PanningManager(this);
+
+    this.#panningManager.create();
+
+    const zoomManager = new ZoomManager(this);
+    zoomManager.create();
+
+    const camera = this.cameras.main;
+
+    const scrollXElement = document.getElementById("scrollX");
+    const scrollYElement = document.getElementById("scrollY");
+
+    const cameraWidth = camera.width;
+    const cameraHeight = camera.height;
+
+    const initialWorldWidth = cameraWidth * 3;
+    const initialWorldHeight = cameraHeight * 3;
+
+    this.#cameraBoundsManager = new CameraBoundsManager(this, camera, {
+      worldWidth: initialWorldWidth,
+      worldHeight: initialWorldHeight,
+      eventConfig: {
+        shapeAdded: { extraPadding: 0, allowShrink: false },
+      },
+    });
+    this.#cameraBoundsManager.create();
+
+    this.#scrollbarManager = new ScrollbarManager(
+      this,
+      camera,
+      scrollXElement,
+      scrollYElement,
+      {
+        worldWidth: initialWorldWidth,
+        worldHeight: initialWorldHeight,
+        eventNames: [
+          "cameraZoomChanged",
+          "cameraPanned",
+          "cameraBoundsChanged",
+        ],
+      },
+    );
+    this.#scrollbarManager.create();
+
+    this.#shapeManager.registerShape(
+      "rectangle",
+      (scene, params) => {
+        const rectangle = new Shapes.Rectangle(
+          scene,
+          params.x,
+          params.y,
+          params.width,
+          params.height,
+          params.color,
+        );
+        rectangle.setRotation(params.rotation);
+
+        return rectangle;
+      },
+      { command: InstructionCommands.CREATE_RECTANGLE },
+    );
+    this.#shapeManager.registerShape(
+      "ellipse",
+      (scene, params) => {
+        const ellipse = new Shapes.Ellipse(
+          scene,
+          params.x,
+          params.y,
+          params.width,
+          params.height,
+          params.color,
+        );
+        ellipse.setRotation(params.rotation);
+        return ellipse;
+      },
+      { command: InstructionCommands.CREATE_ELLIPSE },
+    );
+    this.#shapeManager.registerShape(
+      "arc",
+      (scene, params) => {
+        const arc = new Shapes.Arc(
+          scene,
+          params.x,
+          params.y,
+          params.radius,
+          params.startAngle,
+          params.endAngle,
+          false,
+          params.color,
+        );
+        arc.setRotation(params.rotation);
+        if (params.width && params.height) {
+          arc.setDisplaySize(params.width, params.height);
+        }
+        return arc;
+      },
+      {
+        command: InstructionCommands.CREATE_ARC,
+        fieldMap: {
+          radius: "arcRadius",
+          startAngle: "arcStartAngle",
+          endAngle: "arcEndAngle",
+        },
+      },
+    );
+    this.#shapeManager.registerShape(
+      "polygon",
+      (scene, params) => {
+        const polygon = new Shapes.Polygon(
+          scene,
+          params.x,
+          params.y,
+          params.points,
+          params.color,
+        );
+        polygon.setRotation(params.rotation);
+        if (params.width && params.height) {
+          polygon.setDisplaySize(params.width, params.height);
+        }
+        return polygon;
+      },
+      {
+        command: InstructionCommands.CREATE_POLYGON,
+        fieldMap: { points: "polygonPoints" },
+      },
+    );
+    this.#shapeManager.registerShape(
+      "container",
+      async (scene, params) => {
+        const children = [];
+        if (params.children && params.children.length > 0) {
+          for (const childSnapshot of params.children) {
+            const childShape = await this.#shapeManager.addShapeFromSnapshot(
+              childSnapshot,
+              false,
+            );
+
+            if (!childShape) {
+              continue;
+            }
+            children.push(childShape);
+          }
+        }
+
+        const container = new Shapes.Container(
+          scene,
+          params.x,
+          params.y,
+          children,
+        );
+        container.setRotation(params.rotation);
+        container.setSize(params.width, params.height);
+        return container;
+      },
+      { command: InstructionCommands.BEGIN_CONTAINER, priority: 1 },
+    );
+
+    this.#zoneManager.registerShape(
+      "rectangle",
+      (scene, params) => {
+        const rectangle = new Shapes.Rectangle(
+          scene,
+          params.x,
+          params.y,
+          params.width,
+          params.height,
+          params.color,
+        );
+        rectangle.setRotation(params.rotation);
+
+        return rectangle;
+      },
+      { command: InstructionCommands.CREATE_RECTANGLE },
+    );
+    this.#zoneManager.registerShape(
+      "ellipse",
+      (scene, params) => {
+        const ellipse = new Shapes.Ellipse(
+          scene,
+          params.x,
+          params.y,
+          params.width,
+          params.height,
+          params.color,
+        );
+        ellipse.setRotation(params.rotation);
+
+        return ellipse;
+      },
+      { command: InstructionCommands.CREATE_ELLIPSE },
+    );
+    this.#zoneManager.registerShape(
+      "arc",
+      (scene, params) => {
+        const arc = new Shapes.Arc(
+          scene,
+          params.x,
+          params.y,
+          params.radius,
+          params.startAngle,
+          params.endAngle,
+          false,
+          params.color,
+        );
+        arc.setRotation(params.rotation);
+
+        if (params.width && params.height) {
+          arc.setDisplaySize(params.width, params.height);
+        }
+
+        return arc;
+      },
+      {
+        command: InstructionCommands.CREATE_ARC,
+        fieldMap: {
+          radius: "arcRadius",
+          startAngle: "arcStartAngle",
+          endAngle: "arcEndAngle",
+        },
+      },
+    );
+    this.#zoneManager.registerShape(
+      "polygon",
+      (scene, params) => {
+        const polygon = new Shapes.Polygon(
+          scene,
+          params.x,
+          params.y,
+          params.points,
+          params.color,
+        );
+        polygon.setRotation(params.rotation);
+        if (params.width && params.height) {
+          polygon.setDisplaySize(params.width, params.height);
+        }
+
+        return polygon;
+      },
+      {
+        command: InstructionCommands.CREATE_POLYGON,
+        fieldMap: { points: "polygonPoints" },
+      },
+    );
+    this.#zoneManager.registerShape(
+      "container",
+      async (scene, params) => {
+        const children = [];
+        if (params.children && params.children.length > 0) {
+          for (const childSnapshot of params.children) {
+            const childShape = await this.#zoneManager.addShapeFromSnapshot(
+              childSnapshot,
+              false,
+            );
+
+            if (!childShape) {
+              continue;
+            }
+            children.push(childShape);
+          }
+        }
+
+        const container = new Shapes.Container(
+          scene,
+          params.x,
+          params.y,
+          children,
+        );
+        container.setRotation(params.rotation);
+        container.setSize(params.width, params.height);
+
+        return container;
+      },
+      { command: InstructionCommands.BEGIN_CONTAINER, priority: 1 },
+    );
+
+    this.#UIElements.undoRedoUI = new UndoRedoUserInterface(
+      this,
+      this.#undoRedoManager,
+      "undoButton",
+      "redoButton",
+    );
+
     console.log("Scene", this);
     const backButton = document.createElement("button");
     backButton.id = "backButton";
@@ -452,14 +836,21 @@ class FurnitureView extends Phaser.Scene {
         this.#hoverTimer = null;
         this.#lastHover = null;
       }
+      this.#shapeManager.clearAllShapes();
+      this.#zoneManager.clearAllShapes();
+      this.#cameraBoundsManager.destroy();
     });
+    console.log(this.#cameraBoundsManager);
+    console.log(this.#shapeManager);
   }
 
   /**
    * Updates the scene
    * @public
    */
-  update() {}
+  update() {
+    this.#panningManager.update();
+  }
 }
 
 export { FurnitureView };

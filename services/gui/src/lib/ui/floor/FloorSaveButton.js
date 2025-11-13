@@ -110,7 +110,9 @@ class FloorSaveButton {
 
       const furnitureTransferObjects = furniture
         .map((item) => {
+          console.log("Creating snapshot for furniture item:", item);
           const snapshot = item.createSnapshot();
+          console.log("Snapshot for furniture:", snapshot);
           const instructions =
             this.#instructionsHandler.convertToInstructions(snapshot);
           if (instructions.length === 0) {
@@ -141,6 +143,7 @@ class FloorSaveButton {
 
       console.log(floorData);
       try {
+        console.log("Floor data to be sent:", floorData);
         const response = await fetch(url, {
           method: method,
           headers: {

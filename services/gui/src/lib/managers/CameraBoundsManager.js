@@ -81,6 +81,7 @@ class CameraBoundsManager {
     };
 
     this.#eventConfig = config.eventConfig;
+    console.log("Called", this);
   }
 
   /**
@@ -132,6 +133,7 @@ class CameraBoundsManager {
    *  @returns {void}
    */
   #handleEvent(shape, config) {
+    console.log("Handling event for shape:", shape);
     this.#updateLists(shape);
     this.#adjustCameraBounds(
       config.extraPadding || 0,
@@ -245,6 +247,18 @@ class CameraBoundsManager {
     this.#minYSortedList.remove(shape);
     this.#maxXSortedList.remove(shape);
     this.#maxYSortedList.remove(shape);
+  }
+
+  destroy() {
+    this.#minXSortedList.clear();
+    this.#minYSortedList.clear();
+    this.#maxXSortedList.clear();
+    this.#maxYSortedList.clear();
+    this.#scene = null;
+    this.#camera = null;
+    this.#initialCameraDimensions = null;
+    this.#initialWorldDimensions = null;
+    this.#eventConfig = null;
   }
 }
 
