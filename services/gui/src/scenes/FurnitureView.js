@@ -818,7 +818,7 @@ class FurnitureView extends Phaser.Scene {
       this.#modalHiddenHandler,
     );
 
-    this.events.on("shutdown", () => {
+    this.events.once("shutdown", () => {
       console.log("FurnitureView scene shutdown");
       this.game.canvas.removeEventListener(
         "dragover",
@@ -836,9 +836,10 @@ class FurnitureView extends Phaser.Scene {
         this.#hoverTimer = null;
         this.#lastHover = null;
       }
-      this.#shapeManager.clearAllShapes();
-      this.#zoneManager.clearAllShapes();
-      this.#cameraBoundsManager.destroy();
+      //this.#shapeManager.clearAllShapes();
+      //this.#zoneManager.clearAllShapes();
+      //this.#cameraBoundsManager.destroy();
+      //this.#scrollbarManager.destroy();
     });
     console.log(this.#cameraBoundsManager);
     console.log(this.#shapeManager);

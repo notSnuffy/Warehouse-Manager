@@ -1,4 +1,5 @@
 import { populateFloorViewItemList } from "@utils/UIHelperFunctions";
+import { FurnitureView } from "@scenes/FurnitureView";
 import { API_URL } from "@/config";
 import Phaser from "phaser";
 import PanningManager from "@managers/PanningManager";
@@ -708,6 +709,10 @@ class FloorView extends Phaser.Scene {
       console.log(this.#itemMap);
       console.log(this.#furnitureInstances);
       this.#addCanvasHoverHandler();
+      this.scene.get("FurnitureView").events.once("destroy", () => {
+        this.scene.add("FurnitureView", FurnitureView);
+      });
+      this.scene.remove(this.scene.get("FurnitureView"));
     });
   }
   /**

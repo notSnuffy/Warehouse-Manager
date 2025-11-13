@@ -1,6 +1,8 @@
 import SortedLinkedMapList from "@collections/SortedLinkedMapList";
 import { calculateBoundingBox, getShapePoints } from "@utils/shapes";
 
+let instanceCount = 0;
+
 /**
  * Manages camera bounds based on shapes in the scene.
  * @class CameraBoundsManager
@@ -57,6 +59,12 @@ class CameraBoundsManager {
   #maxYSortedList = new SortedLinkedMapList((a, b) => b - a);
 
   /**
+   * Map of event listeners for shape events
+   * @type {Map<string, Function>}
+   */
+  #eventListeners = new Map();
+
+  /**
    * Creates an instance of CameraBoundsManager.
    * @param {Phaser.Scene} scene - The Phaser scene
    * @param {Phaser.Cameras.Scene2D.Camera} camera - The Phaser camera to manage
@@ -69,6 +77,7 @@ class CameraBoundsManager {
    * @params {boolean} [config.eventConfig.eventName.allowShrink=false] - Whether to allow shrinking bounds on event
    */
   constructor(scene, camera, config) {
+    this.name = `CameraBoundsManager_${instanceCount++}`;
     this.#scene = scene;
     this.#camera = camera;
     this.#initialCameraDimensions = {
@@ -81,7 +90,8 @@ class CameraBoundsManager {
     };
 
     this.#eventConfig = config.eventConfig;
-    console.log("Called", this);
+
+    console.log("Named CameraBoundsManager instance created:", this.name);
   }
 
   /**
@@ -108,20 +118,16 @@ class CameraBoundsManager {
    */
   #registerEvents(eventConfig) {
     Object.entries(eventConfig).forEach(([eventName, config]) => {
-      this.#scene.events.on(
-        eventName,
-        (shape) => this.#handleEvent(shape, config),
-        this,
-      );
+      const listener = (shape) => this.#handleEvent(shape, config);
+      this.#scene.events.on(eventName, listener, this);
+      this.#eventListeners.set(eventName, listener);
     });
-    this.#scene.events.on(
-      "shapeRemoved",
-      (shape) => {
-        this.#removeFromLists(shape);
-        //this.#adjustCameraBounds(0, true);
-      },
-      this,
-    );
+    const removeListener = (shape) => {
+      this.#removeFromLists(shape);
+      //this.#adjustCameraBounds(0, true);
+    };
+    this.#scene.events.on("shapeRemoved", removeListener, this);
+    this.#eventListeners.set("shapeRemoved", removeListener);
   }
 
   /**
@@ -133,6 +139,7 @@ class CameraBoundsManager {
    *  @returns {void}
    */
   #handleEvent(shape, config) {
+    console.log("Name:", this.name);
     console.log("Handling event for shape:", shape);
     this.#updateLists(shape);
     this.#adjustCameraBounds(
@@ -254,6 +261,13 @@ class CameraBoundsManager {
     this.#minYSortedList.clear();
     this.#maxXSortedList.clear();
     this.#maxYSortedList.clear();
+
+    this.#eventListeners.forEach((listener, eventName) => {
+      const emmiter = this.#scene.events.off(eventName, listener, this);
+      console.log("Removed listener for event:", eventName);
+      console.log("Emitter after removal:", emmiter);
+    });
+
     this.#scene = null;
     this.#camera = null;
     this.#initialCameraDimensions = null;
