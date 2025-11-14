@@ -10,6 +10,7 @@ import ShapeInstructionsHandler from "@instructions/ShapeInstructionsHandler";
 import ShapeLabeler from "@managers/ShapeLabeler";
 import * as Shapes from "@shapes";
 import InstructionCommands from "@instructions/InstructionCommands.js";
+import CompositeCommand from "@commands/CompositeCommand";
 
 /**
  * Represents the furniture view scene
@@ -217,36 +218,86 @@ class FurnitureView extends Phaser.Scene {
           const parentItemData = itemMap.get(parentId);
           parentId = parentItemData.parentId;
         }
+
+        const compositeCommand = new CompositeCommand();
+
         if (oldParentId) {
           const oldParentItemData = itemMap.get(oldParentId);
 
-          oldParentItemData.children.delete(id);
+          //oldParentItemData.children.delete(id);
+          compositeCommand.addCommand({
+            execute: async () => {
+              oldParentItemData.children.delete(id);
+            },
+            undo: async () => {
+              oldParentItemData.children.add(id);
+            },
+          });
         }
-        newParentItemData.children.add(id);
+        //newParentItemData.children.add(id);
+        compositeCommand.addCommand({
+          execute: async () => {
+            newParentItemData.children.add(id);
+          },
+          undo: async () => {
+            newParentItemData.children.delete(id);
+          },
+        });
 
-        itemData.parentId = newParentId;
-        itemData.changed = true;
-        this.scene
-          .get("FloorView")
-          .moveItemBetweenZones(itemData.zoneId, null, id);
-        itemData.zoneId = null;
-        const previousFloorId = itemData.floorId;
-        itemData.floorId = newParentItemData.floorId;
-        console.log("Item data after move:", itemData);
+        const previousItemData = { ...itemData };
+
+        compositeCommand.addCommand({
+          execute: async () => {
+            itemData.parentId = newParentId;
+            itemData.changed = true;
+            this.scene
+              .get("FloorView")
+              .moveItemBetweenZones(itemData.zoneId, null, id);
+            itemData.zoneId = null;
+            itemData.floorId = newParentItemData.floorId;
+            console.log("Item data after move:", itemData);
+          },
+          undo: async () => {
+            itemData.parentId = previousItemData.parentId;
+            itemData.zoneId = previousItemData.zoneId;
+            itemData.floorId = previousItemData.floorId;
+            itemData.changed = previousItemData.changed;
+            this.scene
+              .get("FloorView")
+              .moveItemBetweenZones(null, itemData.zoneId, id);
+          },
+        });
+
+        const childCompositeCommand = new CompositeCommand();
+
         const updateChildrenFloor = (itemData, floorId) => {
           if (itemData.children && itemData.children.size > 0) {
             itemData.children.forEach((childId) => {
               const childItemData = itemMap.get(childId);
+
+              const previousChildItemData = { ...childItemData };
+              childCompositeCommand.addCommand({
+                execute: async () => {
+                  childItemData.floorId = floorId;
+                  childItemData.changed = true;
+                },
+                undo: async () => {
+                  childItemData.floorId = previousChildItemData.floorId;
+                  childItemData.changed = previousChildItemData.changed;
+                },
+              });
+
               childItemData.floorId = floorId;
               childItemData.changed = true;
               updateChildrenFloor(childItemData, floorId);
             });
           }
         };
-        if (previousFloorId !== itemData.floorId) {
+        if (previousItemData.floorId !== newParentItemData.floorId) {
           updateChildrenFloor(itemData, itemData.floorId);
         }
 
+        let itemAddCommand;
         if (previousList.id === "itemsMenuItems") {
           console.log("Item added from items menu:", itemData);
           const childList = document.createElement("ul");
@@ -261,7 +312,33 @@ class FurnitureView extends Phaser.Scene {
           if (itemData.children && itemData.children.size > 0) {
             this.#populateZoneItems(itemData.children, childList);
           }
+
+          const index = evt.newIndex;
+          itemAddCommand = {
+            execute: async () => {
+              const thisList = document.querySelector(
+                `ul[data-parent-id="${newParentId}"]`,
+              );
+              thisList.insertBefore(item, thisList.children[index] || null);
+              //evt.to.insertBefore(item, evt.to.children[index] || null);
+            },
+            undo: async () => {
+              const thisList = document.querySelector(
+                `ul[data-parent-id="${newParentId}"]`,
+              );
+              thisList.removeChild(item);
+              //evt.to.removeChild(item);
+            },
+          };
         }
+        compositeCommand.execute();
+        compositeCommand.addCommand(childCompositeCommand);
+        if (itemAddCommand) {
+          compositeCommand.addCommand(itemAddCommand);
+        }
+        this.scene
+          .get("FloorView")
+          .undoRedoManager.pushCommand(compositeCommand);
       },
     });
   }
@@ -348,12 +425,12 @@ class FurnitureView extends Phaser.Scene {
       childList.classList.add("list-group");
       childList.dataset.parentId = itemId;
       unorderedListElement.appendChild(itemElement);
+      this.#addRemoveButtonToItemElement(itemElement);
 
       itemElement.appendChild(childList);
 
       this.#makeSortable(childList);
 
-      this.#addRemoveButtonToItemElement(itemElement);
       if (itemData.children && itemData.children.size > 0) {
         this.#populateZoneItems(itemData.children, childList);
       }
