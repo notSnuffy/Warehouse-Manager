@@ -31,11 +31,22 @@ class SelectShapeManager extends Manager {
   #resizeManager = null;
 
   /**
+   * UndoRedo manager
+   * @type {UndoRedoManager}
+   * @default null
+   */
+  #undoRedoManager = null;
+
+  /**
    * Constructor for the SelectShapeManager
    * @param {Phaser.Scene} scene - The scene
+   * @param {UndoRedoManager} [undoRedoManager=null] - The undo/redo manager
    */
-  constructor(scene) {
+  constructor(scene, undoRedoManager = null) {
     super(scene);
+
+    this.#undoRedoManager = undoRedoManager;
+
     this.#rotationManager = new RotationManager(scene);
     this.#resizeManager = new ResizeManager(scene);
 
@@ -60,18 +71,20 @@ class SelectShapeManager extends Manager {
       }
     });
 
-    this.scene.events.on("undoPerformed", () => {
-      if (this.#lastSelected) {
-        this.#rotationManager.update(this.#lastSelected);
-        this.#resizeManager.update(this.#lastSelected);
-      }
-    });
-    this.scene.events.on("redoPerformed", () => {
-      if (this.#lastSelected) {
-        this.#rotationManager.update(this.#lastSelected);
-        this.#resizeManager.update(this.#lastSelected);
-      }
-    });
+    if (this.#undoRedoManager) {
+      this.#undoRedoManager.on("undoPerformed", () => {
+        if (this.#lastSelected) {
+          this.#rotationManager.update(this.#lastSelected);
+          this.#resizeManager.update(this.#lastSelected);
+        }
+      });
+      this.#undoRedoManager.on("redoPerformed", () => {
+        if (this.#lastSelected) {
+          this.#rotationManager.update(this.#lastSelected);
+          this.#resizeManager.update(this.#lastSelected);
+        }
+      });
+    }
 
     this.scene.events.on("shapeRemoved", () => {
       if (!this.#lastSelected) {

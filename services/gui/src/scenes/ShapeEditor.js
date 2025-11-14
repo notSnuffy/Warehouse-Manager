@@ -198,9 +198,23 @@ class ShapeEditor extends Phaser.Scene {
    * @public
    */
   async create() {
-    this.#selectManager = new SelectShapeManager(this);
-    this.#moveManager = new MoveManager(this, new OutlineManager(this));
-    this.#undoRedoManager = new UndoRedoManager(this, 100);
+    this.#undoRedoManager = new UndoRedoManager(100);
+    this.input.keyboard.on("keydown-Z", async (event) => {
+      if (event.ctrlKey) {
+        await this.#undoRedoManager.undo();
+      }
+    });
+    this.input.keyboard.on("keydown-Y", async (event) => {
+      if (event.ctrlKey) {
+        await this.#undoRedoManager.redo();
+      }
+    });
+    this.#selectManager = new SelectShapeManager(this, this.#undoRedoManager);
+    this.#moveManager = new MoveManager(
+      this,
+      new OutlineManager(this),
+      this.#undoRedoManager,
+    );
     this.#shapeManager = new ShapeManager(this, {
       move: this.#moveManager,
       select: this.#selectManager,
@@ -471,7 +485,6 @@ class ShapeEditor extends Phaser.Scene {
       ShapeFieldSchemas,
     );
     this.#UIElements.undoRedoUI = new UndoRedoUserInterface(
-      this,
       this.#undoRedoManager,
       "undoButton",
       "redoButton",

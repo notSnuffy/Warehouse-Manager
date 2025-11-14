@@ -76,7 +76,7 @@ class FloorView extends Phaser.Scene {
    * @type {UndoRedoManager}
    * @default null
    */
-  #undoRedoManager = null;
+  undoRedoManager = null;
 
   /**
    * Furniture instructions handler
@@ -329,6 +329,8 @@ class FloorView extends Phaser.Scene {
       return;
     }
 
+    this.#panningManager.update();
+
     const gameCanvas = this.game.canvas;
     const canvasBoundingRect = gameCanvas.getBoundingClientRect();
     console.log("Canvas bounding rect:", canvasBoundingRect);
@@ -340,18 +342,12 @@ class FloorView extends Phaser.Scene {
 
     const canvasPointerX = (e.clientX - canvasBoundingRect.x) * scaleX;
     const canvasPointerY = (e.clientY - canvasBoundingRect.y) * scaleY;
-    console.log(`Pointer position: (${canvasPointerX}, ${canvasPointerY})`);
 
     const pointer = this.input.activePointer;
-    const worldPoint = this.cameras.main.getWorldPoint(
-      canvasPointerX,
-      canvasPointerY,
-    );
-    pointer.x = worldPoint.x;
-    pointer.y = worldPoint.y;
+    pointer.x = canvasPointerX;
+    pointer.y = canvasPointerY;
 
     const hits = this.input.hitTestPointer(pointer);
-    console.log("Hit test results:", [...hits]);
 
     if (hits.length === 0) {
       if (!this.#hoverTimer) {
@@ -409,7 +405,17 @@ class FloorView extends Phaser.Scene {
    * @public
    */
   async create() {
-    this.#undoRedoManager = new UndoRedoManager(this, 100);
+    this.undoRedoManager = new UndoRedoManager(100);
+    this.input.keyboard.on("keydown-Z", async (event) => {
+      if (event.ctrlKey) {
+        await this.undoRedoManager.undo();
+      }
+    });
+    this.input.keyboard.on("keydown-Y", async (event) => {
+      if (event.ctrlKey) {
+        await this.undoRedoManager.redo();
+      }
+    });
 
     this.#furnitureManager = new ShapeManager(this);
     this.#cornerManager = new ShapeManager(this);
@@ -616,8 +622,7 @@ class FloorView extends Phaser.Scene {
     });
 
     this.#UIElements.undoRedoUI = new UndoRedoUserInterface(
-      this,
-      this.#undoRedoManager,
+      this.undoRedoManager,
       "undoButton",
       "redoButton",
     );
@@ -709,6 +714,9 @@ class FloorView extends Phaser.Scene {
       console.log(this.#itemMap);
       console.log(this.#furnitureInstances);
       this.#addCanvasHoverHandler();
+
+      this.#scrollbarManager.resetScrollbarsToInitialPosition();
+
       this.scene.get("FurnitureView").events.once("destroy", () => {
         this.scene.add("FurnitureView", FurnitureView);
       });

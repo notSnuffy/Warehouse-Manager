@@ -37,23 +37,41 @@ class MoveManager extends Manager {
   #outlineManager = new OutlineManager(this.scene);
 
   /**
+   * UndoRedo manager
+   * @type {UndoRedoManager|null}
+   * @default null
+   */
+  #undoRedoManager = null;
+
+  /**
    * Constructor
    * @param {Phaser.Scene} scene - The scene
    * @param {OutlineManager} [outlineManager] - Optional outline manager to use
+   * @param {UndoRedoManager|null} [undoRedoManager=null] - Optional undo/redo manager
    * @constructor
    * @public
    */
-  constructor(scene, outlineManager) {
+  constructor(scene, outlineManager, undoRedoManager = null) {
     super(scene);
-    if (outlineManager) {
-      this.#outlineManager = outlineManager;
-      this.scene.events.on("undoPerformed", () => {
-        this.#outlineManager.hideAll();
-      });
-      this.scene.events.on("redoPerformed", () => {
-        this.#outlineManager.hideAll();
-      });
+
+    if (!outlineManager) {
+      return;
     }
+
+    this.#outlineManager = outlineManager;
+
+    if (!undoRedoManager) {
+      return;
+    }
+
+    this.#undoRedoManager = undoRedoManager;
+
+    this.#undoRedoManager.on("undoPerformed", () => {
+      this.#outlineManager.hideAll();
+    });
+    this.#undoRedoManager.on("redoPerformed", () => {
+      this.#outlineManager.hideAll();
+    });
   }
 
   /**

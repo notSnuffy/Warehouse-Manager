@@ -4,12 +4,6 @@
  */
 class UndoRedoUserInterface {
   /**
-   * The scene where the UI is used.
-   * @type {Phaser.Scene}
-   */
-  #scene;
-
-  /**
    * The undo/redo manager instance.
    * @type {UndoRedoManager}
    */
@@ -29,13 +23,11 @@ class UndoRedoUserInterface {
 
   /**
    * Creates an instance of UndoRedoUserInterface.
-   * @param {Phaser.Scene} scene - The scene where the UI is used.
    * @param {UndoRedoManager} undoRedoManager - The undo/redo manager instance.
    * @param {string} undoButtonId - The ID of the undo button element.
    * @param {string} redoButtonId - The ID of the redo button element.
    */
-  constructor(scene, undoRedoManager, undoButtonId, redoButtonId) {
-    this.#scene = scene;
+  constructor(undoRedoManager, undoButtonId, redoButtonId) {
     this.#undoRedoManager = undoRedoManager;
 
     this.#undoButton = document.getElementById(undoButtonId);
@@ -64,13 +56,13 @@ class UndoRedoUserInterface {
    * @return {void}
    */
   #initializeEventListeners() {
-    this.#scene.events.on("undoPerformed", () => {
+    this.#undoRedoManager.on("undoPerformed", () => {
       this.#updateButtonStates();
     });
-    this.#scene.events.on("redoPerformed", () => {
+    this.#undoRedoManager.on("redoPerformed", () => {
       this.#updateButtonStates();
     });
-    this.#scene.events.on("commandPushed", () => {
+    this.#undoRedoManager.on("commandPushed", () => {
       this.#updateButtonStates();
     });
   }

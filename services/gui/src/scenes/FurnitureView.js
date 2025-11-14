@@ -5,13 +5,11 @@ import PanningManager from "@managers/PanningManager";
 import ShapeManager from "@managers/ShapeManager";
 import CameraBoundsManager from "@managers/CameraBoundsManager";
 import ScrollbarManager from "@managers/ScrollbarManager";
-import UndoRedoManager from "@managers/UndoRedoManager";
 import ZoomManager from "@managers/ZoomManager";
 import ShapeInstructionsHandler from "@instructions/ShapeInstructionsHandler";
-//import ShapeLabeler from "@managers/ShapeLabeler";
+import ShapeLabeler from "@managers/ShapeLabeler";
 import * as Shapes from "@shapes";
 import InstructionCommands from "@instructions/InstructionCommands.js";
-import UndoRedoUserInterface from "@ui/UndoRedoUserInterface";
 
 /**
  * Represents the furniture view scene
@@ -80,12 +78,6 @@ class FurnitureView extends Phaser.Scene {
   #scrollbarManager;
 
   /**
-   * Undo redo manager
-   * @type {UndoRedoManager}
-   */
-  #undoRedoManager;
-
-  /**
    * Shape instruction handler
    * @type {ShapeInstructionsHandler}
    */
@@ -101,14 +93,7 @@ class FurnitureView extends Phaser.Scene {
    * Shape labeler
    * @type {ShapeLabeler}
    */
-  //  #labeler;
-
-  /**
-   * Object containing references to UI elements
-   * @type {Object}
-   * @property {UndoRedoUserInterface|null} undoRedoUI - The undo/redo UI
-   */
-  #UIElements;
+  #labeler;
 
   /**
    * Constructor for the FurnitureView scene
@@ -179,6 +164,8 @@ class FurnitureView extends Phaser.Scene {
           this.input.enabled = false;
           zoneItemsModal.show();
         });
+
+        this.#labeler.addLabel(zone, zoneData.zone.name, "#ffffff", () => {});
       });
     }
   }
@@ -265,6 +252,8 @@ class FurnitureView extends Phaser.Scene {
           const childList = document.createElement("ul");
           childList.classList.add("list-group");
           childList.dataset.parentId = id;
+          this.#addRemoveButtonToItemElement(item);
+
           item.appendChild(childList);
 
           this.#makeSortable(childList);
@@ -274,6 +263,70 @@ class FurnitureView extends Phaser.Scene {
           }
         }
       },
+    });
+  }
+
+  /**
+   * Adds a remove button to an item element
+   * @param {HTMLElement} itemElement - The item element to add the remove button to
+   * @return {void}
+   */
+  #addRemoveButtonToItemElement(itemElement) {
+    const removeButton = document.createElement("button");
+    removeButton.classList.add("btn", "btn-sm", "btn-danger");
+    removeButton.textContent = "Remove";
+
+    const contentWrapper = document.createElement("div");
+    contentWrapper.classList.add(
+      "d-flex",
+      "justify-content-between",
+      "align-items-center",
+      "mb-1",
+    );
+
+    const itemText = document.createElement("span");
+    itemText.textContent = itemElement.textContent;
+    contentWrapper.appendChild(itemText);
+    contentWrapper.appendChild(removeButton);
+    itemElement.textContent = "";
+    itemElement.appendChild(contentWrapper);
+
+    const resetChildren = (itemData) => {
+      if (itemData.children && itemData.children.size > 0) {
+        itemData.children.forEach((childId) => {
+          const childItemData = this.scene
+            .get("FloorView")
+            .itemMap.get(childId);
+          childItemData.floorId = null;
+          childItemData.changed = true;
+          resetChildren(childItemData);
+        });
+      }
+    };
+
+    removeButton.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const parentList = itemElement.parentElement;
+      parentList.removeChild(itemElement);
+
+      const itemId = parseInt(itemElement.dataset.id, 10);
+      const itemMap = this.scene.get("FloorView").itemMap;
+      const itemData = itemMap.get(itemId);
+
+      if (itemData.parentId) {
+        const parentItemData = itemMap.get(itemData.parentId);
+        parentItemData.children.delete(itemId);
+      }
+
+      const previousZoneId = itemData.zoneId;
+      itemData.zoneId = null;
+      itemData.parentId = null;
+      itemData.changed = true;
+      itemData.floorId = null;
+      this.scene
+        .get("FloorView")
+        .moveItemBetweenZones(previousZoneId, null, itemId);
+      resetChildren(itemData);
     });
   }
 
@@ -294,11 +347,13 @@ class FurnitureView extends Phaser.Scene {
       const childList = document.createElement("ul");
       childList.classList.add("list-group");
       childList.dataset.parentId = itemId;
+      unorderedListElement.appendChild(itemElement);
+
       itemElement.appendChild(childList);
 
       this.#makeSortable(childList);
 
-      unorderedListElement.appendChild(itemElement);
+      this.#addRemoveButtonToItemElement(itemElement);
       if (itemData.children && itemData.children.size > 0) {
         this.#populateZoneItems(itemData.children, childList);
       }
@@ -413,13 +468,9 @@ class FurnitureView extends Phaser.Scene {
     this.#zoneManager = null;
     this.#cameraBoundsManager = null;
     this.#scrollbarManager = null;
-    this.#undoRedoManager = null;
     this.#shapeInstructionHandler = null;
     this.#zoneInstructionHandler = null;
-    //   this.#labeler = null;
-    this.#UIElements = {
-      undoRedoUI: null,
-    };
+    this.#labeler = null;
   }
 
   /**
@@ -428,10 +479,20 @@ class FurnitureView extends Phaser.Scene {
    */
   async create() {
     console.log("Scene camera:", this.cameras.main);
-    this.#undoRedoManager = new UndoRedoManager(this, 100);
+    const undoRedoManager = this.scene.get("FloorView").undoRedoManager;
+    this.input.keyboard.on("keydown-Z", async (event) => {
+      if (event.ctrlKey) {
+        await undoRedoManager.undo();
+      }
+    });
+    this.input.keyboard.on("keydown-Y", async (event) => {
+      if (event.ctrlKey) {
+        await undoRedoManager.redo();
+      }
+    });
     this.#shapeManager = new ShapeManager(this);
     this.#zoneManager = new ShapeManager(this);
-    //  this.#labeler = new ShapeLabeler(this, false);
+    this.#labeler = new ShapeLabeler(this, false);
 
     this.#shapeInstructionHandler = new ShapeInstructionsHandler(
       this.#shapeManager,
@@ -714,13 +775,6 @@ class FurnitureView extends Phaser.Scene {
       { command: InstructionCommands.BEGIN_CONTAINER, priority: 1 },
     );
 
-    this.#UIElements.undoRedoUI = new UndoRedoUserInterface(
-      this,
-      this.#undoRedoManager,
-      "undoButton",
-      "redoButton",
-    );
-
     console.log("Scene", this);
     const backButton = document.createElement("button");
     backButton.id = "backButton";
@@ -764,6 +818,7 @@ class FurnitureView extends Phaser.Scene {
           const childList = document.createElement("ul");
           childList.classList.add("list-group");
           childList.dataset.parentId = id;
+          this.#addRemoveButtonToItemElement(item);
           item.appendChild(childList);
 
           this.#makeSortable(childList);
@@ -839,7 +894,7 @@ class FurnitureView extends Phaser.Scene {
       //this.#shapeManager.clearAllShapes();
       //this.#zoneManager.clearAllShapes();
       //this.#cameraBoundsManager.destroy();
-      //this.#scrollbarManager.destroy();
+      this.#scrollbarManager.destroy();
     });
     console.log(this.#cameraBoundsManager);
     console.log(this.#shapeManager);

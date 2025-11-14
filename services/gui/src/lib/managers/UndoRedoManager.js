@@ -1,14 +1,10 @@
+import Phaser from "phaser";
+
 /**
  * UndoRedoManager class to handle undo and redo operations using the Command pattern.
  * @class UndoRedoManager
  */
 class UndoRedoManager {
-  /**
-   * The scene where the manager is used.
-   * @type {Phaser.Scene}
-   */
-  #scene;
-
   /**
    * Stack of commands for undo operations.
    * @type {Array<BaseCommand>}
@@ -29,24 +25,52 @@ class UndoRedoManager {
   #redoStack = [];
 
   /**
+   * The event emitter instance.
+   * @type {Phaser.Events.EventEmitter}
+   */
+  #eventEmitter;
+
+  /**
    * Creates an instance of UndoRedoManager.
-   * @param {Phaser.Scene} scene - The scene where the manager is used.
    * @param {number} [maxStackSize=50] - Maximum size of the undo/redo stacks.
    */
-  constructor(scene, maxStackSize = 50) {
-    this.#scene = scene;
+  constructor(maxStackSize = 50) {
     this.#maxStackSize = maxStackSize;
 
-    this.#scene.input.keyboard.on("keydown-Z", async (event) => {
-      if (event.ctrlKey) {
-        await this.undo();
-      }
-    });
-    this.#scene.input.keyboard.on("keydown-Y", async (event) => {
-      if (event.ctrlKey) {
-        await this.redo();
-      }
-    });
+    this.#eventEmitter = new Phaser.Events.EventEmitter();
+  }
+
+  /**
+   * Adds an event listener.
+   * @param {string} event - The event name
+   * @param {Function} listener - The event listener function
+   * @param {Object} [context=this] - The context to bind the listener to
+   * @return {void}
+   */
+  on(event, listener, context = this) {
+    this.#eventEmitter.on(event, listener, context);
+  }
+
+  /**
+   * Removes an event listener.
+   * @param {string} event - The event name
+   * @param {Function} [listener=null] - Only remove listeners that match this function
+   * @param {Object} [context=null] - Only remove listeners that match this context
+   * @param {boolean} [once=null] - If true, only remove once listeners
+   * @return {void}
+   */
+  off(event, listener = null, context = null, once = null) {
+    this.#eventEmitter.off(event, listener, context, once);
+  }
+
+  /**
+   * Emits an event.
+   * @param {string} event - The event name
+   * @param {any[]} args - Arguments to pass to the event listeners
+   * @return {void}
+   */
+  emit(event, ...args) {
+    this.#eventEmitter.emit(event, ...args);
   }
 
   /**
@@ -62,7 +86,7 @@ class UndoRedoManager {
       this.#undoStack.shift();
     }
 
-    this.#scene.events.emit("commandPushed", this.getStackSizes());
+    this.emit("commandPushed", this.getStackSizes());
   }
 
   /**
@@ -79,7 +103,7 @@ class UndoRedoManager {
     await command.undo();
     this.#redoStack.push(command);
 
-    this.#scene.events.emit("undoPerformed", this.getStackSizes());
+    this.emit("undoPerformed", this.getStackSizes());
   }
 
   /**
@@ -95,7 +119,7 @@ class UndoRedoManager {
     const command = this.#redoStack.pop();
     await command.execute();
     this.#undoStack.push(command);
-    this.#scene.events.emit("redoPerformed", this.getStackSizes());
+    this.emit("redoPerformed", this.getStackSizes());
   }
 
   /**

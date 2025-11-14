@@ -1,8 +1,6 @@
 import SortedLinkedMapList from "@collections/SortedLinkedMapList";
 import { calculateBoundingBox, getShapePoints } from "@utils/shapes";
 
-let instanceCount = 0;
-
 /**
  * Manages camera bounds based on shapes in the scene.
  * @class CameraBoundsManager
@@ -77,7 +75,6 @@ class CameraBoundsManager {
    * @params {boolean} [config.eventConfig.eventName.allowShrink=false] - Whether to allow shrinking bounds on event
    */
   constructor(scene, camera, config) {
-    this.name = `CameraBoundsManager_${instanceCount++}`;
     this.#scene = scene;
     this.#camera = camera;
     this.#initialCameraDimensions = {
@@ -90,8 +87,6 @@ class CameraBoundsManager {
     };
 
     this.#eventConfig = config.eventConfig;
-
-    console.log("Named CameraBoundsManager instance created:", this.name);
   }
 
   /**
@@ -139,8 +134,6 @@ class CameraBoundsManager {
    *  @returns {void}
    */
   #handleEvent(shape, config) {
-    console.log("Name:", this.name);
-    console.log("Handling event for shape:", shape);
     this.#updateLists(shape);
     this.#adjustCameraBounds(
       config.extraPadding || 0,

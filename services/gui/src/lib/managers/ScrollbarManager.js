@@ -87,7 +87,17 @@ class ScrollbarManager {
 
     this.#scrollHorizontal.value = this.#camera.width;
     this.#scrollVertical.value = this.#camera.height;
+
     this.#initializeScrollbarsListeners();
+  }
+
+  /**
+   * Resets the scrollbars to their initial position
+   * @returns {void}
+   */
+  resetScrollbarsToInitialPosition() {
+    this.#camera.setScroll(0, 0);
+    this.#updateScrollbars();
   }
 
   /**

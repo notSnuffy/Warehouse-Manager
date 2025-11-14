@@ -53,15 +53,6 @@ class ShapeManager {
       command.emitEvent = true;
       this.#scene.events.emit("shapeRemoved", shape, command);
     });
-
-    this.#scene.events.on("undoPerformed", () => {
-      console.log("Undo performed");
-      console.log(this.#shapes);
-    });
-    this.#scene.events.on("redoPerformed", () => {
-      console.log("Redo performed");
-      console.log(this.#shapes);
-    });
   }
 
   /**
