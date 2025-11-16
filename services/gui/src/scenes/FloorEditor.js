@@ -662,6 +662,13 @@ class FloorEditor extends Phaser.Scene {
             {},
             false,
           );
+
+          if (!result) {
+            this.#selectedCorners.forEach((c) => c.setFillStyle(0xffffff));
+            this.#selectedCorners = [];
+            return;
+          }
+
           const wall = /** @type {Phaser.GameObjects.Line} */ (result.shape);
           const wallCreateCommand = new WallCreateCommand(
             result.command,
