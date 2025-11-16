@@ -423,6 +423,9 @@ class FurnitureView extends Phaser.Scene {
             return;
           }
 
+          const itemElement = parentList.querySelector(
+            `li[data-id="${itemId}"]`,
+          );
           parentList.removeChild(itemElement);
         },
         undo: async () => {
