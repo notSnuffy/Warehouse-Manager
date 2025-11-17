@@ -1,33 +1,28 @@
-import { populateFloorViewItemList } from "@utils/UIHelperFunctions";
-import { FurnitureView } from "@scenes/FurnitureView";
+import { FurnitureItemLocation } from "@scenes/FurnitureItemLocation";
 import { API_URL } from "@/config";
 import Phaser from "phaser";
 import PanningManager from "@managers/PanningManager";
 import ShapeManager from "@managers/ShapeManager";
 import CameraBoundsManager from "@managers/CameraBoundsManager";
 import ScrollbarManager from "@managers/ScrollbarManager";
-import UndoRedoManager from "@managers/UndoRedoManager";
 import ZoomManager from "@managers/ZoomManager";
 import * as Shapes from "@shapes";
 import InstructionCommands from "@instructions/InstructionCommands";
-import UndoRedoUserInterface from "@ui/UndoRedoUserInterface";
 import ShapeInstructionsHandler from "@instructions/ShapeInstructionsHandler";
 import ShapeLabeler from "@managers/ShapeLabeler";
 
-class FloorView extends Phaser.Scene {
+/**
+ * Scene for displaying floor item location
+ * @class FloorItemLocation
+ * @extends {Phaser.Scene}
+ */
+class FloorItemLocation extends Phaser.Scene {
   /**
    * Map of furniture instances by their IDs
    * @type {Map<string, Object>}
    * @default new Map()
    */
   #furnitureInstances = new Map();
-
-  /**
-   * If item is being dragged
-   * @type {boolean}
-   * @default false
-   */
-  #isDragging = false;
 
   /**
    * Panning manager
@@ -72,13 +67,6 @@ class FloorView extends Phaser.Scene {
   #scrollbarManager = null;
 
   /**
-   * Undo redo manager
-   * @type {UndoRedoManager}
-   * @default null
-   */
-  undoRedoManager = null;
-
-  /**
    * Furniture instructions handler
    * @type {ShapeInstructionsHandler}
    * @default null
@@ -93,100 +81,11 @@ class FloorView extends Phaser.Scene {
   #labeler = null;
 
   /**
-   * Object containing references to UI elements
-   * @type {Object}
-   * @property {LabeledModalUserInterface|null} furnitureModal - The furniture modal UI
-   * @property {UndoRedoUserInterface|null} undoRedoUI - The undo/redo UI
-   * @property {FurnitureListUserInterface|null} furnitureListUI - The furniture list UI
-   * @property {FloorSaveButtonUserInterface|null} saveButton - The floor save button UI
-   * @default { furnitureModal: null, undoRedoUI: null, furnitureListUI: null, saveButton: null}
-   */
-  #UIElements = {
-    furnitureModal: null,
-    undoRedoUI: null,
-    furnitureListUI: null,
-    saveButton: null,
-  };
-
-  /**
-   * Getter for the dragging state
-   * @returns {boolean} - True if an item is being dragged, false otherwise
-   */
-  get isDragging() {
-    return this.#isDragging;
-  }
-
-  /**
-   * Last hovered item
-   * @type {Phaser.GameObjects.GameObject|null}
-   * @default null
-   */
-  #lastHover = null;
-
-  /**
-   * Timer for hover events
-   * @type {Phaser.Time.TimerEvent|null}
-   * @default null
-   */
-  #hoverTimer = null;
-
-  /**
-   * Handler for canvas hover events
-   * @type {Function|null}
-   * @default null
-   */
-  #hoverCanvasHandler = null;
-
-  /**
-   * Map of items in the item list
-   * @type {Map<string, Object>|null}
-   * @default null
-   */
-  #itemMap = null;
-
-  /**
-   * Getter for the item map
-   * @returns {Map<string, Object>|null} - The item map
-   * @public
-   */
-  get itemMap() {
-    return this.#itemMap;
-  }
-
-  /**
-   * Moves an item between zones
-   * @param {string} previousZoneId - The ID of the previous zone
-   * @param {string} newZoneId - The ID of the new zone
-   * @param {string} itemId - The ID of the item to move
-   * @return {void}
-   * @public
-   */
-  moveItemBetweenZones(previousZoneId, newZoneId, itemId) {
-    console.log(
-      `Moving item ${itemId} from zone ${previousZoneId} to zone ${newZoneId}`,
-    );
-    this.#furnitureInstances.forEach((furnitureInstance) => {
-      furnitureInstance.zoneInstances.forEach((zoneInstance) => {
-        if (zoneInstance.id === previousZoneId) {
-          if (!zoneInstance.items.has(itemId)) {
-            console.warn(`Item ${itemId} not found in zone ${previousZoneId}`);
-            return;
-          }
-          zoneInstance.items.delete(itemId);
-        }
-        if (zoneInstance.id === newZoneId) {
-          zoneInstance.items.add(itemId);
-        }
-      });
-    });
-  }
-
-  /**
-   * Constructor for the FloorView scene
+   * Constructor for the FloorItemLocation scene
    * @constructor
    */
   constructor() {
-    super("FloorView");
+    super("FloorItemLocation");
   }
 
   /**
@@ -194,6 +93,30 @@ class FloorView extends Phaser.Scene {
    * @public
    */
   init() {}
+
+  /**
+   * Loads the item data from the API
+   * @param {string} itemId - The ID of the item to load
+   * @returns {Promise<Object>} - The item data
+   * @throws {Error} - If the fetch fails or the response is not ok
+   * @async
+   */
+  async #loadItemData(itemId) {
+    try {
+      const response = await fetch(
+        `${API_URL}/item-management/items/${itemId}`,
+      );
+      if (!response.ok) {
+        throw new Error("Failed to fetch item data.");
+      }
+      const itemData = await response.json();
+      console.log("Item data fetched successfully:", itemData);
+      return itemData;
+    } catch (error) {
+      console.error("Error fetching item data:", error);
+      alert("Failed to load item data. Please check the console for details.");
+    }
+  }
 
   /**
    * Loads the floor data from the API
@@ -222,15 +145,16 @@ class FloorView extends Phaser.Scene {
   /**
    * Loads the floor by its ID
    * @param {string} floorId - The ID of the floor to load
+   * @param {Object} highlightedItem - The item to highlight
    * @async
    */
-  async #loadFloor(floorId) {
+  async #loadFloor(floorId, highlightedItem) {
     const floorData = await this.#loadFloorData(floorId);
 
     const cornerMap = new Map();
 
-    const viewElementNameElement = document.getElementById("viewElementName");
-    viewElementNameElement.textContent = `${floorData.name}`;
+    const itemNameElement = document.getElementById("itemName");
+    itemNameElement.textContent = `${floorData.name}`;
 
     for (const cornerData of floorData.corners) {
       const corner = await this.#cornerManager.addShape("corner", {
@@ -255,6 +179,7 @@ class FloorView extends Phaser.Scene {
         console.warn("Invalid corners for wall:", wallData);
       }
     });
+
     floorData.furniture.forEach(async (furnitureData) => {
       const furnitureInstructions =
         furnitureData.topDownViewInstance.instructions;
@@ -282,10 +207,57 @@ class FloorView extends Phaser.Scene {
         });
       };
 
+      const highlightPath = (path) => {
+        path.forEach((item) => {
+          item.isHighlighted = true;
+        });
+      };
+
+      const findItem = (item, path = []) => {
+        if (item.id === highlightedItem.id) {
+          return { item, path };
+        }
+
+        if (!item.children || item.children.length === 0) {
+          return null;
+        }
+
+        for (const childItem of item.children) {
+          const foundItem = findItem(childItem, [...path, item]);
+          if (foundItem) {
+            return foundItem;
+          }
+        }
+        return null;
+      };
+
+      let isHighlighted = false;
+
+      for (const zoneInstance of furnitureData.zoneInstances) {
+        zoneInstance.items = Object.values(zoneInstance.items || []);
+        let item = null;
+
+        for (const zoneItem of zoneInstance.items) {
+          item = findItem(zoneItem);
+          if (item) {
+            break;
+          }
+        }
+
+        if (!item) {
+          continue;
+        }
+
+        isHighlighted = true;
+        zoneInstance.isHighlighted = true;
+        highlightPath(item.path);
+        item.item.isHighlighted = true;
+      }
+
       const snapshots =
         await this.#furnitureInstructionsHandler.convertFromInstructions(
           furnitureInstructions,
-          0xffffff,
+          isHighlighted ? 0xff0000 : 0xffffff,
         );
       configureInteractive(snapshots);
       const [furnitureSnapshot] = snapshots;
@@ -296,108 +268,16 @@ class FloorView extends Phaser.Scene {
 
       furniture.on("pointerdown", () => {
         this.scene.sleep();
-        this.scene.launch("FurnitureView", {
+        this.scene.launch("FurnitureItemLocation", {
           furnitureInstance: this.#furnitureInstances.get(furnitureInstanceId),
         });
-        this.scene.bringToTop("FurnitureView");
+        this.scene.bringToTop("FurnitureItemLocation");
       });
 
       this.#labeler.addLabel(furniture, name, "#ffffff", () => {});
 
-      furnitureData.zoneInstances.forEach((zoneInstance) => {
-        const itemSet = new Set();
-        Object.values(zoneInstance.items).forEach((item) => {
-          itemSet.add(item.id);
-        });
-        zoneInstance.items = itemSet;
-      });
-
       this.#furnitureInstances.set(furnitureInstanceId, furnitureData);
     });
-  }
-
-  /**
-   * Handles the dragover event on the canvas
-   * @param {Event} e - The dragover event
-   * @return {void}
-   */
-  #handleCanvasHover(e) {
-    e.preventDefault();
-    console.log("FloorView dragover event triggered");
-
-    if (!this.#isDragging) {
-      return;
-    }
-
-    this.#panningManager.update();
-
-    const gameCanvas = this.game.canvas;
-    const canvasBoundingRect = gameCanvas.getBoundingClientRect();
-    console.log("Canvas bounding rect:", canvasBoundingRect);
-
-    console.log(this.scale);
-
-    const scaleX = this.scale.displayScale.x;
-    const scaleY = this.scale.displayScale.y;
-
-    const canvasPointerX = (e.clientX - canvasBoundingRect.x) * scaleX;
-    const canvasPointerY = (e.clientY - canvasBoundingRect.y) * scaleY;
-
-    const pointer = this.input.activePointer;
-    pointer.x = canvasPointerX;
-    pointer.y = canvasPointerY;
-
-    const hits = this.input.hitTestPointer(pointer);
-
-    if (hits.length === 0) {
-      if (!this.#hoverTimer) {
-        return;
-      }
-
-      this.#hoverTimer.remove();
-      this.#hoverTimer = null;
-      this.#lastHover = null;
-      return;
-    }
-
-    console.log("Last hover:", this.#lastHover);
-    if (this.#hoverTimer) {
-      return;
-    }
-
-    const topHit = hits[0];
-    if (this.#lastHover && this.#lastHover === topHit) {
-      return;
-    }
-
-    this.#hoverTimer = this.time.delayedCall(500, () => {
-      console.log("Dragged element hovered over box long enough!");
-      console.log([...hits]);
-      this.scene.sleep();
-      this.scene.launch("FurnitureView", {
-        furnitureInstance: this.#furnitureInstances.get(
-          topHit.metadata.furnitureInstanceId,
-        ),
-      });
-      this.scene.bringToTop("FurnitureView");
-      if (this.#hoverTimer) {
-        this.#hoverTimer.remove();
-        this.#hoverTimer = null;
-        this.#lastHover = null;
-      }
-      this.#lastHover = topHit;
-    });
-  }
-
-  /**
-   * Adds a hover handler to the game canvas
-   * @return {void}
-   */
-  #addCanvasHoverHandler() {
-    const gameCanvas = this.game.canvas;
-
-    this.#hoverCanvasHandler = this.#handleCanvasHover.bind(this);
-    gameCanvas.addEventListener("dragover", this.#hoverCanvasHandler);
   }
 
   /**
@@ -405,18 +285,6 @@ class FloorView extends Phaser.Scene {
    * @public
    */
   async create() {
-    this.undoRedoManager = new UndoRedoManager(100);
-    this.input.keyboard.on("keydown-Z", async (event) => {
-      if (event.ctrlKey) {
-        await this.undoRedoManager.undo();
-      }
-    });
-    this.input.keyboard.on("keydown-Y", async (event) => {
-      if (event.ctrlKey) {
-        await this.undoRedoManager.redo();
-      }
-    });
-
     this.#furnitureManager = new ShapeManager(this);
     this.#cornerManager = new ShapeManager(this);
     this.#wallManager = new ShapeManager(this);
@@ -621,103 +489,23 @@ class FloorView extends Phaser.Scene {
       return wall;
     });
 
-    this.#UIElements.undoRedoUI = new UndoRedoUserInterface(
-      this.undoRedoManager,
-      "undoButton",
-      "redoButton",
-    );
-
     const urlParams = new URLSearchParams(window.location.search);
-    const floorId = urlParams.get("floorId");
-    if (floorId) {
-      await this.#loadFloor(floorId);
+    const itemId = urlParams.get("itemId");
+    if (itemId) {
+      const itemData = await this.#loadItemData(itemId);
+      console.log("Loaded item data:", itemData);
+      if (itemData && itemData.floorId) {
+        await this.#loadFloor(itemData.floorId, itemData);
+      }
     }
 
-    this.#itemMap = await populateFloorViewItemList((value) => {
-      this.#isDragging = value;
-    });
-
-    this.#addCanvasHoverHandler();
-    console.log("Canvas:", this.game.canvas);
-
-    const saveButtonElement = document.getElementById("saveButton");
-    saveButtonElement.addEventListener("click", async () => {
-      const changedItems = [];
-      this.#itemMap.forEach((item, itemId) => {
-        if (!item.changed) {
-          return;
-        }
-
-        changedItems.push({
-          itemId: itemId,
-          newParentId: item.parentId,
-          newZoneId: item.zoneId,
-          newFloorId: item.floorId,
-        });
-        item.changed = false;
-      });
-      console.log("Changed items to save:", changedItems);
-      try {
-        const response = await fetch(
-          `${API_URL}/item-management/items/move/batch`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(changedItems),
-          },
-        );
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          if (errorData.errors && errorData.errors.length > 0) {
-            alert(errorData.errors.join("\n"));
-          } else {
-            alert("Failed to save item changes.");
-          }
-          console.error("Failed to save item changes:", errorData);
-          return;
-        }
-      } catch (error) {
-        alert(
-          "Error saving item changes. Please check the console for details.",
-        );
-        console.error("Error loading furniture:", error);
-      }
-    });
-
-    this.events.on(
-      "sleep",
-      () => {
-        console.log("FloorView scene is going to sleep.");
-        console.log("Removing canvas hover handler.");
-        this.game.canvas.removeEventListener(
-          "dragover",
-          this.#hoverCanvasHandler,
-        );
-        this.#hoverCanvasHandler = null;
-        console.log("Canvas:", this.game.canvas);
-        if (this.#hoverTimer) {
-          this.#hoverTimer.remove();
-          this.#hoverTimer = null;
-        }
-        this.#lastHover = null;
-      },
-      this,
-    );
     this.events.on("wake", () => {
-      console.log("FloorView scene is waking up.");
-      console.log(this.#itemMap);
-      console.log(this.#furnitureInstances);
-      this.#addCanvasHoverHandler();
-
       this.#scrollbarManager.resetScrollbarsToInitialPosition();
 
-      this.scene.get("FurnitureView").events.once("destroy", () => {
-        this.scene.add("FurnitureView", FurnitureView);
+      this.scene.get("FurnitureItemLocation").events.once("destroy", () => {
+        this.scene.add("FurnitureItemLocation", FurnitureItemLocation);
       });
-      this.scene.remove(this.scene.get("FurnitureView"));
+      this.scene.remove(this.scene.get("FurnitureItemLocation"));
     });
   }
   /**
@@ -729,4 +517,4 @@ class FloorView extends Phaser.Scene {
   }
 }
 
-export default FloorView;
+export default FloorItemLocation;

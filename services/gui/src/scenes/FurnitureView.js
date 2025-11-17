@@ -205,6 +205,9 @@ class FurnitureView extends Phaser.Scene {
         const previousChildItemData = { ...childItemData };
         childCompositeCommand.addCommand({
           execute: async () => {
+            console.log(
+              `Updating floorId of child item ${childId} from ${childItemData.floorId} to ${floorId}`,
+            );
             childItemData.floorId = floorId;
             childItemData.changed = true;
           },
@@ -307,7 +310,7 @@ class FurnitureView extends Phaser.Scene {
           const childCompositeCommand = new CompositeCommand();
           this.#updateChildrenFloor(
             itemData,
-            itemData.floorId,
+            newParentItemData.floorId,
             itemMap,
             childCompositeCommand,
           );
@@ -1056,7 +1059,7 @@ class FurnitureView extends Phaser.Scene {
           const childCompositeCommand = new CompositeCommand();
           this.#updateChildrenFloor(
             itemData,
-            itemData.floorId,
+            floorId,
             itemMap,
             childCompositeCommand,
           );

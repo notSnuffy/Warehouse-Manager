@@ -231,6 +231,10 @@ function addItemToTable(item, paginatedItemsLength) {
   itemDescriptionElement.textContent = item.description;
   itemDescriptionElement.title = item.description;
 
+  itemRow.querySelector(".location-button").addEventListener("click", () => {
+    window.open(`/item-location/?itemId=${item.id}`, "_blank");
+  });
+
   itemRow.querySelector(".edit-button").addEventListener("click", () => {
     initializeEditItem(item);
   });
