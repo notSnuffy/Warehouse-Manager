@@ -24,18 +24,34 @@ public class ShapeManagementApplication {
     SpringApplication.run(ShapeManagementApplication.class, args);
   }
 
+  private void createSystemShapes(
+      ShapeRepository shapeRepository,
+      ShapeInstanceRepository shapeInstanceRepository,
+      Long id,
+      String name,
+      ShapeType type,
+      Instruction instruction) {
+    Shape shape = new Shape(id, name, type);
+    shape.setPublic(false);
+
+    if (shapeRepository.existsByIdEquals(id)) {
+      logger.info("Shape with ID {} already exists. Skipping creation.", id);
+      return;
+    }
+
+    shapeRepository.save(shape);
+
+    ShapeInstance shapeInstance =
+        new ShapeInstance(shape.getId(), shape.getVersion(), Arrays.asList(instruction));
+    shapeInstance.setTemplate(true);
+    shapeInstanceRepository.save(shapeInstance);
+  }
+
   @Bean
   public CommandLineRunner commandLineRunner(
       ShapeRepository shapeRepository, ShapeInstanceRepository shapeInstanceRepository) {
     return args -> {
       logger.info("Shape Management Application started successfully.");
-
-      Shape rectangle = new Shape(RECTANGLE_ID, "Rectangle", ShapeType.RECTANGLE);
-      rectangle.setPublic(false);
-      shapeRepository.save(rectangle);
-
-      logger.info("Shape saved with ID: {}", rectangle.getId());
-      logger.info("Shape saved with Version: {}", rectangle.getVersion());
 
       ShapeParameters rectangleParameters = new ShapeParameters();
       rectangleParameters.positionX = 0;
@@ -44,16 +60,13 @@ public class ShapeManagementApplication {
       rectangleParameters.height = 100.0;
 
       Instruction rectangleInstruction = new Instruction("CREATE_RECTANGLE", rectangleParameters);
-
-      ShapeInstance rectangleInstance =
-          new ShapeInstance(
-              rectangle.getId(), rectangle.getVersion(), Arrays.asList(rectangleInstruction));
-      rectangleInstance.setTemplate(true);
-      shapeInstanceRepository.save(rectangleInstance);
-
-      Shape ellipse = new Shape(ELLIPSE_ID, "Ellipse", ShapeType.ELLIPSE);
-      ellipse.setPublic(false);
-      shapeRepository.save(ellipse);
+      createSystemShapes(
+          shapeRepository,
+          shapeInstanceRepository,
+          RECTANGLE_ID,
+          "Rectangle",
+          ShapeType.RECTANGLE,
+          rectangleInstruction);
 
       ShapeParameters ellipseParameters = new ShapeParameters();
       ellipseParameters.positionX = 0;
@@ -62,16 +75,13 @@ public class ShapeManagementApplication {
       ellipseParameters.height = 100.0;
 
       Instruction ellipseInstruction = new Instruction("CREATE_ELLIPSE", ellipseParameters);
-
-      ShapeInstance ellipseInstance =
-          new ShapeInstance(
-              ellipse.getId(), ellipse.getVersion(), Arrays.asList(ellipseInstruction));
-      ellipseInstance.setTemplate(true);
-      shapeInstanceRepository.save(ellipseInstance);
-
-      Shape arc = new Shape(ARC_ID, "Arc", ShapeType.ARC);
-      arc.setPublic(false);
-      shapeRepository.save(arc);
+      createSystemShapes(
+          shapeRepository,
+          shapeInstanceRepository,
+          ELLIPSE_ID,
+          "Ellipse",
+          ShapeType.ELLIPSE,
+          ellipseInstruction);
 
       ShapeParameters arcParameters = new ShapeParameters();
       arcParameters.positionX = 0;
@@ -83,15 +93,8 @@ public class ShapeManagementApplication {
       arcParameters.arcEndAngle = 180.0;
 
       Instruction arcInstruction = new Instruction("CREATE_ARC", arcParameters);
-
-      ShapeInstance arcInstance =
-          new ShapeInstance(arc.getId(), arc.getVersion(), Arrays.asList(arcInstruction));
-      arcInstance.setTemplate(true);
-      shapeInstanceRepository.save(arcInstance);
-
-      Shape polygon = new Shape(POLYGON_ID, "Polygon", ShapeType.POLYGON);
-      polygon.setPublic(false);
-      shapeRepository.save(polygon);
+      createSystemShapes(
+          shapeRepository, shapeInstanceRepository, ARC_ID, "Arc", ShapeType.ARC, arcInstruction);
 
       ShapeParameters polygonParameters = new ShapeParameters();
       polygonParameters.positionX = 0;
@@ -101,12 +104,13 @@ public class ShapeManagementApplication {
       polygonParameters.height = 50.0;
 
       Instruction polygonInstruction = new Instruction("CREATE_POLYGON", polygonParameters);
-
-      ShapeInstance polygonInstance =
-          new ShapeInstance(
-              polygon.getId(), polygon.getVersion(), Arrays.asList(polygonInstruction));
-      polygonInstance.setTemplate(true);
-      shapeInstanceRepository.save(polygonInstance);
+      createSystemShapes(
+          shapeRepository,
+          shapeInstanceRepository,
+          POLYGON_ID,
+          "Polygon",
+          ShapeType.POLYGON,
+          polygonInstruction);
     };
   }
 }

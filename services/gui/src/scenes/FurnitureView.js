@@ -238,7 +238,7 @@ class FurnitureView extends Phaser.Scene {
       animation: 150,
       fallbackOnBody: true,
       invertSwap: true,
-      onAdd: (evt) => {
+      onAdd: async (evt) => {
         const item = evt.item;
         const id = parseInt(item.dataset.id, 10);
         const itemMap = this.scene.get("FloorView").itemMap;
@@ -333,17 +333,38 @@ class FurnitureView extends Phaser.Scene {
           }
         }
 
-        compositeCommand.execute();
+        await compositeCommand.execute();
         const index = evt.newIndex;
+
+        const clonedItem = item.cloneNode(true);
+
         compositeCommand.addCommand({
           execute: async () => {
+            const previousListSelector = previousItemData.parentId
+              ? `ul[data-parent-id="${previousItemData.parentId}"]`
+              : `ul[data-zone-id="${previousItemData.zoneId}"]`;
+            const previousListElement =
+              document.querySelector(previousListSelector);
+            if (previousListElement) {
+              const removedItem = previousListElement.querySelector(
+                `li[data-id="${id}"]`,
+              );
+              previousListElement.removeChild(removedItem);
+            }
+
             const thisList = document.querySelector(
               `ul[data-parent-id="${newParentId}"]`,
             );
+
             if (!thisList) {
               return;
             }
-            thisList.insertBefore(item, thisList.children[index] || null);
+
+            // if (thisList.querySelector(`li[data-id="${id}"]`)) {
+            //   return;
+            // }
+
+            thisList.insertBefore(clonedItem, thisList.children[index] || null);
           },
           undo: async () => {
             const thisList = document.querySelector(
@@ -362,8 +383,13 @@ class FurnitureView extends Phaser.Scene {
             if (!previousListElement) {
               return;
             }
+
+            //           if (previousListElement.querySelector(`li[data-id="${id}"]`)) {
+            //             return;
+            //           }
+
             previousListElement.insertBefore(
-              item,
+              clonedItem,
               previousListElement.children[evt.oldIndex] || null,
             );
           },
@@ -429,6 +455,7 @@ class FurnitureView extends Phaser.Scene {
           const itemElement = parentList.querySelector(
             `li[data-id="${itemId}"]`,
           );
+
           parentList.removeChild(itemElement);
         },
         undo: async () => {
@@ -983,7 +1010,7 @@ class FurnitureView extends Phaser.Scene {
     Sortable.create(zoneItemsListElement, {
       group: "items",
       animation: 150,
-      onAdd: (evt) => {
+      onAdd: async (evt) => {
         console.log("Item added to zone:", evt);
         const item = evt.item;
         const id = parseInt(item.dataset.id, 10);
@@ -1066,17 +1093,32 @@ class FurnitureView extends Phaser.Scene {
           compositeCommand.addCommand(childCompositeCommand);
         }
 
-        compositeCommand.execute();
+        await compositeCommand.execute();
         const index = evt.newIndex;
+        const clonedItem = item.cloneNode(true);
+
         compositeCommand.addCommand({
           execute: async () => {
+            const previousListSelector = previousItemData.parentId
+              ? `ul[data-parent-id="${previousItemData.parentId}"]`
+              : `ul[data-zone-id="${previousItemData.zoneId}"]`;
+            const previousListElement =
+              document.querySelector(previousListSelector);
+            if (previousListElement) {
+              const removedItem = previousListElement.querySelector(
+                `li[data-id="${id}"]`,
+              );
+
+              previousListElement.removeChild(removedItem);
+            }
+
             const thisListSelector = `ul[data-zone-id="${newZoneId}"]`;
             const thisList = document.querySelector(thisListSelector);
             if (!thisList) {
               return;
             }
 
-            thisList.insertBefore(item, thisList.children[index] || null);
+            thisList.insertBefore(clonedItem, thisList.children[index] || null);
           },
           undo: async () => {
             const thisListSelector = `ul[data-zone-id="${newZoneId}"]`;
@@ -1095,8 +1137,13 @@ class FurnitureView extends Phaser.Scene {
             if (!previousListElement) {
               return;
             }
+
+            //if (previousListElement.querySelector(`li[data-id="${id}"]`)) {
+            //  return;
+            //}
+
             previousListElement.insertBefore(
-              item,
+              clonedItem,
               previousListElement.children[evt.oldIndex] || null,
             );
           },

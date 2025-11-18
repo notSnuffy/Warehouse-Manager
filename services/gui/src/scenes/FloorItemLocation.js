@@ -154,7 +154,7 @@ class FloorItemLocation extends Phaser.Scene {
     const cornerMap = new Map();
 
     const itemNameElement = document.getElementById("itemName");
-    itemNameElement.textContent = `${floorData.name}`;
+    itemNameElement.textContent = `${highlightedItem.name}`;
 
     for (const cornerData of floorData.corners) {
       const corner = await this.#cornerManager.addShape("corner", {
@@ -215,6 +215,7 @@ class FloorItemLocation extends Phaser.Scene {
 
       const findItem = (item, path = []) => {
         if (item.id === highlightedItem.id) {
+          console.log("Identified item to highlight:", item);
           return { item, path };
         }
 
@@ -250,6 +251,7 @@ class FloorItemLocation extends Phaser.Scene {
 
         isHighlighted = true;
         zoneInstance.isHighlighted = true;
+        console.log("Highlighting item:", item);
         highlightPath(item.path);
         item.item.isHighlighted = true;
       }

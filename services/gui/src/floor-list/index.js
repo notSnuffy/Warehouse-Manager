@@ -18,14 +18,14 @@ const floors = {};
 let currentPage = 1;
 let itemsPerPage = parseInt(itemsPerPageElement.value, 10);
 
-const testFloors = fillFloorsWithTestData();
-Object.keys(testFloors).forEach((key) => {
-  floors[key] = testFloors[key];
-});
+//const testFloors = fillFloorsWithTestData();
+//Object.keys(testFloors).forEach((key) => {
+//  floors[key] = testFloors[key];
+//});
 
 init();
 
-function fillFloorsWithTestData() {
+function _fillFloorsWithTestData() {
   const testFloors = {};
 
   for (let i = 1; i <= 1010; i++) {
@@ -101,8 +101,12 @@ function renderFloors() {
   );
 }
 
+function viewFloor(id) {
+  window.open(`/floor-view/?floorId=${id}`, "_blank");
+}
+
 function editFloor(id) {
-  window.location.href = `/editors/floor-editor/?floorId=${id}`;
+  window.open(`/editors/floor-editor/?floorId=${id}`, "_blank");
 }
 
 async function removeFloor(id) {
@@ -141,6 +145,9 @@ function addFloorToList(floor) {
 
   clone.querySelector(".floor-name").textContent = floor.name;
 
+  clone
+    .querySelector(".view-button")
+    .addEventListener("click", () => viewFloor(floor.id));
   clone
     .querySelector(".edit-button")
     .addEventListener("click", () => editFloor(floor.id));

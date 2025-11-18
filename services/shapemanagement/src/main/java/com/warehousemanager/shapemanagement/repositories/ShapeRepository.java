@@ -21,6 +21,14 @@ public interface ShapeRepository extends CrudRepository<Shape, Long> {
   Long getNextId();
 
   /**
+   * Checks if a shape exists by its ID.
+   *
+   * @param id the ID of the shape to check
+   * @return true if a shape with the given ID exists, false otherwise
+   */
+  boolean existsByIdEquals(Long id);
+
+  /**
    * Finds all shapes that are marked as current and not deleted.
    *
    * @return a list of shapes that are current and not deleted
