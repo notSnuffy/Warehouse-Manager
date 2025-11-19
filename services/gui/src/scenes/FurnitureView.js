@@ -245,6 +245,19 @@ class FurnitureView extends Phaser.Scene {
         const itemData = itemMap.get(id);
         const previousList = evt.from;
 
+        if (previousList.id === "itemsMenuItems") {
+          const zoneItemsList = document.getElementById("zoneItemsList");
+          if (zoneItemsList.querySelector(`li[data-id="${id}"]`)) {
+            // Item already exists in the zone items list, remove the duplicate
+
+            evt.to.removeChild(item);
+            alert(
+              "Item already exists in this zone. Manipulate it from there.",
+            );
+            return;
+          }
+        }
+
         const thisList = evt.to;
         const newParentId = parseInt(thisList.dataset.parentId, 10);
         const newParentItemData = itemMap.get(newParentId);
@@ -319,6 +332,7 @@ class FurnitureView extends Phaser.Scene {
 
         if (previousList.id === "itemsMenuItems") {
           console.log("Item added from items menu:", itemData);
+
           const childList = document.createElement("ul");
           childList.classList.add("list-group");
           childList.dataset.parentId = id;
@@ -335,8 +349,6 @@ class FurnitureView extends Phaser.Scene {
 
         await compositeCommand.execute();
         const index = evt.newIndex;
-
-        const clonedItem = item.cloneNode(true);
 
         compositeCommand.addCommand({
           execute: async () => {
@@ -363,8 +375,26 @@ class FurnitureView extends Phaser.Scene {
             // if (thisList.querySelector(`li[data-id="${id}"]`)) {
             //   return;
             // }
+            const childList = document.createElement("ul");
+            childList.classList.add("list-group");
+            childList.dataset.parentId = id;
 
-            thisList.insertBefore(clonedItem, thisList.children[index] || null);
+            const itemElement = document.createElement("li");
+            itemElement.textContent = `${itemData.name}`;
+            itemElement.dataset.id = id;
+            itemElement.classList.add("list-group-item");
+
+            this.#addRemoveButtonToItemElement(itemElement);
+            itemElement.appendChild(childList);
+            this.#makeSortable(childList);
+            if (itemData.children && itemData.children.size > 0) {
+              this.#populateZoneItems(itemData.children, childList);
+            }
+
+            thisList.insertBefore(
+              itemElement,
+              thisList.children[index] || null,
+            );
           },
           undo: async () => {
             const thisList = document.querySelector(
@@ -387,9 +417,25 @@ class FurnitureView extends Phaser.Scene {
             //           if (previousListElement.querySelector(`li[data-id="${id}"]`)) {
             //             return;
             //           }
+            //
+            const childList = document.createElement("ul");
+            childList.classList.add("list-group");
+            childList.dataset.parentId = id;
+
+            const itemElement = document.createElement("li");
+            itemElement.textContent = `${itemData.name}`;
+            itemElement.dataset.id = id;
+            itemElement.classList.add("list-group-item");
+
+            this.#addRemoveButtonToItemElement(itemElement);
+            itemElement.appendChild(childList);
+            this.#makeSortable(childList);
+            if (itemData.children && itemData.children.size > 0) {
+              this.#populateZoneItems(itemData.children, childList);
+            }
 
             previousListElement.insertBefore(
-              clonedItem,
+              itemElement,
               previousListElement.children[evt.oldIndex] || null,
             );
           },
@@ -417,6 +463,8 @@ class FurnitureView extends Phaser.Scene {
       "align-items-center",
       "mb-1",
     );
+
+    const unwrappedItemElement = itemElement.cloneNode(true);
 
     const itemText = document.createElement("span");
     itemText.textContent = itemElement.textContent;
@@ -468,8 +516,20 @@ class FurnitureView extends Phaser.Scene {
             return;
           }
 
+          const childList = document.createElement("ul");
+          childList.classList.add("list-group");
+          childList.dataset.parentId = itemId;
+
+          const unwrappedClone = unwrappedItemElement.cloneNode(true);
+          this.#addRemoveButtonToItemElement(unwrappedClone);
+          unwrappedClone.appendChild(childList);
+          this.#makeSortable(childList);
+          if (itemData.children && itemData.children.size > 0) {
+            this.#populateZoneItems(itemData.children, childList);
+          }
+
           parentList.insertBefore(
-            itemElement,
+            unwrappedClone,
             parentList.children[previousIndex] || null,
           );
         },
@@ -1023,6 +1083,17 @@ class FurnitureView extends Phaser.Scene {
         const compositeCommand = new CompositeCommand();
 
         if (previousList.id === "itemsMenuItems") {
+          const zoneItemsList = document.getElementById("zoneItemsList");
+          if (zoneItemsList.querySelector(`li[data-id="${id}"]`)) {
+            // Item already exists in the zone items list, remove the duplicate
+
+            evt.to.removeChild(item);
+            alert(
+              "Item already exists in this zone. Manipulate it from there.",
+            );
+            return;
+          }
+
           const childList = document.createElement("ul");
           childList.classList.add("list-group");
           childList.dataset.parentId = id;
@@ -1095,7 +1166,6 @@ class FurnitureView extends Phaser.Scene {
 
         await compositeCommand.execute();
         const index = evt.newIndex;
-        const clonedItem = item.cloneNode(true);
 
         compositeCommand.addCommand({
           execute: async () => {
@@ -1118,7 +1188,26 @@ class FurnitureView extends Phaser.Scene {
               return;
             }
 
-            thisList.insertBefore(clonedItem, thisList.children[index] || null);
+            const childList = document.createElement("ul");
+            childList.classList.add("list-group");
+            childList.dataset.parentId = id;
+
+            const itemElement = document.createElement("li");
+            itemElement.textContent = `${itemData.name}`;
+            itemElement.dataset.id = id;
+            itemElement.classList.add("list-group-item");
+
+            this.#addRemoveButtonToItemElement(itemElement);
+            itemElement.appendChild(childList);
+            this.#makeSortable(childList);
+            if (itemData.children && itemData.children.size > 0) {
+              this.#populateZoneItems(itemData.children, childList);
+            }
+
+            thisList.insertBefore(
+              itemElement,
+              thisList.children[index] || null,
+            );
           },
           undo: async () => {
             const thisListSelector = `ul[data-zone-id="${newZoneId}"]`;
@@ -1141,9 +1230,25 @@ class FurnitureView extends Phaser.Scene {
             //if (previousListElement.querySelector(`li[data-id="${id}"]`)) {
             //  return;
             //}
+            //
+            const childList = document.createElement("ul");
+            childList.classList.add("list-group");
+            childList.dataset.parentId = id;
+
+            const itemElement = document.createElement("li");
+            itemElement.textContent = `${itemData.name}`;
+            itemElement.dataset.id = id;
+            itemElement.classList.add("list-group-item");
+
+            this.#addRemoveButtonToItemElement(itemElement);
+            itemElement.appendChild(childList);
+            this.#makeSortable(childList);
+            if (itemData.children && itemData.children.size > 0) {
+              this.#populateZoneItems(itemData.children, childList);
+            }
 
             previousListElement.insertBefore(
-              clonedItem,
+              itemElement,
               previousListElement.children[evt.oldIndex] || null,
             );
           },
