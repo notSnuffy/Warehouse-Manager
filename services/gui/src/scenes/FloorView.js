@@ -16,6 +16,13 @@ import ShapeLabeler from "@managers/ShapeLabeler";
 
 class FloorView extends Phaser.Scene {
   /**
+   * Name of the floor
+   * @type {string}
+   * @default ""
+   */
+  #floorName = "";
+
+  /**
    * Map of furniture instances by their IDs
    * @type {Map<string, Object>}
    * @default new Map()
@@ -231,6 +238,7 @@ class FloorView extends Phaser.Scene {
 
     const viewElementNameElement = document.getElementById("viewElementName");
     viewElementNameElement.textContent = `${floorData.name}`;
+    this.#floorName = floorData.name;
 
     for (const cornerData of floorData.corners) {
       const corner = await this.#cornerManager.addShape("corner", {
@@ -718,6 +726,9 @@ class FloorView extends Phaser.Scene {
         this.scene.add("FurnitureView", FurnitureView);
       });
       this.scene.remove(this.scene.get("FurnitureView"));
+
+      const viewElementNameElement = document.getElementById("viewElementName");
+      viewElementNameElement.textContent = `${this.#floorName}`;
     });
   }
   /**
