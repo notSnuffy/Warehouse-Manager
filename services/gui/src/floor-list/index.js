@@ -60,7 +60,7 @@ itemsPerPageElement.addEventListener("change", () => {
 });
 
 addFloorButtonElement.addEventListener("click", () => {
-  window.location.href = "/";
+  window.open(`/editors/floor-editor/`, "_blank");
 });
 
 async function fetchFloors() {
