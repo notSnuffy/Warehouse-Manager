@@ -247,7 +247,11 @@ class FurnitureView extends Phaser.Scene {
 
         if (previousList.id === "itemsMenuItems") {
           const zoneItemsList = document.getElementById("zoneItemsList");
-          if (zoneItemsList.querySelector(`li[data-id="${id}"]`)) {
+          const existingItems = Array.from(
+            zoneItemsList.querySelectorAll(`li[data-id="${id}"]`),
+          ).filter((el) => el !== item);
+
+          if (existingItems.length > 0) {
             // Item already exists in the zone items list, remove the duplicate
 
             evt.to.removeChild(item);
@@ -625,6 +629,19 @@ class FurnitureView extends Phaser.Scene {
     });
   }
 
+  /**
+   * Clears the hover timer
+   * @return {void}
+   */
+  #clearHoverTimer() {
+    if (!this.#hoverTimer) {
+      return;
+    }
+    this.#hoverTimer.remove();
+    this.#hoverTimer = null;
+    this.#lastHover = null;
+  }
+
   #handleCanvasHover(e) {
     e.preventDefault();
     console.log("FurnitureView dragover event triggered");
@@ -655,27 +672,21 @@ class FurnitureView extends Phaser.Scene {
     console.log("Hits:", hits);
 
     if (hits.length === 0) {
-      if (!this.#hoverTimer) {
-        return;
-      }
-
-      this.#hoverTimer.remove();
-      this.#hoverTimer = null;
-      this.#lastHover = null;
-      return;
-    }
-
-    if (this.#hoverTimer) {
-      console.log("Hover timer already set, ignoring dragover event");
+      this.#clearHoverTimer();
       return;
     }
 
     const topHit = hits[0];
-    console.log("Last hover:", this.#lastHover);
-    if (this.#lastHover && this.#lastHover === topHit) {
+
+    if (this.#lastHover && this.#lastHover !== topHit) {
+      this.#clearHoverTimer();
+    }
+
+    if (this.#hoverTimer) {
       return;
     }
 
+    this.#lastHover = topHit;
     this.#hoverTimer = this.time.delayedCall(500, () => {
       console.log("Dragged element hovered over box long enough!");
       console.log([...hits]);
@@ -694,13 +705,7 @@ class FurnitureView extends Phaser.Scene {
       this.input.enabled = false;
       zoneItemsModal.show();
 
-      if (this.#hoverTimer) {
-        this.#hoverTimer.remove();
-        this.#hoverTimer = null;
-        this.#lastHover = null;
-      }
-      this.#lastHover = topHit;
-      console.log("Last hover set to:", this.#lastHover);
+      this.#clearHoverTimer();
     });
   }
 
@@ -1084,7 +1089,13 @@ class FurnitureView extends Phaser.Scene {
 
         if (previousList.id === "itemsMenuItems") {
           const zoneItemsList = document.getElementById("zoneItemsList");
-          if (zoneItemsList.querySelector(`li[data-id="${id}"]`)) {
+          console.log("Checking for existing item in zone items list");
+          console.log(zoneItemsList);
+          console.log(zoneItemsList.querySelector(`li[data-id="${id}"]`));
+          const existingItems = Array.from(
+            zoneItemsList.querySelectorAll(`li[data-id="${id}"]`),
+          ).filter((el) => el !== item);
+          if (existingItems.length > 0) {
             // Item already exists in the zone items list, remove the duplicate
 
             evt.to.removeChild(item);

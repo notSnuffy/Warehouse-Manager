@@ -325,6 +325,19 @@ class FloorView extends Phaser.Scene {
   }
 
   /**
+   * Clears the hover timer
+   * @return {void}
+   */
+  #clearHoverTimer() {
+    if (!this.#hoverTimer) {
+      return;
+    }
+    this.#hoverTimer.remove();
+    this.#hoverTimer = null;
+    this.#lastHover = null;
+  }
+
+  /**
    * Handles the dragover event on the canvas
    * @param {Event} e - The dragover event
    * @return {void}
@@ -358,26 +371,20 @@ class FloorView extends Phaser.Scene {
     const hits = this.input.hitTestPointer(pointer);
 
     if (hits.length === 0) {
-      if (!this.#hoverTimer) {
-        return;
-      }
-
-      this.#hoverTimer.remove();
-      this.#hoverTimer = null;
-      this.#lastHover = null;
-      return;
-    }
-
-    console.log("Last hover:", this.#lastHover);
-    if (this.#hoverTimer) {
+      this.#clearHoverTimer();
       return;
     }
 
     const topHit = hits[0];
-    if (this.#lastHover && this.#lastHover === topHit) {
+    if (this.#lastHover && this.#lastHover !== topHit) {
+      this.#clearHoverTimer();
+    }
+
+    if (this.#hoverTimer) {
       return;
     }
 
+    this.#lastHover = topHit;
     this.#hoverTimer = this.time.delayedCall(500, () => {
       console.log("Dragged element hovered over box long enough!");
       console.log([...hits]);
@@ -388,12 +395,7 @@ class FloorView extends Phaser.Scene {
         ),
       });
       this.scene.bringToTop("FurnitureView");
-      if (this.#hoverTimer) {
-        this.#hoverTimer.remove();
-        this.#hoverTimer = null;
-        this.#lastHover = null;
-      }
-      this.#lastHover = topHit;
+      this.#clearHoverTimer();
     });
   }
 
