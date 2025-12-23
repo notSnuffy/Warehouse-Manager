@@ -1,0 +1,40 @@
+@startuml
+actor Client
+participant "ItemManagementController" as Controller
+participant "ItemRepository" as Repository
+participant "ItemService" as Service
+participant "Database" as Database
+
+Client -> Controller: PUT /items/{id}\nItem (Request Body)
+
+Controller -> Repository: findByIdEqualsAndDeletedFalseAndCurrentTrue(id)
+Repository -> Database: SELECT Item
+Database --> Repository: Item / null
+Repository --> Controller: Optional<Item>
+
+alt Item not found
+    Controller -> Controller: throw IllegalArgumentException
+    Controller --> Client: Error response
+else Item found
+    Controller -> Controller: new Item(existingItem)
+    Controller -> Controller: set updated fields
+
+    Controller -> Repository: save(newItem)
+    Repository -> Database: INSERT new Item
+    Database --> Repository: newItem
+    Repository --> Controller: newItem
+
+    Controller -> Controller: existingItem.setCurrent(false)
+
+    Controller -> Repository: save(existingItem)
+    Repository -> Database: UPDATE existingItem
+    Database --> Repository: existingItem
+    Repository --> Controller: existingItem
+
+    Controller -> Service: convertToDto(newItem)
+    Service --> Controller: ItemResponseDataTransferObject
+
+    Controller --> Client: 200 OK\nItemResponseDataTransferObject
+end
+@enduml
+
