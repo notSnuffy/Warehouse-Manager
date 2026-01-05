@@ -238,6 +238,7 @@ class FurnitureView extends Phaser.Scene {
       animation: 150,
       fallbackOnBody: true,
       invertSwap: true,
+      emptyInsertThreshold: 10,
       onAdd: async (evt) => {
         const item = evt.item;
         const id = parseInt(item.dataset.id, 10);

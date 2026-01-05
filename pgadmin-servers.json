@@ -35,15 +35,6 @@
       "Username": "postgres",
       "SSLMode": "prefer",
       "MaintenanceDB": "postgres"
-    },
-    "5": {
-      "Name": "User Database",
-      "Group": "Servers",
-      "Host": "user-database",
-      "Port": 5432,
-      "Username": "postgres",
-      "SSLMode": "prefer",
-      "MaintenanceDB": "postgres"
     }
   }
 }

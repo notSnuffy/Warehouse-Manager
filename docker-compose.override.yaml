@@ -14,9 +14,6 @@ services:
   item-management:
     volumes:
       - ./services/itemmanagement/src:/app/src
-  user-management:
-    volumes:
-      - ./services/usermanagement/src:/app/src
   gateway:
     ports:
       - "8084:8080"
@@ -30,12 +27,6 @@ services:
     volumes:
       - ./services/gui:/app
       - /app/node_modules
-  gui-docs:
-    ports:
-      - "8008:80"
-    volumes:
-      - /usr/share/nginx/html
-
   pg-admin:
     image: dpage/pgadmin4:9
     container_name: pg-admin
@@ -51,13 +42,11 @@ services:
       - furniture-database
       - floor-database
       - item-database
-      - user-database
     networks:
       - shape-network
       - furniture-network
       - floor-network
       - item-network
-      - user-network
     restart: always
     configs:
       - source: servers

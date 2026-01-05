@@ -43,14 +43,14 @@ let sortColumn = SORT_COLUMNS.NAME;
 let sortDirection = SORT_DIRECTIONS.ASCENDING;
 let sortMode = SORT_MODES.ALPHABETICAL;
 
-const testItems = fillItemsWithTestData();
-Object.keys(testItems).forEach((key) => {
-  items[key] = testItems[key];
-});
+//const testItems = fillItemsWithTestData();
+//Object.keys(testItems).forEach((key) => {
+//  items[key] = testItems[key];
+//});
 
 init();
 
-function fillItemsWithTestData() {
+function _fillItemsWithTestData() {
   const testItems = {};
 
   for (let i = 1; i <= 1013; i++) {

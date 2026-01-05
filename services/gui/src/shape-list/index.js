@@ -19,14 +19,14 @@ const shapes = {};
 let currentPage = 1;
 let itemsPerPage = parseInt(itemsPerPageElement.value, 10);
 
-const testShapes = fillShapesWithTestData();
-Object.keys(testShapes).forEach((key) => {
-  shapes[key] = testShapes[key];
-});
+//const testShapes = fillShapesWithTestData();
+//Object.keys(testShapes).forEach((key) => {
+//  shapes[key] = testShapes[key];
+//});
 
 init();
 
-function fillShapesWithTestData() {
+function _fillShapesWithTestData() {
   const testShapes = {};
 
   for (let i = 1; i <= 1010; i++) {

@@ -105,6 +105,13 @@ public class ShapeManagementController {
     return shape;
   }
 
+  /**
+   * Updates an existing shape with new data.
+   *
+   * @param id the unique identifier of the shape to be updated
+   * @param shapeDataTransferObject the data transfer object containing updated shape details
+   * @return the updated shape entity
+   */
   @PutMapping("/shapes/{id}")
   public Shape updateShape(
       @PathVariable Long id, @Valid @RequestBody ShapeDataTransferObject shapeDataTransferObject) {

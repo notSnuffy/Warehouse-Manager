@@ -8,6 +8,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.SequenceGenerator;
 import java.time.Instant;
 import java.util.List;
 import org.hibernate.annotations.ColumnTransformer;
@@ -17,7 +18,11 @@ import org.hibernate.annotations.ColumnTransformer;
 public class ShapeInstance {
   /** Unique identifier for the shape. */
   @Id
-  @GeneratedValue(strategy = GenerationType.SEQUENCE)
+  @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "shape_instance_seq_gen")
+  @SequenceGenerator(
+      name = "shape_instance_seq_gen",
+      sequenceName = "shape_instance_seq",
+      allocationSize = 1)
   private Long id;
 
   /** ID of the shape that this instance represents. */

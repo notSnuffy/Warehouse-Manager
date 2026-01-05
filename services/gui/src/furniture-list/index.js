@@ -20,14 +20,14 @@ const furniture = {};
 let currentPage = 1;
 let itemsPerPage = parseInt(itemsPerPageElement.value, 10);
 
-const testFurniture = fillFurnitureWithTestData();
-Object.keys(testFurniture).forEach((key) => {
-  furniture[key] = testFurniture[key];
-});
+//const testFurniture = fillFurnitureWithTestData();
+//Object.keys(testFurniture).forEach((key) => {
+//  furniture[key] = testFurniture[key];
+//});
 
 init();
 
-function fillFurnitureWithTestData() {
+function _fillFurnitureWithTestData() {
   const testFurniture = {};
 
   for (let i = 1; i <= 1010; i++) {

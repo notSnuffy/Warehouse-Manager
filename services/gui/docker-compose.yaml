@@ -4,8 +4,3 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: user-interface
-  gui-docs:
-    build:
-      context: .
-      dockerfile: Dockerfile-docs
-    container_name: user-interface-docs
