@@ -1,5 +1,3 @@
-import { Boot } from "@scenes/Boot";
-import { Preloader } from "@scenes/Preloader";
 import { ShapeEditor } from "@scenes/ShapeEditor";
 import Phaser from "phaser";
 import "./styles.scss";
@@ -20,7 +18,7 @@ const config = {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
   },
-  scene: [Boot, Preloader, ShapeEditor],
+  scene: [ShapeEditor],
 };
 
 export default new Phaser.Game(config);
