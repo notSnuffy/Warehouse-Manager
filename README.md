@@ -45,9 +45,9 @@ Contains images editable with [draw.io](https://app.diagrams.net/) used in the d
 
 These requirements assume deployment using the provided Docker Compose configuration.
 
-**CPU**:
-2 GHz dual-core 64-bit CPU
-Virtualization support must be enabled in BIOS.
+- **CPU**:
+  2 GHz dual-core 64-bit CPU
+  Virtualization support must be enabled in BIOS.
 
 - **Memory**:
   Minimum **16 GB RAM**
@@ -113,8 +113,6 @@ docker compose up
 ```
 
 On first startup, containers may take additional time to initialize.
-
----
 
 ### 5. Access the Application
 
