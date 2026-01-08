@@ -192,3 +192,10 @@ docker compose ps
 
 - **Out of memory or resource exhaustion**
   Ensure the system meets the minimum hardware requirements.
+
+- **Frontend not loading or API errors**
+  Verify the `API_URL` in `services/gui/src/config.js` is correctly set to the server's public address.
+  If there are errors that files cannot be found, refreshing the page may help. Currently, the frontend is
+  only served by a Vite development server which seems to lazily compile the JavaScript source files on first access.
+  The connections is then closed before the file is fully loaded causing errors. A proper production web server setup
+  is planned for future releases.
