@@ -1,0 +1,98 @@
+@startuml
+skinparam class {
+    BackgroundColor<<Editor>> LightBlue
+    BackgroundColor<<List>> LightYellow
+    BackgroundColor<<View>> LightGreen
+    BackgroundColor<<Modal>> LightCoral
+    RoundCorner 15
+}
+
+title Application Usage Diagram
+
+' Home page
+class "Home Page" as HOME
+
+' Lists
+class "Floor List" as FloorList <<List>> {
+  Delete Floor
+  Search & Sort Floors
+}
+
+class "Furniture List" as FurnitureList <<List>> {
+  Delete Furniture
+  Search & Sort Furniture
+}
+
+class "Shape List" as ShapeList <<List>> {
+  Delete Shape
+  Search & Sort Shapes
+}
+
+class "Item List" as ItemList <<List>> {
+  Create Item
+  Edit Item
+  Delete Item
+  Search & Sort Items
+}
+
+' Editors
+class "Floor Editor" as FloorEditor <<Editor>> {
+  Create Corners & Walls
+  Add Furniture
+}
+
+class "Furniture Editor" as FurnitureEditor <<Editor>> {
+  Design Structure
+  Add Placement Zones
+}
+
+class "Shape Editor" as ShapeEditor <<Editor>> {
+  Create Shapes
+}
+
+' Views
+class "Floor View" as FloorView <<View>> {
+}
+
+class "Furniture View" as FurnitureView <<View>> {
+}
+
+class "Zone View" as ZoneView <<Modal>> {
+    Arrange Items Inside Zone
+}
+
+class "Floor Item Location" as FloorItemLocation <<View>> {
+  Highlight Furniture
+}
+
+class "Furniture Item Location" as FurnitureItemLocation <<View>> {
+  Highlight Zone
+}
+
+class "Zone Item Location" as ZoneItemLocation <<Modal>> {
+  Highlight Item Path
+}
+
+
+' Navigation from Home
+HOME --> FloorList
+HOME --> FurnitureList
+HOME --> ShapeList
+HOME --> ItemList
+HOME --> FloorEditor
+HOME --> FurnitureEditor
+HOME --> ShapeEditor
+
+' Navigation between functional pages
+FloorList --> FloorView : open selected floor
+FloorList --> FloorEditor : edit selected floor
+FurnitureList --> FurnitureEditor : edit selected furniture
+ShapeList --> ShapeEditor : edit selected shape
+FloorView --> FurnitureView : open selected furniture
+FurnitureView --> ZoneView : open selected zone
+ItemList --> FloorItemLocation : show item position
+FloorItemLocation --> FurnitureItemLocation : open selected furniture
+FurnitureItemLocation --> ZoneItemLocation : open selected zone
+
+@enduml
+
